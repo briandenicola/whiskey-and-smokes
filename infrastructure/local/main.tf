@@ -4,5 +4,5 @@ locals {
   project_name      = "${local.resource_name}-project"
   ai_services_name  = "${local.resource_name}-foundry"
   loganalytics_name = "${local.resource_name}-logs"
-  app_insights_name = "${var.foundry_project.name}-appinsights"
+  app_insights_name = "${local.resource_name}-appinsights"
 }

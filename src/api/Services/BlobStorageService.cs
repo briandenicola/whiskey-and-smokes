@@ -8,6 +8,7 @@ public interface IBlobStorageService
 {
     Task<(string UploadUrl, string BlobUrl)> GenerateUploadUrlAsync(string userId, string fileName);
     Task DeleteBlobAsync(string blobUrl);
+    Task<byte[]?> DownloadAsync(string blobUrl, CancellationToken cancellationToken = default);
 }
 
 public class BlobStorageService : IBlobStorageService
@@ -79,5 +80,30 @@ public class BlobStorageService : IBlobStorageService
         await containerClient.DeleteBlobIfExistsAsync(blobName);
 
         _logger.LogInformation("Blob deleted: container={Container}, blobPath={BlobPath}", _containerName, blobName);
+    }
+
+    public async Task<byte[]?> DownloadAsync(string blobUrl, CancellationToken cancellationToken = default)
+    {
+        using var activity = Diagnostics.Storage.StartActivity("Blob.Download");
+
+        try
+        {
+            var uri = new Uri(blobUrl);
+            var containerClient = _blobServiceClient.GetBlobContainerClient(_containerName);
+            var blobName = string.Join("/", uri.Segments.Skip(2)).TrimStart('/');
+
+            activity?.SetTag("blob.path", blobName);
+            _logger.LogDebug("Downloading blob: container={Container}, blobPath={BlobPath}", _containerName, blobName);
+
+            var blobClient = containerClient.GetBlobClient(blobName);
+            var response = await blobClient.DownloadContentAsync(cancellationToken);
+
+            return response.Value.Content.ToArray();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Failed to download blob: {Url}", blobUrl);
+            return null;
+        }
     }
 }

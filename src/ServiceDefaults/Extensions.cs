@@ -50,6 +50,7 @@ public static class Extensions
                        .AddSource("WhiskeyAndSmokes.Api.Auth")
                        .AddSource("WhiskeyAndSmokes.Api.Captures")
                        .AddSource("WhiskeyAndSmokes.Api.Agent")
+                       .AddSource("WhiskeyAndSmokes.Api.Workflow")
                        .AddSource("WhiskeyAndSmokes.Api.Storage")
                        .AddSource("WhiskeyAndSmokes.Api.Admin")
                        .AddAspNetCoreInstrumentation(opts =>

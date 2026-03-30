@@ -29,4 +29,7 @@ public class Prompt
 public static class PromptIds
 {
     public const string AgentInstructions = "agent-instructions";
+    public const string VisionAnalyst = "vision-analyst";
+    public const string DomainExpert = "domain-expert";
+    public const string DataCurator = "data-curator";
 }

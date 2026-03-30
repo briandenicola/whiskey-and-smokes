@@ -14,6 +14,6 @@ output "OPENAI_ENDPOINT" {
 }
 
 output "APPLICATION_INSIGHTS_CONNECTION_STRING" {
-  value     = azure
+  value     = azurerm_application_insights.this.connection_string
   sensitive = false
 }

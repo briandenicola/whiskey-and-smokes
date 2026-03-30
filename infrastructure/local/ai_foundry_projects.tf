@@ -20,11 +20,17 @@ module "project_1" {
       workspace_id = azurerm_log_analytics_workspace.this.id
     }
 
-    models        = [
-    {
-        name     = "gpt-4.1"
-        version  = "2025-04-14"
-        format = "OpenAI"
-    }]
+    models = [
+      {
+        name    = "gpt-4o"
+        version = "2024-11-20"
+        format  = "OpenAI"
+      },
+      {
+        name    = "gpt-5.1-mini"
+        version = "2025-07-25"
+        format  = "OpenAI"
+      }
+    ]
   }
 }

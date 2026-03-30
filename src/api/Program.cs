@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.Azure.Cosmos;
 using Microsoft.IdentityModel.Tokens;
 using WhiskeyAndSmokes.Api;
+using WhiskeyAndSmokes.Api.Agents;
 using WhiskeyAndSmokes.Api.Services;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -112,7 +113,7 @@ else
 builder.Services.AddSingleton(logLevelService);
 builder.Services.AddSingleton<IAuthService, AuthService>();
 builder.Services.AddSingleton<IPromptService, PromptService>();
-builder.Services.AddSingleton<IAgentService, AgentService>();
+builder.Services.AddSingleton<IAgentService, WorkflowAgentService>();
 
 // API
 builder.Services.AddControllers();

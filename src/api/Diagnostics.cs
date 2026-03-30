@@ -14,6 +14,7 @@ public static class Diagnostics
     public static readonly ActivitySource Auth = new($"{ServiceName}.Auth");
     public static readonly ActivitySource Captures = new($"{ServiceName}.Captures");
     public static readonly ActivitySource Agent = new($"{ServiceName}.Agent");
+    public static readonly ActivitySource Workflow = new($"{ServiceName}.Workflow");
     public static readonly ActivitySource Storage = new($"{ServiceName}.Storage");
     public static readonly ActivitySource Admin = new($"{ServiceName}.Admin");
 
@@ -23,6 +24,7 @@ public static class Diagnostics
         $"{ServiceName}.Auth",
         $"{ServiceName}.Captures",
         $"{ServiceName}.Agent",
+        $"{ServiceName}.Workflow",
         $"{ServiceName}.Storage",
         $"{ServiceName}.Admin"
     ];

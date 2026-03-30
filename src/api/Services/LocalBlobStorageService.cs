@@ -51,5 +51,28 @@ public class LocalBlobStorageService : IBlobStorageService
         return Task.CompletedTask;
     }
 
+    public async Task<byte[]?> DownloadAsync(string blobUrl, CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            var uri = new Uri(blobUrl);
+            var relativePath = uri.AbsolutePath.Replace("/uploads/", "");
+            var fullPath = Path.Combine(_storagePath, relativePath.Replace('/', Path.DirectorySeparatorChar));
+
+            if (File.Exists(fullPath))
+            {
+                return await File.ReadAllBytesAsync(fullPath, cancellationToken);
+            }
+
+            _logger.LogWarning("Local blob not found: {Path}", fullPath);
+            return null;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Failed to download local blob: {Url}", blobUrl);
+            return null;
+        }
+    }
+
     public string StoragePath => _storagePath;
 }

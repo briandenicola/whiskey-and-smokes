@@ -40,9 +40,9 @@ tasks:
         dotnet run
     vars:
       FOUNDRY_ENDPOINT:
-        sh: terraform -chdir=./infrastructure/local output -raw OPENAI_ENDPOINT
+        sh: terraform -chdir=./infrastructure/local output -raw OPENAI_ENDPOINT 2>/dev/null || echo ""
       APPINSIGHTS_CONN:
-        sh: terraform -chdir=./infrastructure/local output -raw APPINSIGHTS_CONNECTION_STRING
+        sh: terraform -chdir=./infrastructure/local output -raw APPLICATION_INSIGHTS_CONNECTION_STRING 2>/dev/null || echo ""
 
   run:api:
     desc: Runs the .NET API standalone (without Aspire)
@@ -55,9 +55,9 @@ tasks:
         dotnet run
     vars:
       FOUNDRY_ENDPOINT:
-        sh: terraform -chdir=./infrastructure/local output -raw OPENAI_ENDPOINT 
+        sh: terraform -chdir=./infrastructure/local output -raw OPENAI_ENDPOINT 2>/dev/null || echo ""
       APPINSIGHTS_CONN:
-        sh: terraform -chdir=./infrastructure/local output -raw APPINSIGHTS_CONNECTION_STRING
+        sh: terraform -chdir=./infrastructure/local output -raw APPLICATION_INSIGHTS_CONNECTION_STRING 2>/dev/null || echo ""
 
   run:web:
     desc: Runs the Vue frontend dev server
@@ -65,6 +65,16 @@ tasks:
     cmds:
       - npm install --silent
       - npm run dev
+
+  run:agent-init:
+    desc: Validates agent configuration against AI Foundry
+    cmds:
+      - >-
+        AiFoundry__Endpoint={{.FOUNDRY_ENDPOINT}}
+        dotnet run --project ./src/AgentInitiator
+    vars:
+      FOUNDRY_ENDPOINT:
+        sh: terraform -chdir=./infrastructure/local output -raw OPENAI_ENDPOINT
 
   docker:up:
     desc: Starts all services via Docker Compose
