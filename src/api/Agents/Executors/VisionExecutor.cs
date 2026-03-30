@@ -63,18 +63,27 @@ internal sealed class VisionExecutor : Executor<CaptureInput, VisionDescription>
         {
             try
             {
-                if (photoUrl.StartsWith("http://") || photoUrl.StartsWith("https://"))
+                var isLocalUrl = photoUrl.Contains("localhost", StringComparison.OrdinalIgnoreCase)
+                    || photoUrl.Contains("127.0.0.1");
+
+                if (!isLocalUrl && (photoUrl.StartsWith("http://") || photoUrl.StartsWith("https://")))
                 {
+                    // Remote URL — let the model fetch it directly
                     contentParts.Add(new UriContent(new Uri(photoUrl), "image/jpeg"));
                 }
                 else
                 {
-                    // Local file — read and send as base64
+                    // Local file or localhost URL — download and send as base64
                     var bytes = await _blobService.DownloadAsync(photoUrl, cancellationToken);
                     if (bytes != null)
                     {
                         var mimeType = photoUrl.EndsWith(".png", StringComparison.OrdinalIgnoreCase) ? "image/png" : "image/jpeg";
                         contentParts.Add(new DataContent(bytes, mimeType));
+                        _logger.LogDebug("Loaded photo as base64 ({Size} bytes) for capture {CaptureId}", bytes.Length, input.CaptureId);
+                    }
+                    else
+                    {
+                        _logger.LogWarning("Photo not found at {PhotoUrl} for capture {CaptureId}", photoUrl, input.CaptureId);
                     }
                 }
             }
