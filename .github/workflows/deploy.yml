@@ -1,0 +1,83 @@
+name: Deploy
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Target environment'
+        required: true
+        default: 'dev'
+        type: choice
+        options:
+          - dev
+          - prod
+
+permissions:
+  id-token: write
+  contents: read
+
+env:
+  AZURE_RESOURCE_GROUP: rg-sippuff-${{ github.event.inputs.environment || 'dev' }}
+
+jobs:
+  deploy-api:
+    runs-on: ubuntu-latest
+    environment: ${{ github.event.inputs.environment || 'dev' }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Azure Login
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Login to ACR
+        run: az acr login --name ${{ secrets.ACR_NAME }}
+
+      - name: Build and Push API Image
+        run: |
+          docker build -t ${{ secrets.ACR_NAME }}.azurecr.io/sippuff-api:${{ github.sha }} \
+                        -t ${{ secrets.ACR_NAME }}.azurecr.io/sippuff-api:latest \
+                        ./src/api/SipPuff.Api
+          docker push ${{ secrets.ACR_NAME }}.azurecr.io/sippuff-api --all-tags
+
+      - name: Deploy API to Container Apps
+        run: |
+          az containerapp update \
+            --name ca-sippuff-api-${{ github.event.inputs.environment || 'dev' }} \
+            --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
+            --image ${{ secrets.ACR_NAME }}.azurecr.io/sippuff-api:${{ github.sha }}
+
+  deploy-web:
+    runs-on: ubuntu-latest
+    environment: ${{ github.event.inputs.environment || 'dev' }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Azure Login
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Login to ACR
+        run: az acr login --name ${{ secrets.ACR_NAME }}
+
+      - name: Build and Push Web Image
+        run: |
+          docker build -t ${{ secrets.ACR_NAME }}.azurecr.io/sippuff-web:${{ github.sha }} \
+                        -t ${{ secrets.ACR_NAME }}.azurecr.io/sippuff-web:latest \
+                        ./src/web
+          docker push ${{ secrets.ACR_NAME }}.azurecr.io/sippuff-web --all-tags
+
+      - name: Deploy Web to Container Apps
+        run: |
+          az containerapp update \
+            --name ca-sippuff-web-${{ github.event.inputs.environment || 'dev' }} \
+            --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
+            --image ${{ secrets.ACR_NAME }}.azurecr.io/sippuff-web:${{ github.sha }}

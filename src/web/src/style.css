@@ -1,0 +1,16 @@
+@import "tailwindcss";
+
+:root {
+  --color-primary: #92400e;
+  --color-primary-light: #b45309;
+  --color-surface: #1c1917;
+  --color-surface-light: #292524;
+  --color-text: #fafaf9;
+  --color-text-muted: #a8a29e;
+}
+
+body {
+  @apply bg-stone-950 text-stone-50 min-h-screen;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
