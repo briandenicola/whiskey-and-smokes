@@ -6,17 +6,17 @@ import router from '../router'
 
 export const useAuthStore = defineStore('auth', () => {
   const user = ref<User | null>(null)
+  const token = ref<string | null>(getStoredToken())
   const isLoading = ref(true)
   const error = ref<string | null>(null)
 
-  const isAuthenticated = computed(() => !!getStoredToken())
+  const isAuthenticated = computed(() => !!token.value)
   const isAdmin = computed(() => user.value?.role === 'admin')
 
   function initialize() {
     const storedUser = getStoredUser()
-    if (storedUser && getStoredToken()) {
+    if (storedUser && token.value) {
       user.value = storedUser
-      // Refresh user data in background
       loadUser()
     }
     isLoading.value = false
@@ -27,6 +27,7 @@ export const useAuthStore = defineStore('auth', () => {
     try {
       const response = await authApi.register(data)
       storeAuth(response.data)
+      token.value = response.data.token
       user.value = response.data.user
       router.push('/')
     } catch (e: any) {
@@ -40,6 +41,7 @@ export const useAuthStore = defineStore('auth', () => {
     try {
       const response = await authApi.login(data)
       storeAuth(response.data)
+      token.value = response.data.token
       user.value = response.data.user
       router.push('/')
     } catch (e: any) {
@@ -50,6 +52,7 @@ export const useAuthStore = defineStore('auth', () => {
 
   function logout() {
     clearAuth()
+    token.value = null
     user.value = null
     router.push('/login')
   }

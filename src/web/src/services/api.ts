@@ -18,10 +18,13 @@ api.interceptors.request.use((config) => {
 })
 
 // Handle 401 responses — clear auth and redirect to login
+// Skip auth endpoints so login/register errors display in the form
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.response?.status === 401) {
+    const url = error.config?.url ?? ''
+    const isAuthEndpoint = url.includes('/auth/')
+    if (error.response?.status === 401 && !isAuthEndpoint) {
       clearAuth()
       window.location.href = '/login'
     }
