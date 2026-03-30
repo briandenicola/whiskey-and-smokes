@@ -38,6 +38,9 @@ tasks:
     cmds:
       - >-
         AiFoundry__Endpoint={{.FOUNDRY_ENDPOINT}}
+        AiFoundry__ProjectEndpoint={{.PROJECT_ENDPOINT}}
+        AiFoundry__Models__Vision=gpt-4o
+        AiFoundry__Models__Reasoning=gpt-5-mini
         APPLICATIONINSIGHTS_CONNECTION_STRING={{.APPINSIGHTS_CONN}}
         ASPIRE_DASHBOARD_OTLP_HTTP_ENDPOINT_URL=http://localhost:18889
         ASPIRE_ALLOW_UNSECURED_TRANSPORT=true
@@ -45,6 +48,8 @@ tasks:
     vars:
       FOUNDRY_ENDPOINT:
         sh: terraform -chdir=./infrastructure/local output -raw OPENAI_ENDPOINT 2>/dev/null || echo ""
+      PROJECT_ENDPOINT:
+        sh: terraform -chdir=./infrastructure/local output -raw FOUNDRY_PROJECT_ENDPOINT 2>/dev/null || echo ""
       APPINSIGHTS_CONN:
         sh: terraform -chdir=./infrastructure/local output -raw APPLICATION_INSIGHTS_CONNECTION_STRING 2>/dev/null || echo ""
 
