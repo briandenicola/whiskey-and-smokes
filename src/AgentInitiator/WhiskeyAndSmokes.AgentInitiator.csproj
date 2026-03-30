@@ -9,7 +9,8 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Azure.AI.Agents.Persistent" Version="1.2.0-beta.10" />
+    <PackageReference Include="Azure.AI.Projects" Version="2.0.0-beta.1" />
+    <PackageReference Include="Azure.AI.Projects.OpenAI" Version="2.0.0-beta.1" />
     <PackageReference Include="Azure.Identity" Version="1.19.0" />
     <PackageReference Include="Microsoft.Extensions.Configuration" Version="10.0.3" />
     <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="10.0.3" />
