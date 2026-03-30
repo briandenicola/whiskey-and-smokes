@@ -116,7 +116,39 @@ public class ItemsController : ControllerBase
         activity?.SetTag("user.id", userId);
         _logger.LogDebug("Deleting item {ItemId} for user {UserId}", id, userId);
 
+        var item = await _cosmosDb.GetAsync<Item>(ContainerName, id, userId);
+        if (item == null)
+            return NoContent();
+
         await _cosmosDb.DeleteAsync(ContainerName, id, userId);
+
+        // Cascade: remove item from capture's itemIds and purge capture if no items remain
+        if (!string.IsNullOrEmpty(item.CaptureId))
+        {
+            try
+            {
+                var capture = await _cosmosDb.GetAsync<Capture>("captures", item.CaptureId, userId);
+                if (capture != null)
+                {
+                    capture.ItemIds.Remove(id);
+
+                    if (capture.ItemIds.Count == 0)
+                    {
+                        _logger.LogInformation("No items remain for capture {CaptureId} — purging", capture.Id);
+                        await _cosmosDb.DeleteAsync("captures", capture.Id, userId);
+                    }
+                    else
+                    {
+                        await _cosmosDb.UpsertAsync("captures", capture, capture.PartitionKey);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Failed to cascade-update capture {CaptureId} after deleting item {ItemId}",
+                    item.CaptureId, id);
+            }
+        }
 
         _logger.LogInformation("Deleted item {ItemId} for user {UserId}", id, userId);
         return NoContent();

@@ -270,14 +270,14 @@ async function saveLoggingSettings() {
               @click="startResetPassword(user.id)"
               class="text-xs px-3 py-1.5 rounded-lg bg-stone-800 text-stone-300 hover:bg-stone-700 transition-colors"
             >
-              🔑 Reset Password
+              Reset Password
             </button>
             <button
               v-if="user.id !== auth.user?.id"
               @click="startDeleteUser(user.id)"
               class="text-xs px-3 py-1.5 rounded-lg bg-red-900/30 text-red-400 hover:bg-red-900/50 border border-red-800/50 transition-colors"
             >
-              🗑 Delete
+              Delete
             </button>
           </div>
         </div>
@@ -306,7 +306,7 @@ async function saveLoggingSettings() {
               @click="startEditPrompt(prompt)"
               class="text-xs px-3 py-1.5 rounded-lg bg-stone-800 text-amber-500 hover:bg-stone-700 transition-colors"
             >
-              ✏️ Edit
+              Edit
             </button>
           </div>
 

@@ -60,14 +60,14 @@ public class AgentValidationService : IHostedService
             if (missing.Count == 0)
             {
                 _logger.LogInformation(
-                    "✅ All {Count} Foundry agents validated and ready: [{Agents}]",
+                    "All {Count} Foundry agents validated and ready: [{Agents}]",
                     RequiredAgents.Length,
                     string.Join(", ", RequiredAgents));
             }
             else
             {
                 _logger.LogWarning(
-                    "⚠️ {MissingCount}/{TotalCount} Foundry agents are MISSING: [{Missing}]. " +
+                    "{MissingCount}/{TotalCount} Foundry agents are MISSING: [{Missing}]. " +
                     "Run 'task agent:init' to create them. The app will fall back to local extraction.",
                     missing.Count,
                     RequiredAgents.Length,

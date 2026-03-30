@@ -35,6 +35,12 @@ public class CaptureResponse
     [JsonPropertyName("itemIds")]
     public List<string> ItemIds { get; set; } = [];
 
+    [JsonPropertyName("workflowSteps")]
+    public List<WorkflowStep> WorkflowSteps { get; set; } = [];
+
+    [JsonPropertyName("processingError")]
+    public string? ProcessingError { get; set; }
+
     [JsonPropertyName("createdAt")]
     public DateTime CreatedAt { get; set; }
 }

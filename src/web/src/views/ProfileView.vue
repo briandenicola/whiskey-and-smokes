@@ -157,7 +157,7 @@ async function changePassword() {
         to="/admin"
         class="block bg-stone-900 border border-stone-800 rounded-xl p-4 text-center text-amber-500 hover:text-amber-400 hover:border-stone-700 transition-colors"
       >
-        🔧 Admin Panel
+        Admin Panel
       </router-link>
 
       <!-- Logout -->

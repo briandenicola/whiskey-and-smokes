@@ -6,11 +6,11 @@ const itemsStore = useItemsStore()
 const activeFilter = ref<string | undefined>()
 
 const typeFilters = [
-  { label: 'All', value: undefined, icon: '🍸' },
-  { label: 'Whiskey', value: 'whiskey', icon: '🥃' },
-  { label: 'Wine', value: 'wine', icon: '🍷' },
-  { label: 'Cocktail', value: 'cocktail', icon: '🍹' },
-  { label: 'Cigar', value: 'cigar', icon: '💨' },
+  { label: 'All', value: undefined },
+  { label: 'Whiskey', value: 'whiskey' },
+  { label: 'Wine', value: 'wine' },
+  { label: 'Cocktail', value: 'cocktail' },
+  { label: 'Cigar', value: 'cigar' },
 ]
 
 function setFilter(value?: string) {
@@ -21,10 +21,6 @@ function setFilter(value?: string) {
 onMounted(() => {
   itemsStore.loadItems(undefined, true)
 })
-
-function typeIcon(type: string) {
-  return typeFilters.find(f => f.value === type)?.icon ?? '🍸'
-}
 </script>
 
 <template>
@@ -42,7 +38,7 @@ function typeIcon(type: string) {
           ? 'bg-amber-700 border-amber-600 text-white'
           : 'bg-stone-900 border-stone-700 text-stone-400 hover:border-stone-600'"
       >
-        {{ filter.icon }} {{ filter.label }}
+        {{ filter.label }}
       </button>
     </div>
 
@@ -51,7 +47,6 @@ function typeIcon(type: string) {
     </div>
 
     <div v-else-if="!itemsStore.items.length" class="text-stone-500 text-center py-12">
-      <p class="text-4xl mb-3">🥃</p>
       <p>No items yet. Capture something first!</p>
     </div>
 
@@ -68,8 +63,8 @@ function typeIcon(type: string) {
             :src="item.photoUrls[0]"
             class="w-16 h-16 object-cover rounded-lg shrink-0"
           />
-          <div v-else class="w-16 h-16 bg-stone-800 rounded-lg shrink-0 flex items-center justify-center text-2xl">
-            {{ typeIcon(item.type) }}
+          <div v-else class="w-16 h-16 bg-stone-800 rounded-lg shrink-0 flex items-center justify-center text-xs text-stone-500 uppercase">
+            {{ item.type }}
           </div>
 
           <div class="flex-1 min-w-0">

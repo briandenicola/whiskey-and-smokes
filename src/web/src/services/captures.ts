@@ -11,6 +11,15 @@ export interface CreateCaptureRequest {
   location?: GeoLocation
 }
 
+export interface WorkflowStep {
+  stepId: string
+  agentName: string
+  status: 'pending' | 'running' | 'complete' | 'error'
+  summary?: string
+  detail?: string
+  timestamp: string
+}
+
 export interface CaptureResponse {
   id: string
   status: string
@@ -18,6 +27,8 @@ export interface CaptureResponse {
   userNote?: string
   location?: GeoLocation
   itemIds: string[]
+  workflowSteps: WorkflowStep[]
+  processingError?: string
   createdAt: string
 }
 

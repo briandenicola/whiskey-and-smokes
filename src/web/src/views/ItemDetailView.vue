@@ -11,6 +11,7 @@ const itemsStore = useItemsStore()
 const item = ref<Item | null>(null)
 const isEditing = ref(false)
 const isSaving = ref(false)
+const showDeleteConfirm = ref(false)
 const editRating = ref(0)
 const editNotes = ref('')
 const editName = ref('')
@@ -72,9 +73,13 @@ async function save() {
 }
 
 async function deleteItem() {
-  if (!item.value || !confirm('Delete this item?')) return
+  if (!item.value) return
   await itemsStore.deleteItem(item.value.id)
   router.push('/items')
+}
+
+function isAiGenerated(data: Item): boolean {
+  return (data.aiConfidence != null && data.aiConfidence > 0)
 }
 </script>
 
@@ -110,7 +115,8 @@ async function deleteItem() {
 
     <!-- AI Summary -->
     <div v-if="item.aiSummary" class="bg-stone-900 border border-stone-800 rounded-xl p-4 mb-4">
-      <p class="text-xs text-amber-500 mb-1">🤖 AI Summary</p>
+      <p v-if="isAiGenerated(item)" class="text-xs text-amber-500 mb-1">AI Agent Analysis</p>
+      <p v-else class="text-xs text-stone-500 mb-1">Local Extraction (AI agents were not available)</p>
       <p class="text-sm text-stone-300">{{ item.aiSummary }}</p>
       <p v-if="item.aiConfidence" class="text-xs text-stone-600 mt-2">
         Confidence: {{ Math.round(item.aiConfidence * 100) }}%
@@ -119,7 +125,7 @@ async function deleteItem() {
 
     <!-- Venue -->
     <div v-if="item.venue" class="mb-4">
-      <p class="text-sm text-stone-500">📍 {{ item.venue.name }}</p>
+      <p class="text-sm text-stone-500">Location: {{ item.venue.name }}</p>
       <p v-if="item.venue.address" class="text-xs text-stone-600">{{ item.venue.address }}</p>
     </div>
 
@@ -138,10 +144,10 @@ async function deleteItem() {
           {{ item.status === 'ai-draft' ? 'Review & Rate' : 'Edit' }}
         </button>
         <button
-          @click="deleteItem"
-          class="px-4 bg-stone-800 hover:bg-stone-700 text-red-400 py-3 rounded-xl"
+          @click="showDeleteConfirm = true"
+          class="px-4 bg-stone-800 hover:bg-stone-700 text-red-400 py-3 rounded-xl text-sm"
         >
-          🗑️
+          Delete
         </button>
       </div>
     </div>
@@ -254,5 +260,21 @@ async function deleteItem() {
         {{ tag }}
       </span>
     </div>
+
+    <!-- Delete Confirmation Modal -->
+    <Teleport to="body">
+      <div v-if="showDeleteConfirm" class="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4" @click.self="showDeleteConfirm = false">
+        <div class="bg-stone-900 border border-stone-700 rounded-2xl p-6 w-full max-w-sm">
+          <h3 class="text-lg font-semibold text-red-400 mb-4">Delete Item</h3>
+          <p class="text-sm text-stone-300 mb-4">
+            Are you sure you want to delete <strong>{{ item.name }}</strong>? This action cannot be undone.
+          </p>
+          <div class="flex gap-2 justify-end">
+            <button @click="showDeleteConfirm = false" class="px-4 py-2 text-sm rounded-xl bg-stone-800 text-stone-400 hover:bg-stone-700">Cancel</button>
+            <button @click="deleteItem" class="px-4 py-2 text-sm rounded-xl bg-red-700 text-white hover:bg-red-600">Delete</button>
+          </div>
+        </div>
+      </div>
+    </Teleport>
   </div>
 </template>

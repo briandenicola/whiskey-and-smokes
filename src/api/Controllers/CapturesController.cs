@@ -126,6 +126,8 @@ public class CapturesController : ControllerBase
         UserNote = c.UserNote,
         Location = c.Location,
         ItemIds = c.ItemIds,
+        WorkflowSteps = c.WorkflowSteps,
+        ProcessingError = c.ProcessingError,
         CreatedAt = c.CreatedAt
     };
 }

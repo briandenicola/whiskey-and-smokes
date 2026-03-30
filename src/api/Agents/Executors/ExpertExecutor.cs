@@ -29,6 +29,19 @@ internal sealed class ExpertExecutor : Executor
         _logger = logger;
     }
 
+    /// <summary>Direct entry point for initial vision analysis (used by step-tracked workflow).</summary>
+    public async Task<ExpertAnalysis> AnalyzeAsync(VisionDescription vision, CancellationToken cancellationToken = default)
+    {
+        return await HandleVisionAsync(vision, null!, cancellationToken);
+    }
+
+    /// <summary>Direct entry point for refinement after curator rejection.</summary>
+    public async Task<ExpertAnalysis> RefineAsync(VisionDescription vision, CuratorDecision rejection, CancellationToken cancellationToken = default)
+    {
+        _visionContext = vision.Description;
+        return await HandleRejectionAsync(rejection, null!, cancellationToken);
+    }
+
     protected override ProtocolBuilder ConfigureProtocol(ProtocolBuilder protocol)
     {
         protocol.ConfigureRoutes(routes =>

@@ -1,10 +1,12 @@
 <script setup lang="ts">
 import { ref } from 'vue'
+import { useRouter } from 'vue-router'
 import { useCamera } from '../composables/useCamera'
 import { useLocation } from '../composables/useLocation'
 import { useCapturesStore } from '../stores/captures'
 import { capturesApi } from '../services/captures'
 
+const router = useRouter()
 const { photos, previews, addFromInput, removePhoto, clearPhotos } = useCamera()
 const { location, isLocating, requestLocation } = useLocation()
 const capturesStore = useCapturesStore()
@@ -12,6 +14,7 @@ const capturesStore = useCapturesStore()
 const userNote = ref('')
 const isSubmitting = ref(false)
 const showSuccess = ref(false)
+const lastCaptureId = ref<string | null>(null)
 
 // Auto-request location on mount
 requestLocation()
@@ -56,7 +59,7 @@ async function submit() {
   try {
     const photoUrls = await uploadPhotos()
 
-    await capturesStore.createCapture({
+    const capture = await capturesStore.createCapture({
       photos: photoUrls,
       userNote: userNote.value || undefined,
       location: location.value || undefined,
@@ -65,8 +68,9 @@ async function submit() {
     // Reset form
     clearPhotos()
     userNote.value = ''
+    lastCaptureId.value = capture.id
     showSuccess.value = true
-    setTimeout(() => { showSuccess.value = false }, 3000)
+    setTimeout(() => { showSuccess.value = false }, 8000)
   } finally {
     isSubmitting.value = false
   }
@@ -78,8 +82,13 @@ async function submit() {
     <h2 class="text-xl font-semibold mb-4">Quick Capture</h2>
 
     <!-- Success toast -->
-    <div v-if="showSuccess" class="bg-green-900/50 border border-green-700 text-green-300 px-4 py-3 rounded-lg mb-4 text-sm">
-      ✅ Captured! AI is processing your entry.
+    <div v-if="showSuccess" class="bg-green-900/50 border border-green-700 text-green-300 px-4 py-3 rounded-xl mb-4 text-sm flex items-center justify-between">
+      <span>Captured successfully. Processing your entry.</span>
+      <router-link
+        v-if="lastCaptureId"
+        :to="`/history/${lastCaptureId}`"
+        class="text-amber-400 hover:text-amber-300 font-medium ml-3 whitespace-nowrap"
+      >View progress</router-link>
     </div>
 
     <!-- Photo Capture -->
@@ -100,13 +109,18 @@ async function submit() {
       <!-- Camera / Gallery buttons -->
       <div class="flex gap-3">
         <label class="flex-1 bg-stone-800 hover:bg-stone-700 border border-stone-700 rounded-xl py-4 flex flex-col items-center cursor-pointer transition-colors">
-          <span class="text-2xl mb-1">📷</span>
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6 mb-1 text-stone-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+            <circle cx="12" cy="13" r="3" />
+          </svg>
           <span class="text-xs text-stone-400">Camera</span>
           <input type="file" accept="image/*" capture="environment" multiple @change="addFromInput" class="hidden" />
         </label>
 
         <label class="flex-1 bg-stone-800 hover:bg-stone-700 border border-stone-700 rounded-xl py-4 flex flex-col items-center cursor-pointer transition-colors">
-          <span class="text-2xl mb-1">🖼️</span>
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6 mb-1 text-stone-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+          </svg>
           <span class="text-xs text-stone-400">Gallery</span>
           <input type="file" accept="image/*" multiple @change="addFromInput" class="hidden" />
         </label>
@@ -126,9 +140,9 @@ async function submit() {
 
     <!-- Location indicator -->
     <div class="mb-6 flex items-center gap-2 text-sm">
-      <span v-if="isLocating" class="text-stone-500">📍 Getting location...</span>
-      <span v-else-if="location" class="text-green-500">📍 Location captured</span>
-      <span v-else class="text-stone-600">📍 Location unavailable</span>
+      <span v-if="isLocating" class="text-stone-500">Getting location...</span>
+      <span v-else-if="location" class="text-green-500">Location captured</span>
+      <span v-else class="text-stone-600">Location unavailable</span>
     </div>
 
     <!-- Submit -->

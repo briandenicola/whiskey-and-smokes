@@ -25,6 +25,9 @@ public class Capture
     [JsonPropertyName("itemIds")]
     public List<string> ItemIds { get; set; } = [];
 
+    [JsonPropertyName("workflowSteps")]
+    public List<WorkflowStep> WorkflowSteps { get; set; } = [];
+
     [JsonPropertyName("processingError")]
     public string? ProcessingError { get; set; }
 
@@ -36,6 +39,35 @@ public class Capture
 
     [JsonPropertyName("partitionKey")]
     public string PartitionKey => UserId;
+}
+
+public class WorkflowStep
+{
+    [JsonPropertyName("stepId")]
+    public string StepId { get; set; } = string.Empty;
+
+    [JsonPropertyName("agentName")]
+    public string AgentName { get; set; } = string.Empty;
+
+    [JsonPropertyName("status")]
+    public string Status { get; set; } = WorkflowStepStatus.Pending;
+
+    [JsonPropertyName("summary")]
+    public string? Summary { get; set; }
+
+    [JsonPropertyName("detail")]
+    public string? Detail { get; set; }
+
+    [JsonPropertyName("timestamp")]
+    public DateTime Timestamp { get; set; } = DateTime.UtcNow;
+}
+
+public static class WorkflowStepStatus
+{
+    public const string Pending = "pending";
+    public const string Running = "running";
+    public const string Complete = "complete";
+    public const string Error = "error";
 }
 
 public class GeoLocation

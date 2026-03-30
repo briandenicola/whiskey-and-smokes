@@ -19,6 +19,12 @@ const routes = [
     component: () => import('../views/HistoryView.vue'),
   },
   {
+    path: '/history/:id',
+    name: 'CaptureDetail',
+    component: () => import('../views/CaptureDetailView.vue'),
+    props: true,
+  },
+  {
     path: '/items',
     name: 'Items',
     component: () => import('../views/ItemsView.vue'),

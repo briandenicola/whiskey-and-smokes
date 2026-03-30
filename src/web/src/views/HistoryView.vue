@@ -17,12 +17,12 @@ function statusColor(status: string) {
   }
 }
 
-function statusIcon(status: string) {
+function statusLabel(status: string) {
   switch (status) {
-    case 'completed': return '✅'
-    case 'processing': return '⏳'
-    case 'failed': return '❌'
-    default: return '🔄'
+    case 'completed': return 'Complete'
+    case 'processing': return 'Processing'
+    case 'failed': return 'Failed'
+    default: return 'Pending'
   }
 }
 </script>
@@ -36,19 +36,19 @@ function statusIcon(status: string) {
     </div>
 
     <div v-else-if="!capturesStore.captures.length" class="text-stone-500 text-center py-12">
-      <p class="text-4xl mb-3">📸</p>
       <p>No captures yet. Head to Capture to get started!</p>
     </div>
 
     <div v-else class="space-y-3">
-      <div
+      <router-link
         v-for="capture in capturesStore.captures"
         :key="capture.id"
-        class="bg-stone-900 border border-stone-800 rounded-xl p-4"
+        :to="`/history/${capture.id}`"
+        class="block bg-stone-900 border border-stone-800 rounded-xl p-4 hover:border-stone-700 transition-colors"
       >
         <div class="flex items-start justify-between mb-2">
           <span :class="statusColor(capture.status)" class="text-sm">
-            {{ statusIcon(capture.status) }} {{ capture.status }}
+            {{ statusLabel(capture.status) }}
           </span>
           <span class="text-xs text-stone-600">
             {{ new Date(capture.createdAt).toLocaleDateString() }}
@@ -71,17 +71,15 @@ function statusIcon(status: string) {
           {{ capture.userNote }}
         </p>
 
-        <div v-if="capture.itemIds.length" class="mt-2">
-          <router-link
-            v-for="itemId in capture.itemIds"
-            :key="itemId"
-            :to="`/items/${itemId}`"
-            class="text-xs text-amber-500 hover:text-amber-400 mr-2"
-          >
-            View item →
-          </router-link>
+        <div class="flex items-center justify-between mt-2">
+          <span v-if="capture.workflowSteps?.length" class="text-xs text-stone-600">
+            {{ capture.workflowSteps.length }} workflow step(s)
+          </span>
+          <span v-if="capture.itemIds.length" class="text-xs text-amber-500">
+            {{ capture.itemIds.length }} item(s) →
+          </span>
         </div>
-      </div>
+      </router-link>
     </div>
   </div>
 </template>

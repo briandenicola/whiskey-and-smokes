@@ -1,6 +1,9 @@
 using System.Diagnostics;
 using System.Text.Json;
-using Microsoft.Agents.AI.Workflows;
+using Azure.AI.OpenAI;
+using Azure.Identity;
+using Microsoft.Extensions.AI;
+using WhiskeyAndSmokes.Api.Agents.Executors;
 using WhiskeyAndSmokes.Api.Agents.Models;
 using WhiskeyAndSmokes.Api.Models;
 using WhiskeyAndSmokes.Api.Services;
@@ -8,7 +11,8 @@ using WhiskeyAndSmokes.Api.Services;
 namespace WhiskeyAndSmokes.Api.Agents;
 
 /// <summary>
-/// IAgentService implementation that uses the multi-agent workflow pipeline.
+/// IAgentService implementation that runs the multi-agent pipeline with per-step tracking.
+/// Each agent's output is persisted as a WorkflowStep on the Capture for audit/display.
 /// Falls back to local keyword extraction when AI Foundry is not configured.
 /// </summary>
 public class WorkflowAgentService : IAgentService
@@ -20,6 +24,8 @@ public class WorkflowAgentService : IAgentService
     private readonly IConfiguration _config;
     private readonly ILoggerFactory _loggerFactory;
     private readonly bool _isFoundryConfigured;
+
+    private const int MaxRefinements = 2;
 
     public WorkflowAgentService(
         ICosmosDbService cosmosDb,
@@ -52,6 +58,7 @@ public class WorkflowAgentService : IAgentService
         try
         {
             capture.Status = CaptureStatus.Processing;
+            capture.WorkflowSteps = [];
             capture.UpdatedAt = DateTime.UtcNow;
             await _cosmosDb.UpsertAsync("captures", capture, capture.PartitionKey);
 
@@ -65,7 +72,10 @@ public class WorkflowAgentService : IAgentService
             else
             {
                 _logger.LogWarning("AI Foundry not configured — using local extraction for capture {CaptureId}", capture.Id);
+                await LogStep(capture, "S01", "Local Extraction", WorkflowStepStatus.Running, "AI Foundry not configured — using keyword matching");
                 items = LocalExtraction.Process(capture, _logger);
+                await LogStep(capture, "S01", "Local Extraction", WorkflowStepStatus.Complete,
+                    $"Extracted {items.Count} item(s) from note keywords");
             }
 
             activity?.SetTag("items.count", items.Count);
@@ -74,8 +84,6 @@ public class WorkflowAgentService : IAgentService
             {
                 await _cosmosDb.CreateAsync("items", item, item.PartitionKey);
                 capture.ItemIds.Add(item.Id);
-                _logger.LogDebug("Persisted item {ItemId} (type={ItemType}, name={ItemName})",
-                    item.Id, item.Type, item.Name);
             }
 
             capture.Status = CaptureStatus.Completed;
@@ -91,7 +99,8 @@ public class WorkflowAgentService : IAgentService
             activity?.SetStatus(ActivityStatusCode.Error, ex.Message);
             _logger.LogError(ex, "Failed to process capture {CaptureId}: {Error}", capture.Id, ex.Message);
 
-            // Fall back to local extraction if the workflow fails
+            await LogStep(capture, "ERR", "Error", WorkflowStepStatus.Error, ex.Message);
+
             try
             {
                 _logger.LogWarning("Attempting local extraction fallback for capture {CaptureId}", capture.Id);
@@ -107,10 +116,6 @@ public class WorkflowAgentService : IAgentService
                 capture.ProcessingError = $"AI workflow failed ({ex.Message}), used local extraction";
                 capture.UpdatedAt = DateTime.UtcNow;
                 await _cosmosDb.UpsertAsync("captures", capture, capture.PartitionKey);
-
-                _logger.LogWarning(
-                    "Capture {CaptureId} completed via local extraction fallback: {ItemCount} items",
-                    capture.Id, fallbackItems.Count);
             }
             catch (Exception fallbackEx)
             {
@@ -128,7 +133,16 @@ public class WorkflowAgentService : IAgentService
         using var activity = Diagnostics.Agent.StartActivity("RunWorkflow");
         activity?.SetTag("capture.id", capture.Id);
 
-        var workflow = CaptureWorkflow.Build(_config, _promptService, _blobService, _loggerFactory);
+        var endpoint = _config["AiFoundry:Endpoint"]
+            ?? throw new InvalidOperationException("AiFoundry:Endpoint is required");
+
+        var azureClient = new AzureOpenAIClient(new Uri(endpoint), new DefaultAzureCredential());
+
+        var visionModel = _config["AiFoundry:Models:Vision"] ?? "gpt-4o";
+        var reasoningModel = _config["AiFoundry:Models:Reasoning"] ?? "gpt-5-mini";
+
+        IChatClient visionChatClient = azureClient.GetChatClient(visionModel).AsIChatClient();
+        IChatClient reasoningChatClient = azureClient.GetChatClient(reasoningModel).AsIChatClient();
 
         var input = new CaptureInput
         {
@@ -137,45 +151,125 @@ public class WorkflowAgentService : IAgentService
             PhotoUrls = capture.Photos,
             UserNote = capture.UserNote,
             Location = capture.Location != null
-                ? new Agents.Models.GeoCoordinate
-                {
-                    Latitude = capture.Location.Latitude,
-                    Longitude = capture.Location.Longitude
-                }
+                ? new GeoCoordinate { Latitude = capture.Location.Latitude, Longitude = capture.Location.Longitude }
                 : null
         };
 
-        _logger.LogDebug("Starting workflow for capture {CaptureId}", capture.Id);
+        // ── Step 1: Vision Analyst ────────────────────────────────────────
+        await LogStep(capture, "S01", "Vision Analyst", WorkflowStepStatus.Running,
+            $"Analyzing {capture.Photos.Count} photo(s) with {visionModel}...");
 
-        await using var run = await InProcessExecution.RunAsync(workflow, input);
+        var vision = new VisionExecutor(
+            visionChatClient, _promptService, _blobService,
+            _loggerFactory.CreateLogger<VisionExecutor>());
 
+        var visionResult = await vision.HandleAsync(input, null!, CancellationToken.None);
+
+        var visionSummary = visionResult.Description.Length > 300
+            ? visionResult.Description[..300] + "..."
+            : visionResult.Description;
+        await LogStep(capture, "S01", "Vision Analyst", WorkflowStepStatus.Complete,
+            visionSummary, visionResult.Description);
+
+        // ── Step 2: Domain Expert ─────────────────────────────────────────
+        await LogStep(capture, "S02", "Domain Expert", WorkflowStepStatus.Running,
+            $"Identifying products with {reasoningModel}...");
+
+        var expert = new ExpertExecutor(
+            reasoningChatClient, _promptService,
+            _loggerFactory.CreateLogger<ExpertExecutor>());
+
+        var expertResult = await expert.AnalyzeAsync(visionResult);
+
+        var expertSummary = expertResult.Analysis.Length > 300
+            ? expertResult.Analysis[..300] + "..."
+            : expertResult.Analysis;
+        await LogStep(capture, "S02", "Domain Expert", WorkflowStepStatus.Complete,
+            expertSummary, expertResult.Analysis);
+
+        // ── Step 3: Data Curator (with retry loop) ────────────────────────
         CuratorDecision? decision = null;
-        foreach (var evt in run.NewEvents)
+        var refinements = 0;
+
+        while (refinements <= MaxRefinements)
         {
-            if (evt is WorkflowOutputEvent outputEvent)
+            var stepLabel = refinements == 0 ? "Data Curator" : $"Data Curator (refinement #{refinements})";
+            await LogStep(capture, "S03", stepLabel, WorkflowStepStatus.Running,
+                refinements == 0
+                    ? $"Structuring results with {reasoningModel}..."
+                    : "Refining based on curator feedback...");
+
+            var curator = new CuratorExecutor(
+                reasoningChatClient, _promptService,
+                _loggerFactory.CreateLogger<CuratorExecutor>());
+
+            decision = await curator.HandleAsync(expertResult, null!, CancellationToken.None);
+
+            if (decision.IsApproved)
             {
-                _logger.LogDebug("Workflow output event: {EventType}", outputEvent.Data?.GetType().Name);
-                if (outputEvent.Data is CuratorDecision d)
-                {
-                    decision = d;
-                }
+                var itemNames = decision.Items?.Select(i => i.Name).ToList() ?? [];
+                await LogStep(capture, "S03", stepLabel, WorkflowStepStatus.Complete,
+                    $"Approved {decision.Items?.Count ?? 0} item(s): {string.Join(", ", itemNames)}",
+                    JsonSerializer.Serialize(decision.Items, new JsonSerializerOptions { WriteIndented = true }));
+                break;
             }
-            else if (evt is WorkflowErrorEvent errorEvent)
+
+            // Rejected — feed back to expert
+            await LogStep(capture, "S03", stepLabel, WorkflowStepStatus.Complete,
+                $"Rejected: {decision.Reason}");
+
+            refinements++;
+            if (refinements > MaxRefinements)
             {
-                _logger.LogError("Workflow error: {Error}", errorEvent.ToString());
+                _logger.LogWarning("Max refinements reached for capture {CaptureId} — auto-approving", capture.Id);
+                decision = new CuratorDecision { Decision = "approve", Items = decision.Items ?? [] };
+                await LogStep(capture, "S03", "Data Curator", WorkflowStepStatus.Complete,
+                    "Max refinements reached — auto-approved");
+                break;
             }
+
+            // Re-run expert with rejection feedback
+            await LogStep(capture, "S02", $"Domain Expert (revision #{refinements})", WorkflowStepStatus.Running,
+                $"Revising based on feedback: {decision.Reason}");
+
+            expertResult = await expert.RefineAsync(visionResult, decision);
+            await LogStep(capture, "S02", $"Domain Expert (revision #{refinements})", WorkflowStepStatus.Complete,
+                expertResult.Analysis.Length > 300 ? expertResult.Analysis[..300] + "..." : expertResult.Analysis);
         }
 
-        if (decision?.IsApproved == true && decision.Items != null)
+        if (decision?.IsApproved == true && decision.Items != null && decision.Items.Count > 0)
         {
-            _logger.LogInformation("Workflow approved {ItemCount} items for capture {CaptureId}",
-                decision.Items.Count, capture.Id);
             return ConvertToItems(decision.Items, capture);
         }
 
-        _logger.LogWarning("Workflow did not produce approved items for capture {CaptureId} — falling back to local extraction",
-            capture.Id);
+        _logger.LogWarning("Workflow did not produce approved items for capture {CaptureId} — falling back", capture.Id);
+        await LogStep(capture, "S04", "Fallback", WorkflowStepStatus.Complete,
+            "AI workflow produced no items — used local keyword extraction");
         return LocalExtraction.Process(capture, _logger);
+    }
+
+    private async Task LogStep(Capture capture, string stepId, string agentName, string status,
+        string summary, string? detail = null)
+    {
+        capture.WorkflowSteps.Add(new WorkflowStep
+        {
+            StepId = stepId,
+            AgentName = agentName,
+            Status = status,
+            Summary = summary,
+            Detail = detail,
+            Timestamp = DateTime.UtcNow
+        });
+        capture.UpdatedAt = DateTime.UtcNow;
+
+        try
+        {
+            await _cosmosDb.UpsertAsync("captures", capture, capture.PartitionKey);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Failed to persist workflow step {StepId} for capture {CaptureId}", stepId, capture.Id);
+        }
     }
 
     private static List<Item> ConvertToItems(List<CuratorItemResult> curatorItems, Capture capture)
