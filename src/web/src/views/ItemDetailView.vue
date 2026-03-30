@@ -13,21 +13,55 @@ const isEditing = ref(false)
 const isSaving = ref(false)
 const editRating = ref(0)
 const editNotes = ref('')
+const editName = ref('')
+const editBrand = ref('')
+const editCategory = ref('')
+const editTags = ref<string[]>([])
+const newTag = ref('')
 
 onMounted(async () => {
   const { data } = await itemsApi.get(route.params.id as string)
   item.value = data
+  resetEditFields(data)
+})
+
+function resetEditFields(data: Item) {
   editRating.value = data.userRating ?? 0
   editNotes.value = data.userNotes ?? ''
-})
+  editName.value = data.name ?? ''
+  editBrand.value = data.brand ?? ''
+  editCategory.value = data.category ?? ''
+  editTags.value = [...(data.tags ?? [])]
+}
+
+function startEditing() {
+  if (item.value) resetEditFields(item.value)
+  isEditing.value = true
+}
+
+function addTag() {
+  const tag = newTag.value.trim().toLowerCase()
+  if (tag && !editTags.value.includes(tag)) {
+    editTags.value.push(tag)
+  }
+  newTag.value = ''
+}
+
+function removeTag(tag: string) {
+  editTags.value = editTags.value.filter(t => t !== tag)
+}
 
 async function save() {
   if (!item.value) return
   isSaving.value = true
   try {
     const updated = await itemsStore.updateItem(item.value.id, {
+      name: editName.value || undefined,
+      brand: editBrand.value || undefined,
+      category: editCategory.value || undefined,
       userRating: editRating.value || undefined,
       userNotes: editNotes.value || undefined,
+      tags: editTags.value,
       status: 'reviewed',
     })
     item.value = updated
@@ -98,7 +132,7 @@ async function deleteItem() {
 
       <div class="flex gap-3 pt-4">
         <button
-          @click="isEditing = true"
+          @click="startEditing"
           class="flex-1 bg-amber-700 hover:bg-amber-600 text-white py-3 rounded-xl font-medium"
         >
           {{ item.status === 'ai-draft' ? 'Review & Rate' : 'Edit' }}
@@ -114,6 +148,38 @@ async function deleteItem() {
 
     <!-- Edit mode -->
     <div v-else class="space-y-4">
+      <!-- Name -->
+      <div>
+        <label class="block text-sm text-stone-400 mb-1">Name</label>
+        <input
+          v-model="editName"
+          type="text"
+          class="w-full bg-stone-800 border border-stone-700 rounded-xl px-4 py-3 text-stone-100 focus:outline-none focus:border-amber-700"
+        />
+      </div>
+
+      <!-- Brand & Category row -->
+      <div class="grid grid-cols-2 gap-3">
+        <div>
+          <label class="block text-sm text-stone-400 mb-1">Brand</label>
+          <input
+            v-model="editBrand"
+            type="text"
+            placeholder="e.g. Four Roses"
+            class="w-full bg-stone-800 border border-stone-700 rounded-xl px-4 py-3 text-stone-100 placeholder-stone-600 focus:outline-none focus:border-amber-700"
+          />
+        </div>
+        <div>
+          <label class="block text-sm text-stone-400 mb-1">Category</label>
+          <input
+            v-model="editCategory"
+            type="text"
+            placeholder="e.g. Small Batch"
+            class="w-full bg-stone-800 border border-stone-700 rounded-xl px-4 py-3 text-stone-100 placeholder-stone-600 focus:outline-none focus:border-amber-700"
+          />
+        </div>
+      </div>
+
       <!-- Star rating -->
       <div>
         <label class="block text-sm text-stone-400 mb-2">Rating</label>
@@ -130,16 +196,45 @@ async function deleteItem() {
 
       <!-- Notes -->
       <div>
-        <label class="block text-sm text-stone-400 mb-2">Your Notes</label>
+        <label class="block text-sm text-stone-400 mb-1">Your Notes</label>
         <textarea
           v-model="editNotes"
-          rows="4"
+          rows="3"
           placeholder="What did you think? Flavor notes, pairing, occasion..."
           class="w-full bg-stone-800 border border-stone-700 rounded-xl px-4 py-3 text-stone-100 placeholder-stone-600 focus:outline-none focus:border-amber-700 resize-none"
         />
       </div>
 
-      <div class="flex gap-3">
+      <!-- Tags -->
+      <div>
+        <label class="block text-sm text-stone-400 mb-2">Tags</label>
+        <div class="flex flex-wrap gap-2 mb-2">
+          <span
+            v-for="tag in editTags"
+            :key="tag"
+            class="inline-flex items-center gap-1 text-sm bg-stone-800 text-stone-300 px-3 py-1 rounded-full"
+          >
+            {{ tag }}
+            <button @click="removeTag(tag)" class="text-stone-500 hover:text-red-400 ml-1">×</button>
+          </span>
+        </div>
+        <div class="flex gap-2">
+          <input
+            v-model="newTag"
+            type="text"
+            placeholder="Add a tag..."
+            @keydown.enter.prevent="addTag"
+            class="flex-1 bg-stone-800 border border-stone-700 rounded-xl px-4 py-2 text-sm text-stone-100 placeholder-stone-600 focus:outline-none focus:border-amber-700"
+          />
+          <button
+            @click="addTag"
+            :disabled="!newTag.trim()"
+            class="px-4 bg-stone-800 hover:bg-stone-700 disabled:opacity-30 text-amber-500 rounded-xl text-sm font-medium"
+          >+ Add</button>
+        </div>
+      </div>
+
+      <div class="flex gap-3 pt-2">
         <button
           @click="save"
           :disabled="isSaving"
@@ -153,8 +248,8 @@ async function deleteItem() {
       </div>
     </div>
 
-    <!-- Tags -->
-    <div v-if="item.tags.length" class="mt-4 flex gap-2 flex-wrap">
+    <!-- Tags (read-only, outside edit mode) -->
+    <div v-if="!isEditing && item.tags.length" class="mt-4 flex gap-2 flex-wrap">
       <span v-for="tag in item.tags" :key="tag" class="text-xs bg-stone-800 text-stone-400 px-2 py-1 rounded-full">
         {{ tag }}
       </span>
