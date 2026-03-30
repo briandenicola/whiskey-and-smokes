@@ -13,6 +13,11 @@ output "OPENAI_ENDPOINT" {
   sensitive = false
 }
 
+output "FOUNDRY_PROJECT_ENDPOINT" {
+  value     = module.project_1.PROJECT_ENDPOINT
+  sensitive = false
+}
+
 output "APPLICATION_INSIGHTS_CONNECTION_STRING" {
   value     = azurerm_application_insights.this.connection_string
   sensitive = true

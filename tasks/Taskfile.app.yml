@@ -74,11 +74,11 @@ tasks:
     desc: Validates agent configuration against AI Foundry
     cmds:
       - >-
-        AiFoundry__Endpoint={{.FOUNDRY_ENDPOINT}}
+        AiFoundry__ProjectEndpoint={{.PROJECT_ENDPOINT}}
         dotnet run --project ./src/AgentInitiator
     vars:
-      FOUNDRY_ENDPOINT:
-        sh: terraform -chdir=./infrastructure/local output -raw OPENAI_ENDPOINT
+      PROJECT_ENDPOINT:
+        sh: terraform -chdir=./infrastructure/local output -raw FOUNDRY_PROJECT_ENDPOINT 2>/dev/null || echo ""
 
   services:up:
     desc: Starts all services via Docker Compose

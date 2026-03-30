@@ -8,15 +8,16 @@ var config = new ConfigurationBuilder()
     .AddEnvironmentVariables()
     .Build();
 
-var endpoint = config["AiFoundry__Endpoint"] ?? config["AiFoundry:Endpoint"];
+var endpoint = config["AiFoundry__ProjectEndpoint"] ?? config["AiFoundry:ProjectEndpoint"];
 if (string.IsNullOrEmpty(endpoint))
 {
-    Console.Error.WriteLine("ERROR: AiFoundry endpoint not configured.");
-    Console.Error.WriteLine("Set AiFoundry__Endpoint environment variable or add AiFoundry:Endpoint to appsettings.json.");
+    Console.Error.WriteLine("ERROR: AiFoundry project endpoint not configured.");
+    Console.Error.WriteLine("Set AiFoundry__ProjectEndpoint env var. This is the project URL, not the account endpoint.");
+    Console.Error.WriteLine("Example: https://<name>.services.ai.azure.com/api/projects/<project>");
     return 1;
 }
 
-Console.WriteLine($"Connecting to AI Foundry: {endpoint}");
+Console.WriteLine($"Connecting to AI Foundry project: {endpoint}");
 var client = new PersistentAgentsClient(endpoint, new DefaultAzureCredential());
 
 // Agent definitions — prompts can be overridden from the database via admin panel.
