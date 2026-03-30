@@ -6,14 +6,47 @@ Track your whiskey, wine, cocktails & cigars. Snap a photo at the bar, let AI do
 
 - **Frontend**: Vue 3 + TypeScript + TailwindCSS (mobile-first PWA)
 - **Backend**: .NET 10 Web API
+- **AI Pipeline**: Multi-agent workflow via [Microsoft Agent Framework](https://github.com/microsoft/agent-framework) (1.0.0-rc4)
 - **Orchestration**: .NET Aspire AppHost (OpenTelemetry dashboard)
 - **Database**: Azure CosmosDB (prod) / LiteDB (local dev)
 - **Storage**: Azure Blob Storage (prod) / local filesystem (local dev)
-- **AI**: Azure AI Foundry Agent Service (image analysis & item categorization)
+- **AI Models**: Azure AI Foundry — gpt-4o (vision) + gpt-5.1-mini (reasoning)
 - **Observability**: OpenTelemetry → Azure Application Insights + Aspire Dashboard
 - **Auth**: JWT (local dev) / Azure Entra ID (prod)
 - **Infra**: Terraform → Azure Container Apps
 - **CI/CD**: GitHub Actions
+
+## AI Pipeline
+
+The app uses a multi-agent graph workflow to analyze captured photos:
+
+```
+📷 CaptureInput
+      │
+      ▼
+┌─────────────┐
+│   Vision     │  gpt-4o — examines photos, describes visible items
+│   Analyst    │  (labels, bottles, glasses, cigar bands, menus)
+└──────┬──────┘
+       │
+       ▼
+┌─────────────┐
+│   Domain     │  gpt-5.1-mini — identifies specific products,
+│   Expert     │  adds tasting notes, origins, flavor profiles
+└──────┬──────┘
+       │
+       ▼
+┌─────────────┐     ┌─────────────┐
+│    Data      │────▶│   Output    │  Approved → structured Item JSON
+│   Curator    │     └─────────────┘
+└──────┬──────┘
+       │ reject (max 2×)
+       └──────────▶ back to Domain Expert with feedback
+```
+
+Each agent's prompt is **editable by admins** from the admin panel — no code changes required.
+
+When AI Foundry is not configured, the system falls back to keyword-based local extraction.
 
 ## Prerequisites
 
@@ -44,8 +77,9 @@ az login
 
 ### 3. Provision Azure AI Foundry
 
-This creates a resource group, an Azure OpenAI (Foundry) account, a model deployment,
-and grants your Azure user the **Cognitive Services OpenAI User** role.
+This creates a resource group, an Azure OpenAI (Foundry) account, deploys **gpt-4o** (vision)
+and **gpt-5.1-mini** (reasoning) models, and grants your Azure user the
+**Cognitive Services OpenAI User** role.
 
 ```bash
 task local:up
@@ -57,7 +91,15 @@ Verify the endpoint was created:
 task local:output
 ```
 
-### 4. Run the application
+### 4. (Optional) Validate agent configuration
+
+Verifies that all 3 agent model deployments are accessible:
+
+```bash
+task app:run:agent-init
+```
+
+### 5. Run the application
 
 The API starts with LiteDB (file-based database) and local filesystem storage — no
 CosmosDB or Blob Storage emulators needed. AI Foundry and Application Insights endpoints
@@ -81,14 +123,14 @@ task app:run:api      # API standalone (no Aspire)
 task app:run:web      # Frontend only
 ```
 
-### 5. Build
+### 6. Build
 
 ```bash
-task app:build        # Full .NET solution (API + AppHost + ServiceDefaults)
+task app:build        # Full .NET solution (API + AppHost + ServiceDefaults + AgentInitiator)
 task app:build:web    # Vue frontend only (npm ci + vite build)
 ```
 
-### 6. Test
+### 7. Test
 
 ```bash
 task app:test         # All tests
@@ -96,7 +138,7 @@ task app:test:api     # .NET tests (dotnet test)
 task app:test:web     # Vue TypeScript type checking (vue-tsc)
 ```
 
-### 7. Docker Compose (optional)
+### 8. Docker Compose (optional)
 
 Run services as containers, including CosmosDB emulator and Azurite.
 
@@ -106,7 +148,7 @@ task app:docker:logs  # Tail logs
 task app:docker:down  # Stop and remove containers
 ```
 
-### 8. Tear down Azure resources
+### 9. Tear down Azure resources
 
 When you're done, destroy the AI Foundry resources to avoid charges:
 
@@ -134,7 +176,8 @@ All key operations produce traces under these ActivitySources:
 - `WhiskeyAndSmokes.Api` — general operations
 - `WhiskeyAndSmokes.Api.Auth` — authentication & authorization
 - `WhiskeyAndSmokes.Api.Captures` — photo capture workflow
-- `WhiskeyAndSmokes.Api.Agent` — AI Foundry agent interactions
+- `WhiskeyAndSmokes.Api.Agent` — AI agent interactions
+- `WhiskeyAndSmokes.Api.Workflow` — multi-agent workflow orchestration
 - `WhiskeyAndSmokes.Api.Storage` — CosmosDB & blob storage
 - `WhiskeyAndSmokes.Api.Admin` — admin operations
 
@@ -151,7 +194,7 @@ automatically promoted to admin).
 | Feature | Description |
 |---------|-------------|
 | **User Management** | List users, toggle roles, reset passwords, delete accounts |
-| **AI Prompts** | Edit the instructions sent to the AI agent for image analysis |
+| **AI Prompts** | Edit prompts for each agent (Vision Analyst, Domain Expert, Data Curator) — changes take effect on the next capture |
 | **Logging** | Configure per-category log levels at runtime |
 
 ## How Local Dev Works
@@ -160,7 +203,8 @@ automatically promoted to admin).
 |---------|-------|------------|
 | Database | LiteDB (file-based, zero config) | Azure CosmosDB |
 | Blob Storage | Local filesystem (`uploads/`) | Azure Blob Storage |
-| AI Agent | Azure AI Foundry (`DefaultAzureCredential`) | Azure AI Foundry (Managed Identity) |
+| AI Vision | gpt-4o via Azure AI Foundry | gpt-4o via Azure AI Foundry |
+| AI Reasoning | gpt-5.1-mini via Azure AI Foundry | gpt-5.1-mini via Azure AI Foundry |
 | Observability | Aspire Dashboard (OTLP) | Azure Application Insights |
 | Auth | JWT with dev secret | Azure Entra ID |
 
@@ -181,6 +225,7 @@ Run `task --list` to see all available tasks.
 | `app:run:apphost` | Runs the Aspire AppHost (API + dashboard) |
 | `app:run:api` | Runs the .NET API standalone |
 | `app:run:web` | Runs the Vue dev server |
+| `app:run:agent-init` | Validates agent config against AI Foundry |
 | `app:test` | Runs all tests |
 | `app:test:api` | Runs .NET API tests |
 | `app:test:web` | Runs Vue type checking |
@@ -209,12 +254,22 @@ Run `task --list` to see all available tasks.
 ```
 ├── src/
 │   ├── api/                    # .NET 10 Web API (WhiskeyAndSmokes.Api)
+│   │   ├── Agents/             # Multi-agent workflow
+│   │   │   ├── Executors/      # VisionExecutor, ExpertExecutor, CuratorExecutor
+│   │   │   ├── Models/         # CaptureInput, VisionDescription, ExpertAnalysis, CuratorDecision
+│   │   │   ├── CaptureWorkflow.cs   # WorkflowBuilder graph definition
+│   │   │   ├── WorkflowAgentService.cs  # IAgentService implementation
+│   │   │   └── LocalExtraction.cs   # Keyword fallback (no AI Foundry)
+│   │   ├── Controllers/        # REST API endpoints
+│   │   ├── Models/             # Domain models (Capture, Item, User, Prompt)
+│   │   └── Services/           # Business logic (Auth, CosmosDB, Blob, Prompts)
+│   ├── AgentInitiator/         # CLI tool — validates agent deployments in Foundry
 │   ├── AppHost/                # .NET Aspire orchestrator
 │   ├── ServiceDefaults/        # Shared OpenTelemetry, health checks, resilience
 │   ├── web/                    # Vue 3 Frontend
-│   └── WhiskeyAndSmokes.sln    # Solution file
+│   └── WhiskeyAndSmokes.sln    # Solution file (4 projects)
 ├── infrastructure/
-│   ├── local/                  # Terraform — local dev (AI Foundry only)
+│   ├── local/                  # Terraform — local dev (AI Foundry + gpt-4o + gpt-5.1-mini)
 │   ├── azure/                  # Terraform — full Azure environment
 │   ├── app/                    # Terraform — Container Apps deployment
 │   └── modules/                # Shared Terraform modules
