@@ -4,6 +4,8 @@ vars:
   TITLE: SipPuff
   API_DIR: ./src/api
   WEB_DIR: ./src/web
+  APPHOST_DIR: ./src/AppHost
+  SLN: ./src/SipPuff.sln
 
 tasks:
   default:
@@ -11,16 +13,9 @@ tasks:
       - task --list
 
   build:
-    desc: Builds both the API and web frontend
+    desc: Builds the full solution (API, AppHost, ServiceDefaults)
     cmds:
-      - task: build:api
-      - task: build:web
-
-  build:api:
-    desc: Builds the .NET API
-    dir: "{{.API_DIR}}"
-    cmds:
-      - dotnet build
+      - dotnet build {{.SLN}}
 
   build:web:
     desc: Builds the Vue frontend
@@ -30,15 +25,25 @@ tasks:
       - npm run build
 
   run:
-    desc: Runs API and web frontend for local development
+    desc: Runs Aspire AppHost (API with dashboard) and Vue frontend
     deps:
-      - run:api
+      - run:apphost
       - run:web
 
+  run:apphost:
+    desc: Runs the Aspire AppHost (orchestrates API with OpenTelemetry dashboard)
+    dir: "{{.APPHOST_DIR}}"
+    cmds:
+      - AiFoundry__Endpoint={{.FOUNDRY_ENDPOINT}} dotnet run
+    vars:
+      FOUNDRY_ENDPOINT:
+        sh: terraform -chdir=./infrastructure/local output -raw OPENAI_ENDPOINT 2>/dev/null || echo ""
+
   run:api:
-    desc: Runs the .NET API locally (auto-configures AI Foundry endpoint)
+    desc: Runs the .NET API standalone (without Aspire)
     dir: "{{.API_DIR}}"
     cmds:
+      - dotnet restore --quiet
       - AiFoundry__Endpoint={{.FOUNDRY_ENDPOINT}} dotnet run
     vars:
       FOUNDRY_ENDPOINT:
@@ -48,7 +53,7 @@ tasks:
     desc: Runs the Vue frontend dev server
     dir: "{{.WEB_DIR}}"
     cmds:
-      - npm install
+      - npm install --silent
       - npm run dev
 
   test:

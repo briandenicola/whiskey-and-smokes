@@ -8,6 +8,8 @@ using SipPuff.Api.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
+builder.AddServiceDefaults();
+
 // JWT Authentication
 var jwtSecret = builder.Configuration["Jwt:Secret"] ?? "dev-secret-key-change-in-production-min-32-chars!!";
 var jwtIssuer = builder.Configuration["Jwt:Issuer"] ?? "sippuff";
@@ -136,6 +138,7 @@ if (app.Environment.IsDevelopment())
         useLocalStorage ? "LiteDB + local filesystem" : "CosmosDB + Azure Blob Storage");
 }
 
+app.MapDefaultEndpoints();
 app.UseHttpsRedirection();
 app.UseCors("AllowFrontend");
 app.UseAuthentication();

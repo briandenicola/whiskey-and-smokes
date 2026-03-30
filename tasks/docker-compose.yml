@@ -1,26 +1,35 @@
 services:
-  api:
-    build:
-      context: ../src/api/
-      dockerfile: Dockerfile
-    container_name: sippuff-api
+  aspire-dashboard:
+    image: mcr.microsoft.com/dotnet/aspire-dashboard:10.0
+    container_name: sippuff-aspire-dashboard
     ports:
-      - "5062:8080"
+      - "18888:18888"
+      - "4317:18889"
     environment:
-      - ASPNETCORE_ENVIRONMENT=Development
-      - Cors__AllowedOrigins__0=http://localhost:8080
+      - DOTNET_DASHBOARD_UNSECURED_ALLOW_ANONYMOUS=true
     networks:
       - sippuff
 
-  web:
-    build:
-      context: ../src/web
-      dockerfile: Dockerfile
-    container_name: sippuff-web
+  cosmosdb:
+    image: mcr.microsoft.com/cosmosdb/linux/azure-cosmos-emulator:latest
+    container_name: sippuff-cosmosdb
     ports:
-      - "8080:80"
-    depends_on:
-      - api
+      - "8081:8081"
+      - "10250-10255:10250-10255"
+    environment:
+      - AZURE_COSMOS_EMULATOR_PARTITION_COUNT=10
+      - AZURE_COSMOS_EMULATOR_ENABLE_DATA_PERSISTENCE=true
+    networks:
+      - sippuff
+
+  azurite:
+    image: mcr.microsoft.com/azure-storage/azurite:latest
+    container_name: sippuff-azurite
+    ports:
+      - "10000:10000"
+      - "10001:10001"
+      - "10002:10002"
+    command: "azurite --blobHost 0.0.0.0 --queueHost 0.0.0.0 --tableHost 0.0.0.0"
     networks:
       - sippuff
 
