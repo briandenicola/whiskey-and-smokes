@@ -1,0 +1,16 @@
+dotenv: ['.env']
+
+env:
+  DEFAULT_TITLE: whiskey-and-smokes
+  DEFAULT_REGION: "eastus2"
+
+includes:
+  azure: 
+    taskfile: ./tasks/Taskfile.azure.yml
+    internal: false
+    dir: ./infrastructure/azure/
+
+  local: 
+    taskfile: ./tasks/Taskfile.local.yml
+    internal: false
+    dir: ./infrastructure/local/

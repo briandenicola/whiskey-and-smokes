@@ -1,7 +1,7 @@
 services:
   api:
     build:
-      context: ./src/api/SipPuff.Api
+      context: ./src/api/
       dockerfile: Dockerfile
     container_name: sippuff-api
     ports:
