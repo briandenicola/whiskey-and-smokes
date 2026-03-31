@@ -35,16 +35,16 @@ tasks:
   apphost:
     desc: Runs the Aspire AppHost (orchestrates API with OpenTelemetry dashboard)
     dir: "{{.APPHOST_DIR}}"
+    env:
+      AiFoundry__Endpoint: "{{.FOUNDRY_ENDPOINT}}"
+      AiFoundry__ProjectEndpoint: "{{.PROJECT_ENDPOINT}}"
+      AiFoundry__Models__Vision: gpt-4o
+      AiFoundry__Models__Reasoning: gpt-5-mini
+      APPLICATIONINSIGHTS_CONNECTION_STRING: "{{.APPINSIGHTS_CONN}}"
+      ASPIRE_DASHBOARD_OTLP_HTTP_ENDPOINT_URL: http://localhost:18889
+      ASPIRE_ALLOW_UNSECURED_TRANSPORT: "true"
     cmds:
-      - >-
-        AiFoundry__Endpoint={{.FOUNDRY_ENDPOINT}}
-        AiFoundry__ProjectEndpoint={{.PROJECT_ENDPOINT}}
-        AiFoundry__Models__Vision=gpt-4o
-        AiFoundry__Models__Reasoning=gpt-5-mini
-        APPLICATIONINSIGHTS_CONNECTION_STRING={{.APPINSIGHTS_CONN}}
-        ASPIRE_DASHBOARD_OTLP_HTTP_ENDPOINT_URL=http://localhost:18889
-        ASPIRE_ALLOW_UNSECURED_TRANSPORT=true
-        dotnet run
+      - dotnet run
     vars:
       FOUNDRY_ENDPOINT:
         sh: terraform -chdir=./infrastructure/local output -raw OPENAI_ENDPOINT 2>/dev/null || echo ""
@@ -56,15 +56,19 @@ tasks:
   api:
     desc: Runs the .NET API standalone (without Aspire)
     dir: "{{.API_DIR}}"
+    env:
+      AiFoundry__Endpoint: "{{.FOUNDRY_ENDPOINT}}"
+      AiFoundry__ProjectEndpoint: "{{.PROJECT_ENDPOINT}}"
+      AiFoundry__Models__Vision: gpt-4o
+      AiFoundry__Models__Reasoning: gpt-5-mini
+      APPLICATIONINSIGHTS_CONNECTION_STRING: "{{.APPINSIGHTS_CONN}}"
     cmds:
-      - dotnet restore --quiet
-      - >-
-        AiFoundry__Endpoint={{.FOUNDRY_ENDPOINT}}
-        APPLICATIONINSIGHTS_CONNECTION_STRING={{.APPINSIGHTS_CONN}}
-        dotnet run
+      - dotnet run
     vars:
       FOUNDRY_ENDPOINT:
         sh: terraform -chdir=./infrastructure/local output -raw OPENAI_ENDPOINT 2>/dev/null || echo ""
+      PROJECT_ENDPOINT:
+        sh: terraform -chdir=./infrastructure/local output -raw FOUNDRY_PROJECT_ENDPOINT 2>/dev/null || echo ""
       APPINSIGHTS_CONN:
         sh: terraform -chdir=./infrastructure/local output -raw APPLICATION_INSIGHTS_CONNECTION_STRING 2>/dev/null || echo ""
 
@@ -77,10 +81,10 @@ tasks:
 
   agent:init:
     desc: Validates agent configuration against AI Foundry
+    env:
+      AiFoundry__ProjectEndpoint: "{{.PROJECT_ENDPOINT}}"
     cmds:
-      - >-
-        AiFoundry__ProjectEndpoint={{.PROJECT_ENDPOINT}}
-        dotnet run --project ./src/AgentInitiator
+      - dotnet run --project ./src/AgentInitiator
     vars:
       PROJECT_ENDPOINT:
         sh: terraform -chdir=./infrastructure/local output -raw FOUNDRY_PROJECT_ENDPOINT 2>/dev/null || echo ""
