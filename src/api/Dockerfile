@@ -7,15 +7,21 @@ COPY api/WhiskeyAndSmokes.Api.csproj api/
 COPY ServiceDefaults/WhiskeyAndSmokes.ServiceDefaults.csproj ServiceDefaults/
 RUN dotnet restore api/WhiskeyAndSmokes.Api.csproj
 
-# Build + publish
+# Publish as self-contained single file
 COPY api/ api/
 COPY ServiceDefaults/ ServiceDefaults/
-RUN dotnet publish api/WhiskeyAndSmokes.Api.csproj -c Release -o /app
+RUN dotnet publish api/WhiskeyAndSmokes.Api.csproj \
+    -c Release \
+    -o /app \
+    --self-contained \
+    -r linux-x64 \
+    -p:PublishSingleFile=true \
+    -p:EnableCompressionInSingleFile=true
 
-# ── Runtime stage (chiseled/distroless — ~30MB, no shell, non-root) ──
-FROM mcr.microsoft.com/dotnet/aspnet:10.0-noble-chiseled AS runtime
+# ── Runtime stage (chiseled/distroless — no .NET runtime needed) ──
+FROM mcr.microsoft.com/dotnet/runtime-deps:10.0-noble-chiseled AS runtime
 WORKDIR /app
 COPY --from=build /app .
 EXPOSE 8080
 ENV ASPNETCORE_URLS=http://+:8080
-ENTRYPOINT ["dotnet", "WhiskeyAndSmokes.Api.dll"]
+ENTRYPOINT ["./WhiskeyAndSmokes.Api"]
