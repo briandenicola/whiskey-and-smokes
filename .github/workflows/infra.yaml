@@ -1,30 +1,23 @@
-name: Infrastructure
+name: Deploy
 
 on:
   push:
     branches: [main]
-    paths:
+    paths-ignore:
+      - 'docs/**'
+      - '*.md'
       - 'infrastructure/azure/**'
-      - 'infrastructure/app/**'
+      - 'infrastructure/local/**'
   workflow_dispatch:
     inputs:
-      action:
-        description: 'Terraform action'
+      environment:
+        description: 'Target environment'
         required: true
-        default: 'plan'
+        default: 'dev'
         type: choice
         options:
-          - plan
-          - apply
-          - destroy
-      stack:
-        description: 'Which stack to run'
-        required: true
-        default: 'azure'
-        type: choice
-        options:
-          - azure
-          - app
+          - dev
+          - prod
 
 permissions:
   id-token: write
@@ -35,65 +28,43 @@ env:
   ARM_USE_OIDC: true
 
 jobs:
-  terraform-azure:
-    name: 'Azure Infrastructure'
-    if: |
-      github.event.inputs.stack == 'azure' ||
-      github.event.inputs.stack == '' ||
-      (github.event_name == 'push' && github.ref == 'refs/heads/main')
+  build:
+    name: Build Images
     runs-on: ubuntu-latest
-    environment: dev
-    defaults:
-      run:
-        working-directory: infrastructure/azure
-    env:
-      ARM_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
-      ARM_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
-      ARM_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+    environment: ${{ github.event.inputs.environment || 'dev' }}
     steps:
       - uses: actions/checkout@v4
 
-      - name: Setup Terraform
-        uses: hashicorp/setup-terraform@v3
+      - name: Azure Login
+        uses: azure/login@v2
         with:
-          terraform_version: ${{ env.TF_VERSION }}
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
-      - name: Terraform Init
-        run: terraform init
-
-      - name: Terraform Format Check
-        run: terraform fmt -check -recursive
-
-      - name: Terraform Plan
-        id: plan
+      - name: Build API Image (ACR Build Task)
         run: |
-          terraform plan \
-            -var="tags=${{ secrets.APP_NAME || 'whiskey-and-smokes' }}" \
-            -out=tfplan \
-            -input=false
+          az acr build \
+            --registry ${{ vars.ACR_NAME }} \
+            --image whiskey-and-smokes-api:${{ github.sha }} \
+            --image whiskey-and-smokes-api:latest \
+            --file src/api/Dockerfile \
+            src
 
-      - name: Terraform Apply
-        if: |
-          (github.event_name == 'push' && github.ref == 'refs/heads/main') ||
-          (github.event_name == 'workflow_dispatch' && github.event.inputs.action == 'apply')
-        run: terraform apply -auto-approve tfplan
-
-      - name: Terraform Destroy
-        if: github.event_name == 'workflow_dispatch' && github.event.inputs.action == 'destroy'
+      - name: Build Web Image (ACR Build Task)
         run: |
-          terraform destroy \
-            -var="tags=${{ secrets.APP_NAME || 'whiskey-and-smokes' }}" \
-            -auto-approve
+          az acr build \
+            --registry ${{ vars.ACR_NAME }} \
+            --image whiskey-and-smokes-web:${{ github.sha }} \
+            --image whiskey-and-smokes-web:latest \
+            --file src/web/Dockerfile \
+            src/web
 
-  terraform-app:
-    name: 'App Deployment'
-    needs: terraform-azure
-    if: |
-      always() &&
-      (github.event.inputs.stack == 'app' ||
-       (github.event_name == 'push' && github.ref == 'refs/heads/main'))
+  deploy:
+    name: Deploy to Container Apps
+    needs: build
     runs-on: ubuntu-latest
-    environment: dev
+    environment: ${{ github.event.inputs.environment || 'dev' }}
     defaults:
       run:
         working-directory: infrastructure/app
@@ -112,31 +83,11 @@ jobs:
       - name: Terraform Init
         run: terraform init
 
-      - name: Terraform Plan
-        id: plan
-        run: |
-          terraform plan \
-            -var="app_name=${{ secrets.APP_NAME }}" \
-            -var="tags=${{ secrets.APP_NAME || 'whiskey-and-smokes' }}" \
-            -var="commit_version=${{ github.sha }}" \
-            -var="cosmosdb_endpoint=${{ secrets.COSMOSDB_ENDPOINT }}" \
-            -var="storage_blob_endpoint=${{ secrets.STORAGE_BLOB_ENDPOINT }}" \
-            -out=tfplan \
-            -input=false
-
       - name: Terraform Apply
-        if: |
-          (github.event_name == 'push' && github.ref == 'refs/heads/main') ||
-          (github.event_name == 'workflow_dispatch' && github.event.inputs.action == 'apply')
-        run: terraform apply -auto-approve tfplan
-
-      - name: Terraform Destroy
-        if: github.event_name == 'workflow_dispatch' && github.event.inputs.action == 'destroy'
         run: |
-          terraform destroy \
+          terraform apply -auto-approve -input=false \
             -var="app_name=${{ secrets.APP_NAME }}" \
-            -var="tags=${{ secrets.APP_NAME || 'whiskey-and-smokes' }}" \
+            -var="tags=${{ secrets.APP_NAME }}" \
             -var="commit_version=${{ github.sha }}" \
             -var="cosmosdb_endpoint=${{ secrets.COSMOSDB_ENDPOINT }}" \
-            -var="storage_blob_endpoint=${{ secrets.STORAGE_BLOB_ENDPOINT }}" \
-            -auto-approve
+            -var="storage_blob_endpoint=${{ secrets.STORAGE_BLOB_ENDPOINT }}"
