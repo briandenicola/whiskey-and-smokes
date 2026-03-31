@@ -17,4 +17,8 @@
     <PackageReference Include="Microsoft.Extensions.Configuration.EnvironmentVariables" Version="10.0.3" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Content Include="Prompts\**\*.md" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
 </Project>

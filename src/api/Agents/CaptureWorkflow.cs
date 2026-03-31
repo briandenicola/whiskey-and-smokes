@@ -24,8 +24,8 @@ public static class CaptureWorkflow
         IBlobStorageService blobService,
         ILoggerFactory loggerFactory)
     {
-        var endpoint = config["AiFoundry:Endpoint"]
-            ?? throw new InvalidOperationException("AiFoundry:Endpoint is required for the capture workflow.");
+        var endpoint = config["AiFoundry:ProjectEndpoint"]
+            ?? throw new InvalidOperationException("AiFoundry:ProjectEndpoint is required for the capture workflow.");
 
         var azureClient = new AzureOpenAIClient(new Uri(endpoint), new DefaultAzureCredential());
 

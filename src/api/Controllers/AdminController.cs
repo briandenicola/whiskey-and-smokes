@@ -16,6 +16,7 @@ public class AdminController : ControllerBase
     private readonly IAuthService _authService;
     private readonly IPromptService _promptService;
     private readonly DynamicLogLevelService _logLevelService;
+    private readonly FoundryStatusService _foundryStatus;
     private readonly ILogger<AdminController> _logger;
     private const string UsersContainer = "users";
 
@@ -24,12 +25,14 @@ public class AdminController : ControllerBase
         IAuthService authService,
         IPromptService promptService,
         DynamicLogLevelService logLevelService,
+        FoundryStatusService foundryStatus,
         ILogger<AdminController> logger)
     {
         _cosmosDb = cosmosDb;
         _authService = authService;
         _promptService = promptService;
         _logLevelService = logLevelService;
+        _foundryStatus = foundryStatus;
         _logger = logger;
     }
 
@@ -154,21 +157,11 @@ public class AdminController : ControllerBase
     }
 
     [HttpPut("prompts/{id}")]
-    public async Task<ActionResult<Prompt>> UpdatePrompt(string id, [FromBody] UpdatePromptRequest request)
+    public ActionResult UpdatePrompt(string id, [FromBody] UpdatePromptRequest request)
     {
-        if (string.IsNullOrWhiteSpace(request.Content))
-            return BadRequest(new { message = "Prompt content cannot be empty" });
-
-        var prompt = await _promptService.GetAsync(id);
-        if (prompt == null) return NotFound();
-
-        prompt.Content = request.Content;
-        prompt.UpdatedBy = GetUserId();
-        prompt = await _promptService.UpsertAsync(prompt);
-
-        _logger.LogInformation("Prompt {PromptId} updated by admin {AdminId} ({ContentLength} chars)",
-            id, GetUserId(), request.Content.Length);
-        return Ok(prompt);
+        // Prompts are now managed as files in AgentInitiator/Prompts/ and baked into Foundry agents.
+        // To change a prompt, edit the file and re-run the agent:init task.
+        return StatusCode(405, new { message = "Prompts are read-only. Edit the prompt files in AgentInitiator/Prompts/ and re-run the agent:init task to update agents." });
     }
 
     // ── Logging Configuration ────────────────────────────────
@@ -197,6 +190,68 @@ public class AdminController : ControllerBase
 
         _logger.LogInformation("Log levels updated and persisted successfully");
         return Ok(_logLevelService.GetSettings());
+    }
+
+    // ── Foundry Connectivity ─────────────────────────────────
+
+    [HttpGet("foundry")]
+    public ActionResult<FoundryStatus> GetFoundryStatus()
+    {
+        return Ok(_foundryStatus.GetStatus());
+    }
+
+    [HttpPost("foundry/test")]
+    public async Task<ActionResult<FoundryStatus>> TestFoundryConnectivity()
+    {
+        var status = _foundryStatus.GetStatus();
+        var testResult = new ConnectivityTestResult { TestedAt = DateTime.UtcNow };
+
+        if (!status.IsProjectConfigured)
+        {
+            testResult.Status = "error";
+            testResult.Message = "AiFoundry:ProjectEndpoint is not configured. Ensure PROJECT_ENDPOINT is set via Terraform and passed through the Taskfile.";
+            _foundryStatus.Update(s => s.ConnectivityTest = testResult);
+            return Ok(_foundryStatus.GetStatus());
+        }
+
+        var sw = System.Diagnostics.Stopwatch.StartNew();
+        try
+        {
+            var credential = new Azure.Identity.ChainedTokenCredential(
+                new Azure.Identity.AzureCliCredential(),
+                new Azure.Identity.EnvironmentCredential(),
+                new Azure.Identity.ManagedIdentityCredential(Azure.Identity.ManagedIdentityId.SystemAssigned));
+
+            var projectClient = new Azure.AI.Projects.AIProjectClient(
+                new Uri(status.ProjectEndpoint), credential);
+
+            // Use the project-scoped ChatClient to verify connectivity
+            var chatClient = projectClient.OpenAI.GetChatClient(status.VisionModel);
+            var response = await chatClient.CompleteChatAsync([
+                new OpenAI.Chat.SystemChatMessage("Reply with exactly: OK"),
+                new OpenAI.Chat.UserChatMessage("ping")
+            ]);
+
+            sw.Stop();
+            testResult.Status = "ok";
+            testResult.Message = $"Connected to Foundry project via AIProjectClient. Model: {status.VisionModel}. Response: {response.Value.Content[0].Text}";
+            testResult.LatencyMs = sw.ElapsedMilliseconds;
+
+            _logger.LogInformation("Foundry connectivity test passed: model={Model}, latency={Latency}ms",
+                status.VisionModel, sw.ElapsedMilliseconds);
+        }
+        catch (Exception ex)
+        {
+            sw.Stop();
+            testResult.Status = "error";
+            testResult.Message = ex.Message;
+            testResult.LatencyMs = sw.ElapsedMilliseconds;
+
+            _logger.LogWarning(ex, "Foundry connectivity test failed: {Error}", ex.Message);
+        }
+
+        _foundryStatus.Update(s => s.ConnectivityTest = testResult);
+        return Ok(_foundryStatus.GetStatus());
     }
 }
 

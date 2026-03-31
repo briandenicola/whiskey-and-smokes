@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
-import { usersApi, type User, type Prompt, type LoggingSettings, type LoggingSettingsResponse } from '../services/users'
+import { usersApi, type User, type Prompt, type LoggingSettings, type LoggingSettingsResponse, type FoundryStatus } from '../services/users'
 import { useAuthStore } from '../stores/auth'
 
 const auth = useAuthStore()
@@ -8,7 +8,7 @@ const users = ref<User[]>([])
 const prompts = ref<Prompt[]>([])
 const isLoading = ref(true)
 const searchQuery = ref('')
-const activeTab = ref<'users' | 'prompts' | 'logging'>('users')
+const activeTab = ref<'users' | 'prompts' | 'logging' | 'foundry'>('users')
 
 // Reset password state
 const resetPasswordUserId = ref<string | null>(null)
@@ -18,9 +18,8 @@ const resetMessage = ref('')
 // Delete user state
 const deleteConfirmUserId = ref<string | null>(null)
 
-// Prompt editing state
-const editingPromptId = ref<string | null>(null)
-const editingContent = ref('')
+// Prompt viewing state (read-only — prompts are managed as files in AgentInitiator/Prompts/)
+const expandedPromptId = ref<string | null>(null)
 const promptMessage = ref('')
 
 // Logging state
@@ -29,6 +28,10 @@ const editedLevels = ref<Record<string, string>>({})
 const editedDefaultLevel = ref('Information')
 const loggingMessage = ref('')
 const loggingSaving = ref(false)
+
+// Foundry state
+const foundryStatus = ref<FoundryStatus | null>(null)
+const foundryTesting = ref(false)
 
 const filteredUsers = computed(() => {
   if (!searchQuery.value) return users.value
@@ -41,14 +44,16 @@ const filteredUsers = computed(() => {
 
 onMounted(async () => {
   try {
-    const [usersRes, promptsRes, loggingRes] = await Promise.all([
+    const [usersRes, promptsRes, loggingRes, foundryRes] = await Promise.all([
       usersApi.listUsers(),
       usersApi.listPrompts(),
-      usersApi.getLoggingSettings()
+      usersApi.getLoggingSettings(),
+      usersApi.getFoundryStatus()
     ])
     users.value = usersRes.data
     prompts.value = promptsRes.data
     loggingData.value = loggingRes.data
+    foundryStatus.value = foundryRes.data
     resetLoggingForm()
   } finally {
     isLoading.value = false
@@ -97,23 +102,8 @@ async function confirmDeleteUser() {
   }
 }
 
-function startEditPrompt(prompt: Prompt) {
-  editingPromptId.value = prompt.id
-  editingContent.value = prompt.content
-  promptMessage.value = ''
-}
-
-async function savePrompt() {
-  if (!editingPromptId.value) return
-  try {
-    const { data } = await usersApi.updatePrompt(editingPromptId.value, editingContent.value)
-    const index = prompts.value.findIndex(p => p.id === editingPromptId.value)
-    if (index !== -1) prompts.value[index] = data
-    promptMessage.value = 'Prompt saved'
-    setTimeout(() => { editingPromptId.value = null; promptMessage.value = '' }, 1500)
-  } catch {
-    promptMessage.value = 'Failed to save prompt'
-  }
+function togglePromptExpand(promptId: string) {
+  expandedPromptId.value = expandedPromptId.value === promptId ? null : promptId
 }
 
 function resetLoggingForm() {
@@ -169,6 +159,18 @@ async function saveLoggingSettings() {
     loggingSaving.value = false
   }
 }
+
+async function testFoundryConnectivity() {
+  foundryTesting.value = true
+  try {
+    const { data } = await usersApi.testFoundryConnectivity()
+    foundryStatus.value = data
+  } catch {
+    // handled by status display
+  } finally {
+    foundryTesting.value = false
+  }
+}
 </script>
 
 <template>
@@ -213,6 +215,15 @@ async function saveLoggingSettings() {
           : 'bg-stone-800 text-stone-400 border border-stone-700 hover:bg-stone-750'"
       >
         AI Prompts
+      </button>
+      <button
+        @click="activeTab = 'foundry'"
+        class="flex-1 py-2 rounded-xl text-sm font-medium transition-colors"
+        :class="activeTab === 'foundry'
+          ? 'bg-amber-700/30 text-amber-500 border border-amber-700'
+          : 'bg-stone-800 text-stone-400 border border-stone-700 hover:bg-stone-750'"
+      >
+        Foundry
       </button>
       <button
         @click="activeTab = 'logging'"
@@ -288,63 +299,37 @@ async function saveLoggingSettings() {
       </div>
     </template>
 
-    <!-- ── Prompts Tab ───────────────────────────── -->
+    <!-- ── Prompts Tab (Read-Only) ────────────────── -->
     <template v-else-if="activeTab === 'prompts'">
+      <div class="bg-stone-900/50 border border-stone-800 rounded-xl p-3 mb-4">
+        <p class="text-xs text-stone-400">
+          Agent prompts are managed as files in <code class="text-amber-500/80 bg-stone-800 px-1 rounded">AgentInitiator/Prompts/</code>.
+          To change a prompt, edit the file and re-run the <code class="text-amber-500/80 bg-stone-800 px-1 rounded">agent:init</code> task.
+        </p>
+      </div>
+
       <div class="space-y-3">
         <div
           v-for="prompt in prompts"
           :key="prompt.id"
           class="bg-stone-900 border border-stone-800 rounded-xl p-4"
         >
-          <div class="flex items-center justify-between mb-2">
+          <div class="flex items-center justify-between mb-2 cursor-pointer" @click="togglePromptExpand(prompt.id)">
             <div>
               <p class="font-medium text-stone-100">{{ prompt.name }}</p>
               <p class="text-xs text-stone-500">{{ prompt.description }}</p>
             </div>
-            <button
-              v-if="editingPromptId !== prompt.id"
-              @click="startEditPrompt(prompt)"
-              class="text-xs px-3 py-1.5 rounded-lg bg-stone-800 text-amber-500 hover:bg-stone-700 transition-colors"
-            >
-              Edit
-            </button>
+            <span class="text-stone-500 text-sm transition-transform" :class="expandedPromptId === prompt.id ? 'rotate-180' : ''">
+              &#9662;
+            </span>
           </div>
 
-          <!-- View mode -->
-          <div v-if="editingPromptId !== prompt.id">
-            <pre class="text-xs text-stone-400 bg-stone-950 rounded-lg p-3 whitespace-pre-wrap max-h-40 overflow-y-auto">{{ prompt.content }}</pre>
+          <div v-if="expandedPromptId === prompt.id">
+            <pre class="text-xs text-stone-400 bg-stone-950 rounded-lg p-3 whitespace-pre-wrap max-h-60 overflow-y-auto border border-stone-800">{{ prompt.content }}</pre>
             <p class="text-xs text-stone-600 mt-2">
               Last updated {{ new Date(prompt.updatedAt).toLocaleString() }}
               <span v-if="prompt.updatedBy"> by {{ prompt.updatedBy }}</span>
             </p>
-          </div>
-
-          <!-- Edit mode -->
-          <div v-else>
-            <textarea
-              v-model="editingContent"
-              rows="12"
-              class="w-full bg-stone-950 border border-stone-700 rounded-lg px-3 py-2 text-xs text-stone-200 font-mono focus:outline-none focus:border-amber-700 resize-y"
-            />
-            <div class="flex items-center justify-between mt-2">
-              <p v-if="promptMessage" class="text-xs" :class="promptMessage.includes('Failed') ? 'text-red-400' : 'text-green-400'">
-                {{ promptMessage }}
-              </p>
-              <div class="flex gap-2 ml-auto">
-                <button
-                  @click="editingPromptId = null"
-                  class="text-xs px-3 py-1.5 rounded-lg bg-stone-800 text-stone-400 hover:bg-stone-700 transition-colors"
-                >
-                  Cancel
-                </button>
-                <button
-                  @click="savePrompt"
-                  class="text-xs px-3 py-1.5 rounded-lg bg-amber-700 text-white hover:bg-amber-600 transition-colors"
-                >
-                  Save Prompt
-                </button>
-              </div>
-            </div>
           </div>
         </div>
 
@@ -352,6 +337,91 @@ async function saveLoggingSettings() {
           No prompts configured. Start the API to seed defaults.
         </p>
       </div>
+    </template>
+
+    <!-- ── Foundry Tab ───────────────────────────── -->
+    <template v-else-if="activeTab === 'foundry'">
+      <div v-if="foundryStatus" class="space-y-4">
+        <!-- Configuration -->
+        <div class="bg-stone-900 border border-stone-800 rounded-xl p-4">
+          <h3 class="text-sm font-semibold text-stone-200 mb-3">Configuration</h3>
+          <div class="space-y-2">
+            <div class="flex justify-between text-xs">
+              <span class="text-stone-500">Project Endpoint</span>
+              <span class="text-stone-300 font-mono truncate ml-4 max-w-[60%] text-right">{{ foundryStatus.projectEndpoint || 'Not configured' }}</span>
+            </div>
+            <div class="flex justify-between text-xs">
+              <span class="text-stone-500">Vision Model</span>
+              <span class="text-stone-300 font-mono">{{ foundryStatus.visionModel || '—' }}</span>
+            </div>
+            <div class="flex justify-between text-xs">
+              <span class="text-stone-500">Reasoning Model</span>
+              <span class="text-stone-300 font-mono">{{ foundryStatus.reasoningModel || '—' }}</span>
+            </div>
+            <div class="flex justify-between text-xs">
+              <span class="text-stone-500">Status</span>
+              <span :class="foundryStatus.isProjectConfigured ? 'text-green-400' : 'text-red-400'" class="font-medium">
+                {{ foundryStatus.isProjectConfigured ? 'Configured' : 'Not Configured' }}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Agent Validation -->
+        <div v-if="foundryStatus.agents && foundryStatus.agents.length > 0" class="bg-stone-900 border border-stone-800 rounded-xl p-4">
+          <h3 class="text-sm font-semibold text-stone-200 mb-3">Registered Agents</h3>
+          <div class="space-y-2">
+            <div
+              v-for="agent in foundryStatus.agents"
+              :key="agent.name"
+              class="flex items-center justify-between text-xs py-1 border-b border-stone-800 last:border-b-0"
+            >
+              <span class="text-stone-300 font-mono">{{ agent.name }}</span>
+              <span :class="agent.status === 'ok' ? 'text-green-400' : 'text-red-400'" class="font-medium">
+                {{ agent.status === 'ok' ? 'Valid' : agent.error || 'Not Found' }}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Connectivity Test -->
+        <div class="bg-stone-900 border border-stone-800 rounded-xl p-4">
+          <div class="flex items-center justify-between mb-3">
+            <h3 class="text-sm font-semibold text-stone-200">Connectivity Test</h3>
+            <button
+              @click="testFoundryConnectivity"
+              :disabled="foundryTesting || !foundryStatus.isProjectConfigured"
+              class="text-xs px-4 py-2 rounded-xl bg-amber-700 text-white hover:bg-amber-600 transition-colors disabled:opacity-50"
+            >
+              {{ foundryTesting ? 'Testing...' : 'Test Connection' }}
+            </button>
+          </div>
+
+          <div v-if="foundryStatus.connectivityTest" class="text-xs space-y-1">
+            <div class="flex justify-between">
+              <span class="text-stone-500">Status</span>
+              <span :class="foundryStatus.connectivityTest.status === 'ok' ? 'text-green-400' : 'text-red-400'" class="font-medium">
+                {{ foundryStatus.connectivityTest.status === 'ok' ? 'Connected' : 'Failed' }}
+              </span>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-stone-500">Latency</span>
+              <span class="text-stone-300">{{ foundryStatus.connectivityTest.latencyMs }}ms</span>
+            </div>
+            <div v-if="foundryStatus.connectivityTest.message" class="mt-2">
+              <p class="text-stone-400 bg-stone-950 rounded-lg p-2 break-words">{{ foundryStatus.connectivityTest.message }}</p>
+            </div>
+            <p class="text-stone-600 mt-1">
+              Tested {{ new Date(foundryStatus.connectivityTest.testedAt).toLocaleString() }}
+            </p>
+          </div>
+          <p v-else class="text-xs text-stone-500">No test run yet. Click "Test Connection" to verify Foundry connectivity.</p>
+        </div>
+      </div>
+
+      <p v-else class="text-stone-500 text-center py-8">
+        Could not load Foundry status.
+      </p>
     </template>
 
     <!-- ── Logging Tab ───────────────────────────── -->

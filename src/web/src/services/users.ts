@@ -33,6 +33,28 @@ export interface LoggingSettingsResponse {
   availableLevels: string[]
 }
 
+export interface FoundryStatus {
+  endpoint: string
+  projectEndpoint: string
+  visionModel: string
+  reasoningModel: string
+  isEndpointConfigured: boolean
+  isProjectConfigured: boolean
+  agentValidation: {
+    status: string
+    foundAgents: string[]
+    missingAgents: string[]
+    error: string | null
+  }
+  connectivityTest: {
+    status: string
+    message: string
+    latencyMs: number | null
+    testedAt: string
+  } | null
+  checkedAt: string
+}
+
 export const usersApi = {
   getMe: () => api.get<User>('/users/me'),
 
@@ -65,4 +87,9 @@ export const usersApi = {
 
   changePassword: (data: { currentPassword: string; newPassword: string }) =>
     api.put('/users/me/password', data),
+
+  // Admin - Foundry
+  getFoundryStatus: () => api.get<FoundryStatus>('/admin/foundry'),
+
+  testFoundryConnectivity: () => api.post<FoundryStatus>('/admin/foundry/test'),
 }

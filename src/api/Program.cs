@@ -111,6 +111,7 @@ else
 
 // Auth & AI services
 builder.Services.AddSingleton(logLevelService);
+builder.Services.AddSingleton<FoundryStatusService>();
 builder.Services.AddSingleton<IAuthService, AuthService>();
 builder.Services.AddSingleton<IPromptService, PromptService>();
 builder.Services.AddSingleton<IAgentService, WorkflowAgentService>();

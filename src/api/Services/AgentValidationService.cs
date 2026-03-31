@@ -5,12 +5,14 @@ namespace WhiskeyAndSmokes.Api.Services;
 
 /// <summary>
 /// Background service that validates Foundry agents are registered and ready on startup.
+/// Populates FoundryStatusService with connectivity results.
 /// Logs warnings if agents are missing but does not prevent the app from starting.
 /// </summary>
 public class AgentValidationService : IHostedService
 {
     private readonly IConfiguration _config;
     private readonly ILogger<AgentValidationService> _logger;
+    private readonly FoundryStatusService _foundryStatus;
 
     public static readonly string[] RequiredAgents =
     [
@@ -19,24 +21,53 @@ public class AgentValidationService : IHostedService
         "whiskey-smokes-data-curator",
     ];
 
-    public AgentValidationService(IConfiguration config, ILogger<AgentValidationService> logger)
+    public AgentValidationService(
+        IConfiguration config,
+        ILogger<AgentValidationService> logger,
+        FoundryStatusService foundryStatus)
     {
         _config = config;
         _logger = logger;
+        _foundryStatus = foundryStatus;
     }
 
     public async Task StartAsync(CancellationToken cancellationToken)
     {
-        var endpoint = _config["AiFoundry:ProjectEndpoint"];
-        if (string.IsNullOrEmpty(endpoint))
+        var endpoint = _config["AiFoundry:Endpoint"] ?? "";
+        var projectEndpoint = _config["AiFoundry:ProjectEndpoint"] ?? "";
+        var visionModel = _config["AiFoundry:Models:Vision"] ?? "gpt-4o";
+        var reasoningModel = _config["AiFoundry:Models:Reasoning"] ?? "gpt-5-mini";
+
+        _logger.LogInformation(
+            "Foundry configuration: Endpoint={Endpoint}, ProjectEndpoint={ProjectEndpoint}, Vision={Vision}, Reasoning={Reasoning}",
+            string.IsNullOrEmpty(endpoint) ? "(not set)" : endpoint,
+            string.IsNullOrEmpty(projectEndpoint) ? "(not set)" : projectEndpoint,
+            visionModel, reasoningModel);
+
+        _foundryStatus.Update(s =>
+        {
+            s.Endpoint = endpoint;
+            s.ProjectEndpoint = projectEndpoint;
+            s.VisionModel = visionModel;
+            s.ReasoningModel = reasoningModel;
+            s.IsEndpointConfigured = !string.IsNullOrEmpty(endpoint);
+            s.IsProjectConfigured = !string.IsNullOrEmpty(projectEndpoint);
+        });
+
+        if (string.IsNullOrEmpty(projectEndpoint))
         {
             _logger.LogWarning(
                 "AiFoundry:ProjectEndpoint not configured — skipping agent validation. " +
                 "The app will use local extraction fallback.");
+            _foundryStatus.Update(s =>
+            {
+                s.AgentValidation.Status = "skipped";
+                s.AgentValidation.Error = "ProjectEndpoint not configured";
+            });
             return;
         }
 
-        _logger.LogInformation("Validating Foundry agents at {Endpoint}...", endpoint);
+        _logger.LogInformation("Validating Foundry agents at {Endpoint}...", projectEndpoint);
 
         try
         {
@@ -45,7 +76,7 @@ public class AgentValidationService : IHostedService
                 new EnvironmentCredential(),
                 new ManagedIdentityCredential(ManagedIdentityId.SystemAssigned));
 
-            var client = new AIProjectClient(new Uri(endpoint), credential);
+            var client = new AIProjectClient(new Uri(projectEndpoint), credential);
             var agents = client.Agents;
 
             var found = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
@@ -56,6 +87,14 @@ public class AgentValidationService : IHostedService
             }
 
             var missing = RequiredAgents.Where(name => !found.Contains(name)).ToList();
+            var foundRequired = RequiredAgents.Where(name => found.Contains(name)).ToList();
+
+            _foundryStatus.Update(s =>
+            {
+                s.AgentValidation.FoundAgents = foundRequired;
+                s.AgentValidation.MissingAgents = missing;
+                s.AgentValidation.Status = missing.Count == 0 ? "ok" : "partial";
+            });
 
             if (missing.Count == 0)
             {
@@ -80,6 +119,11 @@ public class AgentValidationService : IHostedService
                 "Could not validate Foundry agents: {Error}. " +
                 "The app will fall back to local extraction.",
                 ex.Message);
+            _foundryStatus.Update(s =>
+            {
+                s.AgentValidation.Status = "error";
+                s.AgentValidation.Error = ex.Message;
+            });
         }
     }
 

@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using System.Text.Json;
-using Azure.AI.OpenAI;
+using Azure.AI.Projects;
+using Azure.AI.Projects.OpenAI;
 using Azure.Identity;
 using Microsoft.Extensions.AI;
 using WhiskeyAndSmokes.Api.Agents.Executors;
@@ -11,9 +12,10 @@ using WhiskeyAndSmokes.Api.Services;
 namespace WhiskeyAndSmokes.Api.Agents;
 
 /// <summary>
-/// IAgentService implementation that runs the multi-agent pipeline with per-step tracking.
-/// Each agent's output is persisted as a WorkflowStep on the Capture for audit/display.
-/// Falls back to local keyword extraction when AI Foundry is not configured.
+/// IAgentService implementation using Microsoft Foundry Agent Service (AIProjectClient).
+/// Calls pre-registered Foundry agents via the Responses API for text-based agents
+/// and uses the project-scoped ChatClient for vision (multimodal/image) analysis.
+/// Falls back to local keyword extraction when Foundry is not configured.
 /// </summary>
 public class WorkflowAgentService : IAgentService
 {
@@ -26,6 +28,10 @@ public class WorkflowAgentService : IAgentService
     private readonly bool _isFoundryConfigured;
 
     private const int MaxRefinements = 2;
+
+    private const string VisionAgentName = "whiskey-smokes-vision-analyst";
+    private const string ExpertAgentName = "whiskey-smokes-domain-expert";
+    private const string CuratorAgentName = "whiskey-smokes-data-curator";
 
     public WorkflowAgentService(
         ICosmosDbService cosmosDb,
@@ -41,7 +47,7 @@ public class WorkflowAgentService : IAgentService
         _logger = logger;
         _config = config;
         _loggerFactory = loggerFactory;
-        _isFoundryConfigured = !string.IsNullOrEmpty(config["AiFoundry:Endpoint"]);
+        _isFoundryConfigured = !string.IsNullOrEmpty(config["AiFoundry:ProjectEndpoint"]);
     }
 
     public async Task ProcessCaptureAsync(Capture capture)
@@ -133,16 +139,21 @@ public class WorkflowAgentService : IAgentService
         using var activity = Diagnostics.Agent.StartActivity("RunWorkflow");
         activity?.SetTag("capture.id", capture.Id);
 
-        var endpoint = _config["AiFoundry:Endpoint"]
-            ?? throw new InvalidOperationException("AiFoundry:Endpoint is required");
+        var endpoint = _config["AiFoundry:ProjectEndpoint"]
+            ?? throw new InvalidOperationException("AiFoundry:ProjectEndpoint is required");
 
-        var azureClient = new AzureOpenAIClient(new Uri(endpoint), new DefaultAzureCredential());
+        var credential = new ChainedTokenCredential(
+            new AzureCliCredential(),
+            new EnvironmentCredential(),
+            new ManagedIdentityCredential(ManagedIdentityId.SystemAssigned));
+
+        var projectClient = new AIProjectClient(new Uri(endpoint), credential);
 
         var visionModel = _config["AiFoundry:Models:Vision"] ?? "gpt-4o";
         var reasoningModel = _config["AiFoundry:Models:Reasoning"] ?? "gpt-5-mini";
 
-        IChatClient visionChatClient = azureClient.GetChatClient(visionModel).AsIChatClient();
-        IChatClient reasoningChatClient = azureClient.GetChatClient(reasoningModel).AsIChatClient();
+        _logger.LogInformation("Connected to Foundry project at {Endpoint} for capture {CaptureId}",
+            endpoint, capture.Id);
 
         var input = new CaptureInput
         {
@@ -155,10 +166,11 @@ public class WorkflowAgentService : IAgentService
                 : null
         };
 
-        // ── Step 1: Vision Analyst ────────────────────────────────────────
+        // ── Step 1: Vision Analyst (uses ChatClient for multimodal/image support) ──
         await LogStep(capture, "S01", "Vision Analyst", WorkflowStepStatus.Running,
             $"Analyzing {capture.Photos.Count} photo(s) with {visionModel}...");
 
+        IChatClient visionChatClient = projectClient.OpenAI.GetChatClient(visionModel).AsIChatClient();
         var vision = new VisionExecutor(
             visionChatClient, _promptService, _blobService,
             _loggerFactory.CreateLogger<VisionExecutor>());
@@ -171,23 +183,24 @@ public class WorkflowAgentService : IAgentService
         await LogStep(capture, "S01", "Vision Analyst", WorkflowStepStatus.Complete,
             visionSummary, visionResult.Description);
 
-        // ── Step 2: Domain Expert ─────────────────────────────────────────
+        // ── Step 2: Domain Expert (Foundry agent via Responses API) ──
+        // Prompt is baked into the Foundry agent at init time (see AgentInitiator/Prompts/).
+        // To change the prompt, edit the file and re-run agent:init.
         await LogStep(capture, "S02", "Domain Expert", WorkflowStepStatus.Running,
-            $"Identifying products with {reasoningModel}...");
+            $"Identifying products via Foundry agent...");
 
-        var expert = new ExpertExecutor(
-            reasoningChatClient, _promptService,
-            _loggerFactory.CreateLogger<ExpertExecutor>());
+        var expertPrompt = BuildExpertPrompt(visionResult);
+        var expertText = await CallFoundryAgentAsync(projectClient, ExpertAgentName, expertPrompt, "S02");
 
-        var expertResult = await expert.AnalyzeAsync(visionResult);
-
-        var expertSummary = expertResult.Analysis.Length > 300
-            ? expertResult.Analysis[..300] + "..."
-            : expertResult.Analysis;
+        var expertSummary = expertText.Length > 300
+            ? expertText[..300] + "..."
+            : expertText;
         await LogStep(capture, "S02", "Domain Expert", WorkflowStepStatus.Complete,
-            expertSummary, expertResult.Analysis);
+            expertSummary, expertText);
 
-        // ── Step 3: Data Curator (with retry loop) ────────────────────────
+        var expertAnalysis = expertText;
+
+        // ── Step 3: Data Curator (Foundry agent with retry loop) ──
         CuratorDecision? decision = null;
         var refinements = 0;
 
@@ -196,14 +209,13 @@ public class WorkflowAgentService : IAgentService
             var stepLabel = refinements == 0 ? "Data Curator" : $"Data Curator (refinement #{refinements})";
             await LogStep(capture, "S03", stepLabel, WorkflowStepStatus.Running,
                 refinements == 0
-                    ? $"Structuring results with {reasoningModel}..."
+                    ? "Structuring results via Foundry agent..."
                     : "Refining based on curator feedback...");
 
-            var curator = new CuratorExecutor(
-                reasoningChatClient, _promptService,
-                _loggerFactory.CreateLogger<CuratorExecutor>());
+            var curatorPrompt = $"Expert analysis to structure:\n\n{expertAnalysis}";
+            var curatorText = await CallFoundryAgentAsync(projectClient, CuratorAgentName, curatorPrompt, "S03");
 
-            decision = await curator.HandleAsync(expertResult, null!, CancellationToken.None);
+            decision = ParseCuratorResponse(curatorText, capture.Id);
 
             if (decision.IsApproved)
             {
@@ -214,7 +226,6 @@ public class WorkflowAgentService : IAgentService
                 break;
             }
 
-            // Rejected — feed back to expert
             await LogStep(capture, "S03", stepLabel, WorkflowStepStatus.Complete,
                 $"Rejected: {decision.Reason}");
 
@@ -228,13 +239,15 @@ public class WorkflowAgentService : IAgentService
                 break;
             }
 
-            // Re-run expert with rejection feedback
+            // Re-run expert with rejection feedback via Foundry agent
             await LogStep(capture, "S02", $"Domain Expert (revision #{refinements})", WorkflowStepStatus.Running,
                 $"Revising based on feedback: {decision.Reason}");
 
-            expertResult = await expert.RefineAsync(visionResult, decision);
+            var refinementPrompt = BuildRefinementPrompt(visionResult.Description, decision);
+            expertAnalysis = await CallFoundryAgentAsync(projectClient, ExpertAgentName, refinementPrompt, "S02");
+
             await LogStep(capture, "S02", $"Domain Expert (revision #{refinements})", WorkflowStepStatus.Complete,
-                expertResult.Analysis.Length > 300 ? expertResult.Analysis[..300] + "..." : expertResult.Analysis);
+                expertAnalysis.Length > 300 ? expertAnalysis[..300] + "..." : expertAnalysis);
         }
 
         if (decision?.IsApproved == true && decision.Items != null && decision.Items.Count > 0)
@@ -306,5 +319,117 @@ public class WorkflowAgentService : IAgentService
             "cigar" => ItemType.Cigar,
             _ => type?.ToLowerInvariant() ?? "unknown"
         };
+    }
+
+    /// <summary>
+    /// Calls a Foundry agent by name using the Project Responses API.
+    /// The agent's system prompt (instructions) is baked in at init time via AgentInitiator.
+    /// To change an agent's prompt, edit the file in AgentInitiator/Prompts/ and re-run agent:init.
+    /// </summary>
+    private async Task<string> CallFoundryAgentAsync(
+        AIProjectClient projectClient, string agentName, string prompt, string stepId)
+    {
+        using var agentActivity = Diagnostics.Agent.StartActivity($"InvokeAgent_{stepId}");
+        agentActivity?.SetTag("gen_ai.agent.name", agentName);
+        var sw = Stopwatch.StartNew();
+
+        _logger.LogInformation("{Step}: Calling Foundry agent '{Agent}'...", stepId, agentName);
+
+        var agentRef = new AgentReference(agentName, "latest");
+        var responsesClient = projectClient.OpenAI.GetProjectResponsesClientForAgent(agentRef);
+        var response = await responsesClient.CreateResponseAsync(prompt);
+
+        sw.Stop();
+        var text = response.Value.GetOutputText() ?? "(empty response)";
+
+        _logger.LogInformation("{Step}: Agent '{Agent}' responded in {Duration}ms ({Chars} chars)",
+            stepId, agentName, sw.ElapsedMilliseconds, text.Length);
+
+        agentActivity?.SetTag("agent.response.length", text.Length);
+        agentActivity?.SetTag("agent.call.duration_ms", sw.ElapsedMilliseconds);
+
+        return text;
+    }
+
+    private static string BuildExpertPrompt(VisionDescription vision)
+    {
+        return $"""
+            Here is what the vision analyst observed in the photos:
+
+            {vision.Description}
+
+            {(vision.UserNote != null ? $"User's note: {vision.UserNote}" : "")}
+            {(vision.Location != null ? $"GPS Location: {vision.Location.Latitude}, {vision.Location.Longitude}" : "")}
+
+            Please identify each item and provide your expert analysis.
+            """;
+    }
+
+    private static string BuildRefinementPrompt(string visionContext, CuratorDecision rejection)
+    {
+        return $"""
+            The data curator rejected your previous analysis with this feedback:
+            {rejection.Reason}
+
+            Original vision description for reference:
+            {visionContext}
+
+            Please refine your analysis addressing the curator's feedback.
+            """;
+    }
+
+    private CuratorDecision ParseCuratorResponse(string responseText, string captureId)
+    {
+        try
+        {
+            var jsonText = responseText.Trim();
+
+            if (jsonText.StartsWith("```"))
+            {
+                var firstNewline = jsonText.IndexOf('\n');
+                var lastFence = jsonText.LastIndexOf("```");
+                if (firstNewline > 0 && lastFence > firstNewline)
+                    jsonText = jsonText[(firstNewline + 1)..lastFence].Trim();
+            }
+
+            var decision = JsonSerializer.Deserialize<CuratorDecision>(jsonText, new JsonSerializerOptions
+            {
+                PropertyNameCaseInsensitive = true
+            });
+
+            if (decision != null) return decision;
+        }
+        catch (JsonException ex)
+        {
+            _logger.LogWarning(ex, "Failed to parse curator JSON for capture {CaptureId}: {Error}", captureId, ex.Message);
+        }
+
+        return new CuratorDecision
+        {
+            Decision = "approve",
+            Items = ExtractBestEffortItems(responseText)
+        };
+    }
+
+    private List<CuratorItemResult>? ExtractBestEffortItems(string text)
+    {
+        try
+        {
+            var arrayStart = text.IndexOf('[');
+            var arrayEnd = text.LastIndexOf(']');
+            if (arrayStart >= 0 && arrayEnd > arrayStart)
+            {
+                var arrayJson = text[arrayStart..(arrayEnd + 1)];
+                return JsonSerializer.Deserialize<List<CuratorItemResult>>(arrayJson, new JsonSerializerOptions
+                {
+                    PropertyNameCaseInsensitive = true
+                });
+            }
+        }
+        catch (JsonException ex)
+        {
+            _logger.LogWarning(ex, "Failed to extract best-effort items from curator response");
+        }
+        return null;
     }
 }

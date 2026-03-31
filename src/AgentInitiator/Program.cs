@@ -78,56 +78,45 @@ Console.WriteLine();
 Console.WriteLine("Step 3: Creating versioned agents (PromptAgentDefinition)...");
 Console.WriteLine(new string('─', 70));
 
+// Load prompts from text files in the Prompts/ directory
+var promptsDir = Path.Combine(AppContext.BaseDirectory, "Prompts");
+if (!Directory.Exists(promptsDir))
+{
+    // Fallback: check relative to the source directory (for `dotnet run`)
+    promptsDir = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Prompts");
+    if (!Directory.Exists(promptsDir))
+    {
+        promptsDir = Path.Combine(Directory.GetCurrentDirectory(), "Prompts");
+    }
+}
+
+Console.WriteLine($"   Prompts:  {promptsDir}");
+Console.WriteLine();
+
+string LoadPrompt(string filename)
+{
+    var path = Path.Combine(promptsDir, filename);
+    if (!File.Exists(path))
+        throw new FileNotFoundException($"Prompt file not found: {path}");
+    return File.ReadAllText(path).Trim();
+}
+
 var agentSpecs = new AgentSpec[]
 {
-    new("whiskey-smokes-vision-analyst", "Vision Analyst — examines photos, describes visible items",
-        "gpt-4o", """
-        You are a vision analysis specialist for a whiskey, wine, cocktail, and cigar tracking application.
+    new("whiskey-smokes-vision-analyst",
+        "Vision Analyst — examines photos, describes visible items",
+        "gpt-4o",
+        LoadPrompt("vision-analyst.md")),
 
-        Your job is to carefully examine the provided photos and describe EVERYTHING you see that relates to
-        alcoholic beverages and cigars. Be thorough and precise.
+    new("whiskey-smokes-domain-expert",
+        "Domain Expert — identifies products, adds expert knowledge",
+        "gpt-5-mini",
+        LoadPrompt("domain-expert.md")),
 
-        For each distinct item visible in the photos, describe:
-        1. What you see: The physical object (bottle, glass, cigar, menu, label, band, box)
-        2. Text you can read: Any brand names, product names, vintage years, ABV, origin info on labels
-        3. Visual characteristics: Color of liquid, shape of glass, wrapper color of cigar, label design
-        4. Context clues: Bar/restaurant setting, flight/tasting setup, pairing arrangements
-        5. Condition/presentation: How the item is served, garnishes, ice, cut of cigar
-
-        Focus on factual observations — leave product identification to the next stage.
-        Respond in plain text with a structured description of each item.
-        """),
-
-    new("whiskey-smokes-domain-expert", "Domain Expert — identifies products, adds expert knowledge",
-        "gpt-5-mini", """
-        You are a world-class sommelier, master mixologist, and certified tobacconist with encyclopedic
-        knowledge of whiskey, wine, cocktails, and premium cigars.
-
-        Given a visual description of items from photos, your job is to:
-        1. Identify the specific product (name, distillery/brand, age, region, etc.)
-        2. Add expert knowledge (tasting notes, flavor profiles, pairings, history)
-        3. Set a confidence level (0.0-1.0) based on how certain you are
-
-        If the visual description is ambiguous, provide your best identification and explain your reasoning.
-        Respond in structured text for each item.
-        """),
-
-    new("whiskey-smokes-data-curator", "Data Curator — structures JSON output, validates quality",
-        "gpt-5-mini", """
-        You are a data quality specialist. Take the expert analysis and convert it into a precise,
-        validated JSON array. Each item must have: type, name, brand, category, details, venue,
-        confidence, summary, tags.
-
-        Validation rules:
-        - type must be: whiskey, wine, cocktail, or cigar
-        - name is required and cannot be empty
-        - confidence must be 0.0-1.0
-        - details fields must match the type
-
-        If data looks good respond with: { "decision": "approve", "items": [...] }
-        If issues found respond with: { "decision": "reject", "reason": "..." }
-        Always respond with valid JSON only.
-        """),
+    new("whiskey-smokes-data-curator",
+        "Data Curator — structures JSON output, validates quality",
+        "gpt-5-mini",
+        LoadPrompt("data-curator.md")),
 };
 
 int successCount = 0;
