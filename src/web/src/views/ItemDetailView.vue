@@ -17,6 +17,8 @@ const editNotes = ref('')
 const editName = ref('')
 const editBrand = ref('')
 const editCategory = ref('')
+const editVenueName = ref('')
+const editVenueAddress = ref('')
 const editTags = ref<string[]>([])
 const newTag = ref('')
 
@@ -32,6 +34,8 @@ function resetEditFields(data: Item) {
   editName.value = data.name ?? ''
   editBrand.value = data.brand ?? ''
   editCategory.value = data.category ?? ''
+  editVenueName.value = data.venue?.name ?? ''
+  editVenueAddress.value = data.venue?.address ?? ''
   editTags.value = [...(data.tags ?? [])]
 }
 
@@ -60,6 +64,7 @@ async function save() {
       name: editName.value || undefined,
       brand: editBrand.value || undefined,
       category: editCategory.value || undefined,
+      venue: editVenueName.value ? { name: editVenueName.value, address: editVenueAddress.value || undefined } : undefined,
       userRating: editRating.value || undefined,
       userNotes: editNotes.value || undefined,
       tags: editTags.value,
@@ -184,6 +189,23 @@ function isAiGenerated(data: Item): boolean {
             class="w-full bg-stone-800 border border-stone-700 rounded-xl px-4 py-3 text-stone-100 placeholder-stone-600 focus:outline-none focus:border-amber-700"
           />
         </div>
+      </div>
+
+      <!-- Location -->
+      <div>
+        <label class="block text-sm text-stone-400 mb-1">Location</label>
+        <input
+          v-model="editVenueName"
+          type="text"
+          placeholder="e.g. Rare Books Bar"
+          class="w-full bg-stone-800 border border-stone-700 rounded-xl px-4 py-3 text-stone-100 placeholder-stone-600 focus:outline-none focus:border-amber-700"
+        />
+        <input
+          v-model="editVenueAddress"
+          type="text"
+          placeholder="Address (optional)"
+          class="w-full bg-stone-800 border border-stone-700 rounded-xl px-4 py-3 text-stone-100 placeholder-stone-600 focus:outline-none focus:border-amber-700 mt-2"
+        />
       </div>
 
       <!-- Star rating -->

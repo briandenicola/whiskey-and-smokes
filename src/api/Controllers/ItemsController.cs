@@ -94,6 +94,7 @@ public class ItemsController : ControllerBase
         if (request.Name != null) item.Name = request.Name;
         if (request.Brand != null) item.Brand = request.Brand;
         if (request.Category != null) item.Category = request.Category;
+        if (request.Venue != null) item.Venue = request.Venue;
         if (request.UserRating.HasValue) item.UserRating = request.UserRating;
         if (request.UserNotes != null) item.UserNotes = request.UserNotes;
         if (request.Tags != null) item.Tags = request.Tags;

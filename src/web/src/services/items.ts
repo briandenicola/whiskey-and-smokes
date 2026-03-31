@@ -29,6 +29,10 @@ export interface UpdateItemRequest {
   name?: string
   brand?: string
   category?: string
+  venue?: {
+    name: string
+    address?: string
+  }
   userRating?: number
   userNotes?: string
   tags?: string[]

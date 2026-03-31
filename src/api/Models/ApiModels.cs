@@ -70,6 +70,9 @@ public class UpdateItemRequest
     [JsonPropertyName("category")]
     public string? Category { get; set; }
 
+    [JsonPropertyName("venue")]
+    public VenueInfo? Venue { get; set; }
+
     [JsonPropertyName("userRating")]
     public int? UserRating { get; set; }
 

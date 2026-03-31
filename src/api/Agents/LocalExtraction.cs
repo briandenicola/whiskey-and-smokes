@@ -31,6 +31,7 @@ internal static class LocalExtraction
         else if (capture.Photos.Count > 0 || !string.IsNullOrEmpty(note))
         {
             var type = GuessType(note);
+            var venue = ExtractVenue(note, capture);
             items.Add(new Item
             {
                 UserId = capture.UserId,
@@ -42,10 +43,7 @@ internal static class LocalExtraction
                 AiSummary = !string.IsNullOrEmpty(note)
                     ? $"Captured with note: \"{note}\". AI analysis pending — configure AI Foundry for full extraction."
                     : "Photo captured. AI analysis pending — configure AI Foundry for full extraction.",
-                Venue = capture.Location != null ? new VenueInfo
-                {
-                    Name = $"Location: {capture.Location.Latitude:F4}, {capture.Location.Longitude:F4}"
-                } : null,
+                Venue = venue,
                 Tags = [],
                 Status = ItemStatus.AiDraft,
                 ProcessedBy = ProcessingSource.LocalExtraction
@@ -59,6 +57,7 @@ internal static class LocalExtraction
     {
         var items = new List<Item>();
         var lowerNote = note.ToLowerInvariant();
+        var venue = ExtractVenue(note, capture);
 
         var patterns = new Dictionary<string, (string type, string[] keywords)>
         {
@@ -107,10 +106,7 @@ internal static class LocalExtraction
                         PhotoUrls = capture.Photos,
                         AiConfidence = 0.5,
                         AiSummary = $"Extracted from note: \"{note}\". Matched keyword: {matchedKeyword}. Configure AI Foundry for richer analysis.",
-                        Venue = capture.Location != null ? new VenueInfo
-                        {
-                            Name = $"Location: {capture.Location.Latitude:F4}, {capture.Location.Longitude:F4}"
-                        } : null,
+                        Venue = venue,
                         Tags = [],
                         Status = ItemStatus.AiDraft,
                         ProcessedBy = ProcessingSource.LocalExtraction
@@ -121,6 +117,58 @@ internal static class LocalExtraction
         }
 
         return items;
+    }
+
+    private static VenueInfo? ExtractVenue(string note, Capture capture)
+    {
+        // Try to extract venue name from note text using common patterns
+        var venueName = ExtractVenueFromText(note);
+
+        if (venueName != null)
+        {
+            return new VenueInfo { Name = venueName };
+        }
+
+        // Fall back to GPS coordinates if available
+        if (capture.Location != null)
+        {
+            return new VenueInfo
+            {
+                Name = $"Location: {capture.Location.Latitude:F4}, {capture.Location.Longitude:F4}"
+            };
+        }
+
+        return null;
+    }
+
+    private static string? ExtractVenueFromText(string note)
+    {
+        // Match patterns like "at Rare Books Bar", "from The Whiskey Library", "in Death & Co"
+        var prepositions = new[] { " at ", " from ", " in " };
+
+        foreach (var prep in prepositions)
+        {
+            var idx = note.IndexOf(prep, StringComparison.OrdinalIgnoreCase);
+            if (idx < 0) continue;
+
+            var after = note[(idx + prep.Length)..].Trim();
+            if (string.IsNullOrEmpty(after)) continue;
+
+            // Take text until end of sentence or common stop patterns
+            var endIdx = after.IndexOfAny(['.', '!', ',', '\n']);
+            var candidate = endIdx >= 0 ? after[..endIdx].Trim() : after.Trim();
+
+            if (string.IsNullOrEmpty(candidate) || candidate.Length < 3) continue;
+
+            // Skip if it looks like a generic word rather than a proper name
+            // Venue names typically start with an uppercase letter or "The"/"the"
+            if (char.IsUpper(candidate[0]) || candidate.StartsWith("the ", StringComparison.OrdinalIgnoreCase))
+            {
+                return candidate.Length > 80 ? candidate[..80] : candidate;
+            }
+        }
+
+        return null;
     }
 
     private static string GuessType(string note)
