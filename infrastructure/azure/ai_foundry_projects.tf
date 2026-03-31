@@ -3,7 +3,7 @@ module "project_1" {
   depends_on = [
     azapi_resource.ai_foundry,
   ]
-  source   = "./project"
+  source = "./project"
 
   foundry_project = {
     name          = local.project_name
@@ -11,20 +11,26 @@ module "project_1" {
     resource_name = local.resource_name
     tag           = var.tags
 
-    ai_foundry    = {
-      id = azapi_resource.ai_foundry.id
+    ai_foundry = {
+      id   = azapi_resource.ai_foundry.id
       name = azapi_resource.ai_foundry.name
     }
 
-    logs          = {
+    logs = {
       workspace_id = azurerm_log_analytics_workspace.this.id
     }
 
-    models        = [
-    {
-        name     = "gpt-4.1"
-        version  = "2025-04-14"
-        format = "OpenAI"
-    }]
+    models = [
+      {
+        name    = "gpt-4o"
+        version = "2024-11-20"
+        format  = "OpenAI"
+      },
+      {
+        name    = "gpt-5-mini"
+        version = "2025-01-31"
+        format  = "OpenAI"
+      }
+    ]
   }
 }

@@ -13,17 +13,27 @@ output "OPENAI_ENDPOINT" {
   sensitive = false
 }
 
-output "FOUNDRY_ENDPOINT" {
-  value     = module.project_classic.PROJECT_ENDPOINT
-  sensitive = false
-}
-output "FOUNDRY_NEXTGEN_ENDPOINT" {
-  value     = module.project_workflow.PROJECT_ENDPOINT
+output "FOUNDRY_PROJECT_ENDPOINT" {
+  value     = module.project_1.PROJECT_ENDPOINT
   sensitive = false
 }
 
-# ACR_NAME is still needed by the acr-build Taskfile tasks
+output "APPLICATION_INSIGHTS_CONNECTION_STRING" {
+  value     = module.project_1.APPINSIGHTS_CONNECTION_STRING
+  sensitive = true
+}
+
 output "ACR_NAME" {
   value     = azurerm_container_registry.this.name
+  sensitive = false
+}
+
+output "COSMOSDB_ENDPOINT" {
+  value     = module.project_1.COSMOSDB_ENDPOINT
+  sensitive = false
+}
+
+output "STORAGE_BLOB_ENDPOINT" {
+  value     = module.project_1.STORAGE_BLOB_ENDPOINT
   sensitive = false
 }

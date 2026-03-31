@@ -17,3 +17,13 @@ variable "commit_version" {
   description = "Container image tag (short git SHA)"
   type        = string
 }
+
+variable "cosmosdb_endpoint" {
+  description = "Cosmos DB account endpoint (from azure stack output)"
+  type        = string
+}
+
+variable "storage_blob_endpoint" {
+  description = "Storage account blob endpoint (from azure stack output)"
+  type        = string
+}

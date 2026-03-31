@@ -1,9 +1,9 @@
-output "CLASSIC_URL" {
-  value = "https://${azurerm_container_app.classic.ingress[0].fqdn}"
+output "API_URL" {
+  value = "https://${azurerm_container_app.api.ingress[0].fqdn}"
 }
 
-output "WORKFLOW_URL" {
-  value = "https://${azurerm_container_app.workflow.ingress[0].fqdn}"
+output "WEB_URL" {
+  value = "https://${azurerm_container_app.web.ingress[0].fqdn}"
 }
 
 output "MANAGED_IDENTITY_CLIENT_ID" {

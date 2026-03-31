@@ -26,11 +26,6 @@ resource "azapi_resource" "ai_foundry" {
           useMicrosoftManagedNetwork = false
         }
       ]
-      userOwnedStorageAccounts = [
-        {
-          id = azurerm_storage_account.this.id
-        }
-      ]
     }
   }
 

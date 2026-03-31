@@ -20,3 +20,20 @@ resource "azurerm_role_assignment" "ai_developer" {
   principal_id                     = azurerm_user_assigned_identity.app.principal_id
   skip_service_principal_aad_check = true
 }
+
+# Cosmos DB data plane access for application data
+resource "azurerm_cosmosdb_sql_role_assignment" "cosmos_contributor" {
+  resource_group_name = "${local.project_name}_rg"
+  account_name        = "${local.project_name}-db"
+  scope               = "/dbs/whiskey-and-smokes"
+  role_definition_id  = "/${local.project_name}-db/sqlRoleDefinitions/00000000-0000-0000-0000-000000000002"
+  principal_id        = azurerm_user_assigned_identity.app.principal_id
+}
+
+# Blob storage access for photo uploads
+resource "azurerm_role_assignment" "storage_blob_contributor" {
+  scope                            = "/subscriptions/${data.azurerm_client_config.current.subscription_id}/resourceGroups/${local.project_name}_rg/providers/Microsoft.Storage/storageAccounts/*"
+  role_definition_name             = "Storage Blob Data Contributor"
+  principal_id                     = azurerm_user_assigned_identity.app.principal_id
+  skip_service_principal_aad_check = true
+}
