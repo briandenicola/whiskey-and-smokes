@@ -225,20 +225,24 @@ public class AdminController : ControllerBase
             var projectClient = new Azure.AI.Projects.AIProjectClient(
                 new Uri(status.ProjectEndpoint), credential);
 
-            // Use the project-scoped ChatClient to verify connectivity
-            var chatClient = projectClient.OpenAI.GetChatClient(status.VisionModel);
-            var response = await chatClient.CompleteChatAsync([
-                new OpenAI.Chat.SystemChatMessage("Reply with exactly: OK"),
-                new OpenAI.Chat.UserChatMessage("ping")
-            ]);
+            // Invoke the domain expert agent with a trivial prompt to validate the
+            // full Foundry pipeline: auth → agent resolution → Responses API → response
+            const string healthCheckAgent = "whiskey-smokes-domain-expert";
+            const string healthCheckPrompt = "Reply with exactly: OK";
+
+            var agentRef = new Azure.AI.Projects.OpenAI.AgentReference(healthCheckAgent, "latest");
+            var responsesClient = projectClient.OpenAI.GetProjectResponsesClientForAgent(agentRef);
+            var response = await responsesClient.CreateResponseAsync(healthCheckPrompt);
 
             sw.Stop();
+            var responseText = response.Value.GetOutputText() ?? "(empty)";
+
             testResult.Status = "ok";
-            testResult.Message = $"Connected to Foundry project via AIProjectClient. Model: {status.VisionModel}. Response: {response.Value.Content[0].Text}";
+            testResult.Message = $"Foundry agent '{healthCheckAgent}' responded via Responses API in {sw.ElapsedMilliseconds}ms. Response: {responseText}";
             testResult.LatencyMs = sw.ElapsedMilliseconds;
 
-            _logger.LogInformation("Foundry connectivity test passed: model={Model}, latency={Latency}ms",
-                status.VisionModel, sw.ElapsedMilliseconds);
+            _logger.LogInformation("Foundry connectivity test passed: agent={Agent}, latency={Latency}ms, response={Response}",
+                healthCheckAgent, sw.ElapsedMilliseconds, responseText);
         }
         catch (Exception ex)
         {
