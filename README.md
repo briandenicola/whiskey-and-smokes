@@ -107,3 +107,18 @@ Access the admin panel at `/admin` (requires admin role — the first registered
 ├── Taskfile.yml
 └── README.md
 ```
+
+## Roadmap
+
+### Local Docker Deployment (self-hosted)
+
+Run the full application locally via Docker Compose — no Azure dependency except AI Foundry.
+
+| Item | Description | Effort |
+|------|-------------|--------|
+| Docker Compose | API + Web + Azurite containers with volume mounts for data persistence | Small |
+| Storage provider toggle | Add `Storage:Provider` config (`local` / `azure` / `auto`) so LiteDB + local blobs work in Production mode (currently gated on `IsDevelopment()`) | Small |
+| `.env.example` | Template for Foundry credentials, JWT secret, optional Entra config | Trivial |
+| Documentation | `docs/local-deployment.md` — prerequisites, setup, `docker compose up` | Small |
+
+**What already works**: Dockerfiles (optimized), nginx reverse proxy, LiteDB fallback, local blob storage, configurable paths via env vars. The only code change is the storage provider toggle (~15 LOC in `Program.cs`).
