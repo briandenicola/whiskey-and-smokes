@@ -163,26 +163,9 @@ function isAiGenerated(data: Item): boolean {
       <span>View processing history →</span>
     </router-link>
 
-    <!-- Rating & Actions (view mode) -->
-    <div v-if="!isEditing" class="space-y-3">
-      <div v-if="item.userRating" class="text-amber-500 text-lg">
-        {{ '★'.repeat(item.userRating) }}{{ '☆'.repeat(5 - item.userRating) }}
-      </div>
-
-      <div class="flex gap-3 pt-4">
-        <button
-          @click="startEditing"
-          class="flex-1 bg-amber-700 hover:bg-amber-600 text-white py-3 rounded-xl font-medium"
-        >
-          {{ item.status === 'ai-draft' ? 'Review & Rate' : 'Edit' }}
-        </button>
-        <button
-          @click="showDeleteConfirm = true"
-          class="px-4 bg-stone-800 hover:bg-stone-700 text-red-400 py-3 rounded-xl text-sm"
-        >
-          Delete
-        </button>
-      </div>
+    <!-- Rating (view mode) -->
+    <div v-if="!isEditing && item.userRating" class="text-amber-500 text-lg">
+      {{ '★'.repeat(item.userRating) }}{{ '☆'.repeat(5 - item.userRating) }}
     </div>
 
     <!-- Journal -->
@@ -336,6 +319,22 @@ function isAiGenerated(data: Item): boolean {
       <span v-for="tag in item.tags" :key="tag" class="text-xs bg-stone-800 text-stone-400 px-2 py-1 rounded-full">
         {{ tag }}
       </span>
+    </div>
+
+    <!-- Actions (view mode, bottom of page) -->
+    <div v-if="!isEditing" class="flex gap-3 mt-6 pt-4 border-t border-stone-800">
+      <button
+        @click="startEditing"
+        class="flex-1 bg-amber-700 hover:bg-amber-600 text-white py-3 rounded-xl font-medium"
+      >
+        Edit
+      </button>
+      <button
+        @click="showDeleteConfirm = true"
+        class="px-4 bg-stone-800 hover:bg-stone-700 text-red-400 py-3 rounded-xl text-sm"
+      >
+        Delete
+      </button>
     </div>
 
     <!-- Delete Confirmation Modal -->
