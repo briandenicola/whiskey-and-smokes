@@ -115,14 +115,24 @@ public class AgentValidationService : IHostedService
         }
         catch (Exception ex)
         {
+            // Unwrap the full exception chain to surface the root cause
+            var innerMessages = new List<string>();
+            var current = ex;
+            while (current != null)
+            {
+                innerMessages.Add($"[{current.GetType().Name}] {current.Message}");
+                current = current.InnerException;
+            }
+            var fullError = string.Join(" → ", innerMessages);
+
             _logger.LogWarning(ex,
                 "Could not validate Foundry agents: {Error}. " +
                 "The app will fall back to local extraction.",
-                ex.Message);
+                fullError);
             _foundryStatus.Update(s =>
             {
                 s.AgentValidation.Status = "error";
-                s.AgentValidation.Error = ex.Message;
+                s.AgentValidation.Error = fullError;
             });
         }
     }

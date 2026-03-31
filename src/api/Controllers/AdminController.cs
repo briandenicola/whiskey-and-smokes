@@ -247,11 +247,21 @@ public class AdminController : ControllerBase
         catch (Exception ex)
         {
             sw.Stop();
+            // Unwrap the full exception chain to surface the root cause (e.g. SSL inner exceptions)
+            var innerMessages = new List<string>();
+            var current = ex;
+            while (current != null)
+            {
+                innerMessages.Add($"[{current.GetType().Name}] {current.Message}");
+                current = current.InnerException;
+            }
+            var fullError = string.Join(" → ", innerMessages);
+
             testResult.Status = "error";
-            testResult.Message = ex.Message;
+            testResult.Message = fullError;
             testResult.LatencyMs = sw.ElapsedMilliseconds;
 
-            _logger.LogWarning(ex, "Foundry connectivity test failed: {Error}", ex.Message);
+            _logger.LogWarning(ex, "Foundry connectivity test failed: {Error}", fullError);
         }
 
         _foundryStatus.Update(s => s.ConnectivityTest = testResult);
