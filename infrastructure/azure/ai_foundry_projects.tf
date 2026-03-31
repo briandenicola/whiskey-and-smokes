@@ -22,8 +22,8 @@ module "project_1" {
 
     models = [
       {
-        name    = "gpt-4o"
-        version = "2024-11-20"
+        name    = "gpt-4.1"
+        version = "2025-04-14"
         format  = "OpenAI"
       },
       {

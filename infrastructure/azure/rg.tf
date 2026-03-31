@@ -1,22 +1,11 @@
 resource "azurerm_resource_group" "this" {
-  name     = "${local.resource_name}-ai_rg"
+  name     = "${local.resource_name}-app_rg"
   location = local.location
   tags = {
     Application = var.tags
     DeployedOn  = timestamp()
     AppName     = local.resource_name
-    Tier        = "AI Foundry; Bing Grounding"
-  }
-}
-
-resource "azurerm_resource_group" "logs" {
-  name     = "${local.resource_name}-logs_rg"
-  location = local.location
-  tags = {
-    Application = var.tags
-    DeployedOn  = timestamp()
-    AppName     = local.resource_name
-    Tier        = "Azure Monitor; Azure Log Analytics"
+    Tier        = "AI Foundry; Cosmos DB; Azure Storage; Container Apps, Managed Identity"
   }
 }
 
@@ -27,6 +16,6 @@ resource "azurerm_resource_group" "core" {
     Application = var.tags
     DeployedOn  = timestamp()
     AppName     = local.resource_name
-    Tier        = "Azure Virtual Network; Azure Private Endpoints; Azure Network Security Group; Container Apps Environment; Azure Container Registry"
+    Tier        = "Azure Virtual Network; Azure Log Analytics; Azure Network Security Group; Container Apps Environment; Azure Container Registry"
   }
 }

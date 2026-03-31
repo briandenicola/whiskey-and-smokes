@@ -18,12 +18,11 @@ resource "azapi_resource" "ai_foundry" {
       disableLocalAuth       = false
       allowProjectManagement = true
       customSubDomainName    = local.ai_services_name
-
+      publicNetworkAccess    = "Enabled"
       networkInjections = [
         {
           scenario                   = "agent"
-          subnetArmId                = azurerm_subnet.agents.id
-          useMicrosoftManagedNetwork = false
+          useMicrosoftManagedNetwork = true
         }
       ]
     }
