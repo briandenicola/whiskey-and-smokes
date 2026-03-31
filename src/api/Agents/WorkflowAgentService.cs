@@ -33,6 +33,7 @@ public class WorkflowAgentService : IAgentService
     private const string VisionAgentName = "whiskey-smokes-vision-analyst";
     private const string ExpertAgentName = "whiskey-smokes-domain-expert";
     private const string CuratorAgentName = "whiskey-smokes-data-curator";
+    private const string NoteAgentName = "whiskey-smokes-note-analyst";
 
     public WorkflowAgentService(
         ICosmosDbService cosmosDb,
@@ -171,7 +172,7 @@ public class WorkflowAgentService : IAgentService
                 : null
         };
 
-        // ── Step 1: Vision Analyst (uses ChatClient for multimodal/image support) ──
+        // ── Step 1: Vision Analyst + Note Analyst (run in parallel) ──
         await LogStep(capture, "S01", "Vision Analyst", WorkflowStepStatus.Running,
             $"Analyzing {capture.Photos.Count} photo(s) with {visionModel}...");
 
@@ -180,7 +181,28 @@ public class WorkflowAgentService : IAgentService
             visionChatClient, _promptService, _blobService,
             _loggerFactory.CreateLogger<VisionExecutor>());
 
-        var visionResult = await vision.HandleAsync(input, null!, CancellationToken.None);
+        // Start vision and note analysis concurrently
+        var visionTask = vision.HandleAsync(input, null!, CancellationToken.None).AsTask();
+
+        NoteAnalysis? noteAnalysis = null;
+        Task<NoteAnalysis?>? noteTask = null;
+        if (!string.IsNullOrWhiteSpace(capture.UserNote))
+        {
+            await LogStep(capture, "S01b", "Note Analyst", WorkflowStepStatus.Running,
+                "Extracting venue, sentiment, and occasion from user notes...");
+            noteTask = RunNoteAnalystAsync(projectClient, capture);
+        }
+
+        var visionResult = await visionTask;
+
+        if (noteTask != null)
+        {
+            noteAnalysis = await noteTask;
+            var noteInfo = noteAnalysis != null
+                ? $"venue={noteAnalysis.Venue?.Name ?? "none"}, rating={noteAnalysis.SuggestedRating?.ToString() ?? "none"}, occasion={noteAnalysis.Occasion ?? "none"}"
+                : "no results";
+            await LogStep(capture, "S01b", "Note Analyst", WorkflowStepStatus.Complete, noteInfo);
+        }
 
         var visionSummary = visionResult.Description.Length > 300
             ? visionResult.Description[..300] + "..."
@@ -257,7 +279,7 @@ public class WorkflowAgentService : IAgentService
 
         if (decision?.IsApproved == true && decision.Items != null && decision.Items.Count > 0)
         {
-            return ConvertToItems(decision.Items, capture);
+            return ConvertToItems(decision.Items, capture, noteAnalysis);
         }
 
         _logger.LogWarning("Workflow did not produce approved items for capture {CaptureId} — falling back", capture.Id);
@@ -290,28 +312,49 @@ public class WorkflowAgentService : IAgentService
         }
     }
 
-    private static List<Item> ConvertToItems(List<CuratorItemResult> curatorItems, Capture capture)
+    private static List<Item> ConvertToItems(List<CuratorItemResult> curatorItems, Capture capture, NoteAnalysis? noteAnalysis = null)
     {
-        return curatorItems.Select(p => new Item
+        return curatorItems.Select(p =>
         {
-            UserId = capture.UserId,
-            CaptureId = capture.Id,
-            Type = NormalizeType(p.Type),
-            Name = p.Name ?? "Unknown Item",
-            Brand = p.Brand,
-            Category = p.Category,
-            Details = p.Details != null ? JsonSerializer.SerializeToElement(p.Details) : null,
-            Venue = p.Venue != null ? new VenueInfo
+            // Prefer curator venue, fall back to note analyst venue
+            VenueInfo? venue = null;
+            if (p.Venue != null)
             {
-                Name = p.Venue.Name ?? "Unknown Venue",
-                Address = p.Venue.Address
-            } : null,
-            PhotoUrls = capture.Photos,
-            AiConfidence = p.Confidence ?? 0.8,
-            AiSummary = p.Summary,
-            Tags = p.Tags ?? [],
-            Status = ItemStatus.AiDraft,
-            ProcessedBy = ProcessingSource.AiFoundry
+                venue = new VenueInfo { Name = p.Venue.Name ?? "Unknown Venue", Address = p.Venue.Address };
+            }
+            else if (noteAnalysis?.Venue?.Name != null)
+            {
+                venue = new VenueInfo { Name = noteAnalysis.Venue.Name, Address = noteAnalysis.Venue.Address };
+            }
+
+            // Build tags — include occasion from note analyst if available
+            var tags = p.Tags ?? [];
+            if (!string.IsNullOrWhiteSpace(noteAnalysis?.Occasion))
+            {
+                var occasionTag = noteAnalysis.Occasion.ToLowerInvariant().Trim();
+                if (!tags.Contains(occasionTag))
+                    tags = [.. tags, occasionTag];
+            }
+
+            return new Item
+            {
+                UserId = capture.UserId,
+                CaptureId = capture.Id,
+                Type = NormalizeType(p.Type),
+                Name = p.Name ?? "Unknown Item",
+                Brand = p.Brand,
+                Category = p.Category,
+                Details = p.Details != null ? JsonSerializer.SerializeToElement(p.Details) : null,
+                Venue = venue,
+                PhotoUrls = capture.Photos,
+                AiConfidence = p.Confidence ?? 0.8,
+                AiSummary = p.Summary,
+                UserRating = noteAnalysis?.SuggestedRating,
+                Journal = LocalExtraction.InitialJournal(capture.UserNote),
+                Tags = tags,
+                Status = ItemStatus.AiDraft,
+                ProcessedBy = ProcessingSource.AiFoundry
+            };
         }).ToList();
     }
 
@@ -355,6 +398,37 @@ public class WorkflowAgentService : IAgentService
         agentActivity?.SetTag("agent.call.duration_ms", sw.ElapsedMilliseconds);
 
         return text;
+    }
+
+    private async Task<NoteAnalysis?> RunNoteAnalystAsync(AIProjectClient projectClient, Capture capture)
+    {
+        try
+        {
+            var prompt = $"User's note: \"{capture.UserNote}\"";
+            if (capture.Location != null)
+                prompt += $"\nGPS coordinates: {capture.Location.Latitude}, {capture.Location.Longitude}";
+
+            var responseText = await CallFoundryAgentAsync(projectClient, NoteAgentName, prompt, "S01b");
+
+            var jsonText = responseText.Trim();
+            if (jsonText.StartsWith("```"))
+            {
+                var firstNewline = jsonText.IndexOf('\n');
+                var lastFence = jsonText.LastIndexOf("```");
+                if (firstNewline > 0 && lastFence > firstNewline)
+                    jsonText = jsonText[(firstNewline + 1)..lastFence].Trim();
+            }
+
+            return JsonSerializer.Deserialize<NoteAnalysis>(jsonText, new JsonSerializerOptions
+            {
+                PropertyNameCaseInsensitive = true
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Note Analyst failed for capture {CaptureId} — continuing without note analysis", capture.Id);
+            return null;
+        }
     }
 
     private static string BuildExpertPrompt(VisionDescription vision)

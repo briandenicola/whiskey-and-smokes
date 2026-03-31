@@ -97,6 +97,15 @@ public class ItemsController : ControllerBase
         if (request.Venue != null) item.Venue = request.Venue;
         if (request.UserRating.HasValue) item.UserRating = request.UserRating;
         if (request.UserNotes != null) item.UserNotes = request.UserNotes;
+        if (!string.IsNullOrWhiteSpace(request.JournalEntry))
+        {
+            item.Journal.Add(new JournalEntry
+            {
+                Text = request.JournalEntry.Trim(),
+                Date = DateTime.UtcNow,
+                Source = "user"
+            });
+        }
         if (request.Tags != null) item.Tags = request.Tags;
         if (request.Status != null) item.Status = request.Status;
         item.UpdatedAt = DateTime.UtcNow;

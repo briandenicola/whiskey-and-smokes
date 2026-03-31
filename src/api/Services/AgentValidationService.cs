@@ -19,6 +19,7 @@ public class AgentValidationService : IHostedService
         "whiskey-smokes-vision-analyst",
         "whiskey-smokes-domain-expert",
         "whiskey-smokes-data-curator",
+        "whiskey-smokes-note-analyst",
     ];
 
     public AgentValidationService(

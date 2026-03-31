@@ -79,6 +79,9 @@ public class UpdateItemRequest
     [JsonPropertyName("userNotes")]
     public string? UserNotes { get; set; }
 
+    [JsonPropertyName("journalEntry")]
+    public string? JournalEntry { get; set; }
+
     [JsonPropertyName("tags")]
     public List<string>? Tags { get; set; }
 

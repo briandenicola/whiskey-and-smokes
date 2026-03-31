@@ -37,7 +37,7 @@ Console.WriteLine($"   API:      AIProjectClient.Agents.CreateAgentVersionAsync"
 Console.WriteLine();
 Console.WriteLine("   Model Assignments:");
 Console.WriteLine("     gpt-4o       → Vision Analyst (image analysis)");
-Console.WriteLine("     gpt-5-mini   → Domain Expert, Data Curator (reasoning)");
+Console.WriteLine("     gpt-5-mini   → Domain Expert, Data Curator, Note Analyst (reasoning)");
 Console.WriteLine();
 
 // ── Step 1: Acquire Entra ID credential ───────────────────────────────────
@@ -83,6 +83,7 @@ var agentNames = new HashSet<string>
     "whiskey-smokes-vision-analyst",
     "whiskey-smokes-domain-expert",
     "whiskey-smokes-data-curator",
+    "whiskey-smokes-note-analyst",
 };
 
 try
@@ -154,6 +155,11 @@ var agentSpecs = new AgentSpec[]
         "Data Curator — structures JSON output, validates quality",
         "gpt-5-mini",
         LoadPrompt("data-curator.md")),
+
+    new("whiskey-smokes-note-analyst",
+        "Note Analyst — extracts venue, sentiment rating, and occasion from user notes",
+        "gpt-5-mini",
+        LoadPrompt("note-analyst.md")),
 };
 
 int successCount = 0;

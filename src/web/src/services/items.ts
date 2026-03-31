@@ -19,10 +19,17 @@ export interface Item {
   aiSummary?: string
   userRating?: number
   userNotes?: string
+  journal?: JournalEntry[]
   tags: string[]
   status: string
   createdAt: string
   updatedAt: string
+}
+
+export interface JournalEntry {
+  text: string
+  date: string
+  source?: string
 }
 
 export interface UpdateItemRequest {
@@ -35,6 +42,7 @@ export interface UpdateItemRequest {
   }
   userRating?: number
   userNotes?: string
+  journalEntry?: string
   tags?: string[]
   status?: string
 }

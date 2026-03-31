@@ -32,6 +32,7 @@ internal static class LocalExtraction
         {
             var type = GuessType(note);
             var venue = ExtractVenue(note, capture);
+            var rating = !string.IsNullOrEmpty(note) ? EstimateRating(note) : null;
             items.Add(new Item
             {
                 UserId = capture.UserId,
@@ -44,6 +45,8 @@ internal static class LocalExtraction
                     ? $"Captured with note: \"{note}\". AI analysis pending — configure AI Foundry for full extraction."
                     : "Photo captured. AI analysis pending — configure AI Foundry for full extraction.",
                 Venue = venue,
+                UserRating = rating,
+                Journal = InitialJournal(note),
                 Tags = [],
                 Status = ItemStatus.AiDraft,
                 ProcessedBy = ProcessingSource.LocalExtraction
@@ -53,11 +56,18 @@ internal static class LocalExtraction
         return items;
     }
 
+    internal static List<JournalEntry> InitialJournal(string? note)
+    {
+        if (string.IsNullOrWhiteSpace(note)) return [];
+        return [new JournalEntry { Text = note.Trim(), Date = DateTime.UtcNow, Source = "capture" }];
+    }
+
     private static List<Item> ExtractFromNote(string note, Capture capture)
     {
         var items = new List<Item>();
         var lowerNote = note.ToLowerInvariant();
         var venue = ExtractVenue(note, capture);
+        var rating = EstimateRating(note);
 
         var patterns = new Dictionary<string, (string type, string[] keywords)>
         {
@@ -107,6 +117,8 @@ internal static class LocalExtraction
                         AiConfidence = 0.5,
                         AiSummary = $"Extracted from note: \"{note}\". Matched keyword: {matchedKeyword}. Configure AI Foundry for richer analysis.",
                         Venue = venue,
+                        UserRating = rating,
+                        Journal = InitialJournal(note),
                         Tags = [],
                         Status = ItemStatus.AiDraft,
                         ProcessedBy = ProcessingSource.LocalExtraction
@@ -121,15 +133,25 @@ internal static class LocalExtraction
 
     private static VenueInfo? ExtractVenue(string note, Capture capture)
     {
-        // Try to extract venue name from note text using common patterns
-        var venueName = ExtractVenueFromText(note);
-
-        if (venueName != null)
+        // Simple pattern matching as offline fallback — the Note Analyst agent
+        // handles this properly when AI Foundry is available
+        var lower = note.ToLowerInvariant();
+        foreach (var prep in new[] { " at ", " from " })
         {
-            return new VenueInfo { Name = venueName };
+            var idx = lower.LastIndexOf(prep);
+            if (idx < 0) continue;
+
+            var after = note[(idx + prep.Length)..].Trim();
+            var endIdx = after.IndexOfAny(['.', '!', '\n']);
+            var candidate = (endIdx >= 0 ? after[..endIdx] : after).TrimEnd(',', ';', ':').Trim();
+
+            if (candidate.Length >= 3 && (char.IsUpper(candidate[0]) ||
+                candidate.StartsWith("the ", StringComparison.OrdinalIgnoreCase)))
+            {
+                return new VenueInfo { Name = candidate.Length > 80 ? candidate[..80] : candidate };
+            }
         }
 
-        // Fall back to GPS coordinates if available
         if (capture.Location != null)
         {
             return new VenueInfo
@@ -141,33 +163,15 @@ internal static class LocalExtraction
         return null;
     }
 
-    private static string? ExtractVenueFromText(string note)
+    private static int? EstimateRating(string note)
     {
-        // Match patterns like "at Rare Books Bar", "from The Whiskey Library", "in Death & Co"
-        var prepositions = new[] { " at ", " from ", " in " };
-
-        foreach (var prep in prepositions)
-        {
-            var idx = note.IndexOf(prep, StringComparison.OrdinalIgnoreCase);
-            if (idx < 0) continue;
-
-            var after = note[(idx + prep.Length)..].Trim();
-            if (string.IsNullOrEmpty(after)) continue;
-
-            // Take text until end of sentence or common stop patterns
-            var endIdx = after.IndexOfAny(['.', '!', ',', '\n']);
-            var candidate = endIdx >= 0 ? after[..endIdx].Trim() : after.Trim();
-
-            if (string.IsNullOrEmpty(candidate) || candidate.Length < 3) continue;
-
-            // Skip if it looks like a generic word rather than a proper name
-            // Venue names typically start with an uppercase letter or "The"/"the"
-            if (char.IsUpper(candidate[0]) || candidate.StartsWith("the ", StringComparison.OrdinalIgnoreCase))
-            {
-                return candidate.Length > 80 ? candidate[..80] : candidate;
-            }
-        }
-
+        // Simple sentiment fallback — the Note Analyst agent handles this properly
+        var lower = note.ToLowerInvariant();
+        if (new[] { "amazing", "incredible", "best", "perfect", "phenomenal" }.Any(lower.Contains)) return 5;
+        if (new[] { "great", "excellent", "fantastic", "loved", "delicious" }.Any(lower.Contains)) return 4;
+        if (new[] { "good", "nice", "decent", "solid" }.Any(lower.Contains)) return 3;
+        if (new[] { "disappointing", "mediocre", "underwhelming" }.Any(lower.Contains)) return 2;
+        if (new[] { "terrible", "awful", "worst", "disgusting" }.Any(lower.Contains)) return 1;
         return null;
     }
 

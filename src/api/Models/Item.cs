@@ -47,6 +47,9 @@ public class Item
     [JsonPropertyName("userNotes")]
     public string? UserNotes { get; set; }
 
+    [JsonPropertyName("journal")]
+    public List<JournalEntry> Journal { get; set; } = [];
+
     [JsonPropertyName("tags")]
     public List<string> Tags { get; set; } = [];
 
@@ -76,6 +79,18 @@ public class VenueInfo
 
     [JsonPropertyName("placeId")]
     public string? PlaceId { get; set; }
+}
+
+public class JournalEntry
+{
+    [JsonPropertyName("text")]
+    public string Text { get; set; } = string.Empty;
+
+    [JsonPropertyName("date")]
+    public DateTime Date { get; set; } = DateTime.UtcNow;
+
+    [JsonPropertyName("source")]
+    public string? Source { get; set; }
 }
 
 public static class ItemType
