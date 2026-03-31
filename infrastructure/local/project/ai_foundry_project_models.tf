@@ -1,37 +1,29 @@
-resource "azapi_resource" "model_deployment_1" {
-  depends_on = [azapi_resource.ai_foundry_project]
-  type      = "Microsoft.CognitiveServices/accounts/deployments@2025-06-01"
-  name      = var.foundry_project.models[0].name
-  parent_id = var.foundry_project.ai_foundry.id
+# Azure only allows one deployment operation at a time per Cognitive Services account.
+# Build an ordered map keyed by name, with each entry referencing its predecessor.
+# The tags dependency forces Terraform to serialize creation in list order.
 
-  body = {
-    properties = {
-      model = {
-        format  = var.foundry_project.models[0].format
-        name    = var.foundry_project.models[0].name
-        version = var.foundry_project.models[0].version
-      }
-    }
-    sku = {
-      name     = "GlobalStandard"
-      capacity = 100
-    }
+locals {
+  model_list = var.foundry_project.models
+  model_map = {
+    for idx, m in local.model_list : m.name => merge(m, {
+      index = idx
+      prev  = idx > 0 ? local.model_list[idx - 1].name : null
+    })
   }
 }
 
-resource "azapi_resource" "model_deployment_2" {
-  # Azure Cognitive Services only allows one deployment operation at a time
-  depends_on = [azapi_resource.model_deployment_1]
+resource "azapi_resource" "model_deployments" {
+  for_each  = local.model_map
   type      = "Microsoft.CognitiveServices/accounts/deployments@2025-06-01"
-  name      = var.foundry_project.models[1].name
+  name      = each.value.name
   parent_id = var.foundry_project.ai_foundry.id
 
   body = {
     properties = {
       model = {
-        format  = var.foundry_project.models[1].format
-        name    = var.foundry_project.models[1].name
-        version = var.foundry_project.models[1].version
+        format  = each.value.format
+        name    = each.value.name
+        version = each.value.version
       }
     }
     sku = {
@@ -39,4 +31,9 @@ resource "azapi_resource" "model_deployment_2" {
       capacity = 100
     }
   }
+
+  # Reference the previous deployment to create an implicit dependency chain
+  tags = each.value.prev != null ? {
+    deploy_after = azapi_resource.model_deployments[each.value.prev].id
+  } : {}
 }
