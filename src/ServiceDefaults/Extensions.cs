@@ -18,11 +18,11 @@ public static class Extensions
         builder.AddDefaultHealthChecks();
 
         builder.Services.AddServiceDiscovery();
-        builder.Services.ConfigureHttpClientDefaults(http =>
-        {
-            http.AddStandardResilienceHandler();
-            http.AddServiceDiscovery();
-        });
+
+        // Only apply service discovery and resilience to explicitly named HttpClients,
+        // not to all HttpClient instances globally. Global defaults interfere with
+        // Azure SDK clients (AIProjectClient, BlobServiceClient, etc.) that make
+        // direct outbound HTTPS calls to Azure endpoints.
 
         return builder;
     }
