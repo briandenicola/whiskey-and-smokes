@@ -37,7 +37,7 @@ jobs:
       - name: Build API Image (ACR Build Task)
         run: |
           az acr build \
-            --registry ${{ vars.ACR_NAME }} \
+            --registry ${{ secrets.ACR_NAME }} \
             --image whiskey-and-smokes-api:${{ github.sha }} \
             --image whiskey-and-smokes-api:latest \
             --file src/api/Dockerfile \
@@ -46,7 +46,7 @@ jobs:
       - name: Build Web Image (ACR Build Task)
         run: |
           az acr build \
-            --registry ${{ vars.ACR_NAME }} \
+            --registry ${{ secrets.ACR_NAME }} \
             --image whiskey-and-smokes-web:${{ github.sha }} \
             --image whiskey-and-smokes-web:latest \
             --file src/web/Dockerfile \
@@ -69,13 +69,13 @@ jobs:
       - name: Deploy API to Container Apps
         run: |
           az containerapp update \
-            --name ${{ vars.APP_NAME }}-api \
-            --resource-group ${{ vars.APP_NAME }}_apps_rg \
-            --image ${{ vars.ACR_NAME }}.azurecr.io/whiskey-and-smokes-api:${{ github.sha }}
+            --name ${{ secrets.APP_NAME }}-api \
+            --resource-group ${{ secrets.APP_NAME }}_apps_rg \
+            --image ${{ secrets.ACR_NAME }}.azurecr.io/whiskey-and-smokes-api:${{ github.sha }}
 
       - name: Deploy Web to Container Apps
         run: |
           az containerapp update \
-            --name ${{ vars.APP_NAME }}-web \
-            --resource-group ${{ vars.APP_NAME }}_apps_rg \
-            --image ${{ vars.ACR_NAME }}.azurecr.io/whiskey-and-smokes-web:${{ github.sha }}
+            --name ${{ secrets.APP_NAME }}-web \
+            --resource-group ${{ secrets.APP_NAME }}_apps_rg \
+            --image ${{ secrets.ACR_NAME }}.azurecr.io/whiskey-and-smokes-web:${{ github.sha }}
