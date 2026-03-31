@@ -140,8 +140,7 @@ function isAiGenerated(data: Item): boolean {
       :to="`/history/${item.captureId}`"
       class="inline-flex items-center gap-1.5 text-xs text-stone-500 hover:text-amber-500 transition-colors mb-4"
     >
-      <span>🔍</span>
-      <span>View processing history</span>
+      <span>View processing history →</span>
     </router-link>
 
     <!-- Rating & Notes (view/edit) -->
