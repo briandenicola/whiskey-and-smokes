@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useAuthStore } from '../stores/auth'
+import { isEntraConfigured } from '../services/msal'
 
 const auth = useAuthStore()
 
@@ -10,6 +11,14 @@ const password = ref('')
 const displayName = ref('')
 const isSubmitting = ref(false)
 const errorMessage = ref('')
+const entraAvailable = ref(false)
+
+onMounted(() => {
+  // Check after a short delay to allow MSAL init to complete
+  setTimeout(() => {
+    entraAvailable.value = isEntraConfigured()
+  }, 500)
+})
 
 async function submit() {
   isSubmitting.value = true
@@ -35,6 +44,18 @@ async function submit() {
   }
 }
 
+async function signInWithMicrosoft() {
+  isSubmitting.value = true
+  errorMessage.value = ''
+  try {
+    await auth.loginEntra()
+  } catch (e: any) {
+    errorMessage.value = e.response?.data?.message ?? e.message ?? 'Microsoft sign-in failed'
+  } finally {
+    isSubmitting.value = false
+  }
+}
+
 function toggleMode() {
   isRegister.value = !isRegister.value
   errorMessage.value = ''
@@ -46,6 +67,29 @@ function toggleMode() {
     <div class="text-center mb-10">
       <h1 class="text-5xl font-bold text-amber-500 mb-2">Whiskey &amp; Smokes</h1>
       <p class="text-stone-400 text-lg">Track your whiskey, wine, cocktails & cigars</p>
+    </div>
+
+    <!-- Microsoft sign-in -->
+    <div v-if="entraAvailable" class="w-full max-w-sm mb-6">
+      <button
+        @click="signInWithMicrosoft"
+        :disabled="isSubmitting"
+        class="w-full flex items-center justify-center gap-3 bg-white hover:bg-gray-100 disabled:bg-gray-300 text-gray-800 font-semibold py-4 rounded-xl transition-colors text-lg border border-gray-300"
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" width="21" height="21" viewBox="0 0 21 21">
+          <rect x="1" y="1" width="9" height="9" fill="#f25022"/>
+          <rect x="11" y="1" width="9" height="9" fill="#7fba00"/>
+          <rect x="1" y="11" width="9" height="9" fill="#00a4ef"/>
+          <rect x="11" y="11" width="9" height="9" fill="#ffb900"/>
+        </svg>
+        Sign in with Microsoft
+      </button>
+
+      <div class="flex items-center gap-4 my-6">
+        <div class="flex-1 border-t border-stone-700"></div>
+        <span class="text-stone-500 text-sm">or use a local account</span>
+        <div class="flex-1 border-t border-stone-700"></div>
+      </div>
     </div>
 
     <form @submit.prevent="submit" class="w-full max-w-sm space-y-4">

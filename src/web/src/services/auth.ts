@@ -46,4 +46,7 @@ export const authApi = {
 
   login: (data: LoginRequest) =>
     api.post<AuthResponse>('/auth/login', data),
+
+  entraLogin: (accessToken: string) =>
+    api.post<AuthResponse>('/auth/entra', { accessToken }),
 }

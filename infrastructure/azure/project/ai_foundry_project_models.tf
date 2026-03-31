@@ -1,29 +1,23 @@
 # Azure only allows one deployment operation at a time per Cognitive Services account.
-# Build an ordered map keyed by name, with each entry referencing its predecessor.
-# The tags dependency forces Terraform to serialize creation in list order.
+# Use count with index-based dependency to serialize deployments without cycles.
+# (for_each self-references always create cycles in Terraform's graph.)
 
 locals {
   model_list = var.foundry_project.models
-  model_map = {
-    for idx, m in local.model_list : m.name => merge(m, {
-      index = idx
-      prev  = idx > 0 ? local.model_list[idx - 1].name : null
-    })
-  }
 }
 
 resource "azapi_resource" "model_deployments" {
-  for_each  = local.model_map
+  count     = length(local.model_list)
   type      = "Microsoft.CognitiveServices/accounts/deployments@2025-06-01"
-  name      = each.value.name
+  name      = local.model_list[count.index].name
   parent_id = var.foundry_project.ai_foundry.id
 
   body = {
     properties = {
       model = {
-        format  = each.value.format
-        name    = each.value.name
-        version = each.value.version
+        format  = local.model_list[count.index].format
+        name    = local.model_list[count.index].name
+        version = local.model_list[count.index].version
       }
     }
     sku = {
@@ -32,8 +26,8 @@ resource "azapi_resource" "model_deployments" {
     }
   }
 
-  # Reference the previous deployment to create an implicit dependency chain
-  tags = each.value.prev != null ? {
-    deploy_after = azapi_resource.model_deployments[each.value.prev].id
+  # Serialize: each deployment waits for the previous one to complete
+  tags = count.index > 0 ? {
+    deploy_after = azapi_resource.model_deployments[count.index - 1].id
   } : {}
 }

@@ -15,6 +15,7 @@ public interface IAuthService
     bool VerifyPassword(string password, string hash);
     AuthResponse GenerateToken(User user);
     Task<User?> FindByEmailAsync(string email);
+    Task<User?> FindByEntraObjectIdAsync(string objectId);
 }
 
 public class AuthService : IAuthService
@@ -120,5 +121,19 @@ public class AuthService : IAuthService
         }
 
         return user;
+    }
+
+    public async Task<User?> FindByEntraObjectIdAsync(string objectId)
+    {
+        using var activity = Diagnostics.Auth.StartActivity("FindByEntraObjectId");
+        _logger.LogDebug("Looking up user by Entra Object ID {ObjectId}", objectId);
+
+        var users = await _cosmosDb.QueryCrossPartitionAsync<User>(
+            ContainerName,
+            "SELECT * FROM c WHERE c.entraObjectId = @oid",
+            new Dictionary<string, object> { ["@oid"] = objectId },
+            maxItems: 1);
+
+        return users.FirstOrDefault();
     }
 }

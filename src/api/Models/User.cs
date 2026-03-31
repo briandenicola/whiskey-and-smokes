@@ -19,6 +19,12 @@ public class User
     [JsonPropertyName("role")]
     public string Role { get; set; } = "user";
 
+    [JsonPropertyName("authProvider")]
+    public string AuthProvider { get; set; } = "local";
+
+    [JsonPropertyName("entraObjectId")]
+    public string? EntraObjectId { get; set; }
+
     [JsonPropertyName("isDisabled")]
     public bool IsDisabled { get; set; } = false;
 
@@ -43,6 +49,7 @@ public class User
             Email = Email,
             PasswordHash = "",
             Role = Role,
+            AuthProvider = AuthProvider,
             IsDisabled = IsDisabled,
             Preferences = Preferences,
             CreatedAt = CreatedAt,

@@ -22,6 +22,7 @@ builder.AddServiceDefaults();
 
 // Bind strongly-typed options
 builder.Services.Configure<JwtOptions>(builder.Configuration.GetSection(JwtOptions.Section));
+builder.Services.Configure<EntraIdOptions>(builder.Configuration.GetSection(EntraIdOptions.Section));
 builder.Services.Configure<AiFoundryOptions>(builder.Configuration.GetSection(AiFoundryOptions.Section));
 builder.Services.Configure<CosmosDbOptions>(builder.Configuration.GetSection(CosmosDbOptions.Section));
 builder.Services.Configure<BlobStorageOptions>(builder.Configuration.GetSection(BlobStorageOptions.Section));
@@ -32,9 +33,15 @@ if (string.IsNullOrEmpty(jwtOptions.Secret) && builder.Environment.IsDevelopment
     jwtOptions.Secret = "dev-secret-key-change-in-production-min-32-chars!!";
 }
 
-// JWT Authentication
-builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-    .AddJwtBearer(options =>
+var entraOptions = builder.Configuration.GetSection(EntraIdOptions.Section).Get<EntraIdOptions>() ?? new EntraIdOptions();
+
+// Authentication — local JWT + optional Entra ID
+var authBuilder = builder.Services.AddAuthentication(options =>
+    {
+        options.DefaultAuthenticateScheme = "MultiAuth";
+        options.DefaultChallengeScheme = "MultiAuth";
+    })
+    .AddJwtBearer("LocalJwt", options =>
     {
         options.TokenValidationParameters = new TokenValidationParameters
         {
@@ -46,6 +53,62 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             ValidAudience = jwtOptions.Audience,
             IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtOptions.Secret)),
             ClockSkew = TimeSpan.FromMinutes(5)
+        };
+    });
+
+if (entraOptions.IsConfigured)
+{
+    authBuilder.AddJwtBearer("EntraId", options =>
+    {
+        options.Authority = $"{entraOptions.Instance}{entraOptions.TenantId}/v2.0";
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuer = true,
+            ValidIssuer = $"{entraOptions.Instance}{entraOptions.TenantId}/v2.0",
+            ValidateAudience = true,
+            ValidAudience = !string.IsNullOrEmpty(entraOptions.Audience)
+                ? entraOptions.Audience
+                : entraOptions.ClientId,
+            ValidateLifetime = true,
+            ClockSkew = TimeSpan.FromMinutes(5)
+        };
+    });
+}
+
+// Policy scheme that tries both — Entra first (if configured), then local
+builder.Services.AddAuthentication()
+    .AddPolicyScheme("MultiAuth", "Local JWT or Entra ID", options =>
+    {
+        options.ForwardDefaultSelector = context =>
+        {
+            var authHeader = context.Request.Headers.Authorization.FirstOrDefault();
+            if (string.IsNullOrEmpty(authHeader) || !authHeader.StartsWith("Bearer "))
+                return "LocalJwt";
+
+            // Entra ID tokens are standard JWTs from login.microsoftonline.com
+            // Local tokens use our custom issuer
+            var token = authHeader["Bearer ".Length..];
+            try
+            {
+                // Quick peek at the issuer claim without full validation
+                var handler = new System.IdentityModel.Tokens.Jwt.JwtSecurityTokenHandler();
+                if (handler.CanReadToken(token))
+                {
+                    var jwt = handler.ReadJwtToken(token);
+                    var issuer = jwt.Issuer;
+                    if (entraOptions.IsConfigured &&
+                        issuer.Contains("login.microsoftonline.com", StringComparison.OrdinalIgnoreCase))
+                    {
+                        return "EntraId";
+                    }
+                }
+            }
+            catch
+            {
+                // If we can't read the token, fall through to local
+            }
+
+            return "LocalJwt";
         };
     });
 

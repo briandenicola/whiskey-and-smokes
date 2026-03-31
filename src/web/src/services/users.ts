@@ -5,6 +5,7 @@ export interface User {
   displayName: string
   email: string
   role: string
+  authProvider: string
   preferences: {
     favoriteTypes: string[]
     defaultView: string

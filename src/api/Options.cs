@@ -10,6 +10,18 @@ public class JwtOptions
     public int ExpirationDays { get; set; } = 7;
 }
 
+public class EntraIdOptions
+{
+    public const string Section = "EntraId";
+
+    public string Instance { get; set; } = "https://login.microsoftonline.com/";
+    public string TenantId { get; set; } = string.Empty;
+    public string ClientId { get; set; } = string.Empty;
+    public string Audience { get; set; } = string.Empty;
+
+    public bool IsConfigured => !string.IsNullOrEmpty(TenantId) && !string.IsNullOrEmpty(ClientId);
+}
+
 public class AiFoundryOptions
 {
     public const string Section = "AiFoundry";

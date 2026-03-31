@@ -161,6 +161,24 @@ public class ChangePasswordRequest
     public string NewPassword { get; set; } = string.Empty;
 }
 
+public class EntraTokenRequest
+{
+    [JsonPropertyName("accessToken")]
+    public string AccessToken { get; set; } = string.Empty;
+}
+
+public class EntraConfigResponse
+{
+    [JsonPropertyName("clientId")]
+    public string ClientId { get; set; } = string.Empty;
+
+    [JsonPropertyName("authority")]
+    public string Authority { get; set; } = string.Empty;
+
+    [JsonPropertyName("scopes")]
+    public List<string> Scopes { get; set; } = [];
+}
+
 public class AdminResetPasswordRequest
 {
     [JsonPropertyName("newPassword")]

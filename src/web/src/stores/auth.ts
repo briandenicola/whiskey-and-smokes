@@ -2,6 +2,7 @@ import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import { authApi, storeAuth, clearAuth, getStoredToken, getStoredUser, type RegisterRequest, type LoginRequest } from '../services/auth'
 import { usersApi, type User } from '../services/users'
+import { loginWithEntra, logoutEntra, isEntraConfigured } from '../services/msal'
 import router from '../router'
 
 export const useAuthStore = defineStore('auth', () => {
@@ -50,7 +51,29 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
-  function logout() {
+  async function loginEntra() {
+    error.value = null
+    try {
+      const msalResult = await loginWithEntra()
+      const response = await authApi.entraLogin(msalResult.accessToken)
+      storeAuth(response.data)
+      token.value = response.data.token
+      user.value = response.data.user
+      router.push('/')
+    } catch (e: any) {
+      error.value = e.response?.data?.message ?? e.message ?? 'Microsoft sign-in failed'
+      throw e
+    }
+  }
+
+  async function logout() {
+    if (isEntraConfigured()) {
+      try {
+        await logoutEntra()
+      } catch {
+        // Entra logout is best-effort
+      }
+    }
     clearAuth()
     token.value = null
     user.value = null
@@ -66,5 +89,5 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
-  return { user, isLoading, error, isAuthenticated, isAdmin, initialize, register, login, logout, loadUser }
+  return { user, isLoading, error, isAuthenticated, isAdmin, initialize, register, login, loginEntra, logout, loadUser }
 })
