@@ -1,6 +1,8 @@
 name: Deploy
 
 on:
+  push:
+    branches: [main]
   workflow_dispatch:
     inputs:
       environment:
@@ -16,11 +18,42 @@ permissions:
   id-token: write
   contents: read
 
-env:
-  AZURE_RESOURCE_GROUP: rg-sippuff-${{ github.event.inputs.environment || 'dev' }}
-
 jobs:
-  deploy-api:
+  build:
+    runs-on: ubuntu-latest
+    environment: ${{ github.event.inputs.environment || 'dev' }}
+    outputs:
+      image_tag: ${{ github.sha }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Azure Login
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Build API Image (ACR Build Task)
+        run: |
+          az acr build \
+            --registry ${{ vars.ACR_NAME }} \
+            --image whiskey-and-smokes-api:${{ github.sha }} \
+            --image whiskey-and-smokes-api:latest \
+            --file src/api/Dockerfile \
+            src
+
+      - name: Build Web Image (ACR Build Task)
+        run: |
+          az acr build \
+            --registry ${{ vars.ACR_NAME }} \
+            --image whiskey-and-smokes-web:${{ github.sha }} \
+            --image whiskey-and-smokes-web:latest \
+            --file src/web/Dockerfile \
+            src/web
+
+  deploy:
+    needs: build
     runs-on: ubuntu-latest
     environment: ${{ github.event.inputs.environment || 'dev' }}
     steps:
@@ -32,50 +65,17 @@ jobs:
           client-id: ${{ secrets.AZURE_CLIENT_ID }}
           tenant-id: ${{ secrets.AZURE_TENANT_ID }}
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
-
-      - name: Login to ACR
-        run: az acr login --name ${{ secrets.ACR_NAME }}
-
-      - name: Build and Push API Image
-        run: |
-          docker build -t ${{ secrets.ACR_NAME }}.azurecr.io/sippuff-api:${{ github.sha }} \
-                        -t ${{ secrets.ACR_NAME }}.azurecr.io/sippuff-api:latest \
-                        ./src/api/SipPuff.Api
-          docker push ${{ secrets.ACR_NAME }}.azurecr.io/sippuff-api --all-tags
 
       - name: Deploy API to Container Apps
         run: |
           az containerapp update \
-            --name ca-sippuff-api-${{ github.event.inputs.environment || 'dev' }} \
-            --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
-            --image ${{ secrets.ACR_NAME }}.azurecr.io/sippuff-api:${{ github.sha }}
-
-  deploy-web:
-    runs-on: ubuntu-latest
-    environment: ${{ github.event.inputs.environment || 'dev' }}
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Azure Login
-        uses: azure/login@v2
-        with:
-          client-id: ${{ secrets.AZURE_CLIENT_ID }}
-          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
-          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
-
-      - name: Login to ACR
-        run: az acr login --name ${{ secrets.ACR_NAME }}
-
-      - name: Build and Push Web Image
-        run: |
-          docker build -t ${{ secrets.ACR_NAME }}.azurecr.io/sippuff-web:${{ github.sha }} \
-                        -t ${{ secrets.ACR_NAME }}.azurecr.io/sippuff-web:latest \
-                        ./src/web
-          docker push ${{ secrets.ACR_NAME }}.azurecr.io/sippuff-web --all-tags
+            --name ${{ vars.APP_NAME }}-api \
+            --resource-group ${{ vars.APP_NAME }}_apps_rg \
+            --image ${{ vars.ACR_NAME }}.azurecr.io/whiskey-and-smokes-api:${{ github.sha }}
 
       - name: Deploy Web to Container Apps
         run: |
           az containerapp update \
-            --name ca-sippuff-web-${{ github.event.inputs.environment || 'dev' }} \
-            --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
-            --image ${{ secrets.ACR_NAME }}.azurecr.io/sippuff-web:${{ github.sha }}
+            --name ${{ vars.APP_NAME }}-web \
+            --resource-group ${{ vars.APP_NAME }}_apps_rg \
+            --image ${{ vars.ACR_NAME }}.azurecr.io/whiskey-and-smokes-web:${{ github.sha }}
