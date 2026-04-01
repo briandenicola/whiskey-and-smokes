@@ -22,8 +22,8 @@ includes:
     internal: false
     dir: ./infrastructure/azure/
 
-  app:
-    taskfile: ./tasks/Taskfile.deploy.yml
+  azure:app:
+    taskfile: ./tasks/Taskfile.azure.deploy.yml
     internal: false
     dir: ./tasks
 

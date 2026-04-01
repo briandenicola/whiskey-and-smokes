@@ -12,6 +12,7 @@ tasks:
       - task --list
 
   init:
+    internal: true 
     desc: Initializes Terraform for the Container Apps deployment
     dir: "{{.APP_DIR}}"
     cmds:
@@ -21,7 +22,7 @@ tasks:
     vars:
       REGION: "{{default .DEFAULT_REGION .CLI_ARGS}}"
 
-  app:
+  deploy:
     desc: Deploys Container Apps for {{.TITLE}} (creates or updates)
     dir: "{{.APP_DIR}}"
     cmds:
@@ -40,9 +41,9 @@ tasks:
         #sh: terraform -chdir={{.AZURE_DIR}} output -raw APP_LOCATION 2>/dev/null || echo ""
       COMMIT_VERSION:
         sh: git rev-parse HEAD
-      COSMOSDB_ENDPOINT: hare-22173-db
+      COSMOSDB_ENDPOINT: https://hare-22173-db.documents.azure.com:443/
         #sh: terraform -chdir={{.AZURE_DIR}} output -raw COSMOSDB_ENDPOINT 2>/dev/null || echo ""
-      STORAGE_BLOB_ENDPOINT: 1edf95d9cde5bf1da9a282sa
+      STORAGE_BLOB_ENDPOINT: https://1edf95d9cde5bf1da9a282sa.blob.core.windows.net/
         #sh: terraform -chdir={{.AZURE_DIR}} output -raw STORAGE_BLOB_ENDPOINT 2>/dev/null || echo ""
 
   output:
