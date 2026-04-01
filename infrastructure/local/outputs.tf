@@ -24,12 +24,12 @@ output "APPLICATION_INSIGHTS_CONNECTION_STRING" {
 }
 
 output "SPN_CLIENT_ID" {
-  value     = azuread_application.local_docker.client_id
+  value     = azuread_application.this.client_id
   sensitive = false
 }
 
 output "SPN_CLIENT_SECRET" {
-  value     = azuread_application_password.local_docker.value
+  value     = azuread_application_password.this.value
   sensitive = true
 }
 
