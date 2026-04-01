@@ -82,56 +82,11 @@ resource "azurerm_container_app" "api" {
   }
 }
 
-# ── Web Container App ──────────────────────────────────────
-resource "azurerm_container_app" "web" {
-  name                         = local.web_app_name
-  container_app_environment_id = data.azurerm_container_app_environment.this.id
-  resource_group_name          = local.apps_rg_name
-  revision_mode                = "Single"
-
-  identity {
-    type = "UserAssigned"
-    identity_ids = [
-      azurerm_user_assigned_identity.app.id
-    ]
-  }
-
-  ingress {
-    allow_insecure_connections = false
-    external_enabled           = true
-    target_port                = 80
-    transport                  = "auto"
-
-    traffic_weight {
-      latest_revision = true
-      percentage      = 100
-    }
-  }
-
-  registry {
-    server   = local.acr_login_server
-    identity = azurerm_user_assigned_identity.app.id
-  }
-
-  template {
-    container {
-      name   = "web"
-      image  = local.web_image
-      cpu    = 0.25
-      memory = "0.5Gi"
-
-      env {
-        name  = "API_HOST"
-        value = "${local.api_app_name}.internal.${data.azurerm_container_app_environment.this.default_domain}"
-      }
-
-      env {
-        name  = "API_PORT"
-        value = "443"
-      }
-    }
-
-    max_replicas = 3
-    min_replicas = 1
-  }
+# ── Web Static Web App ─────────────────────────────────────
+resource "azurerm_static_web_app" "web" {
+  name                = local.web_app_name
+  resource_group_name = local.apps_rg_name
+  location            = var.region
+  sku_tier            = "Free"
+  sku_size            = "Free"
 }

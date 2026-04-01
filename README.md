@@ -13,7 +13,7 @@ Track your whiskey, wine, cocktails & cigars. Snap a photo at the bar, let AI do
 - **AI Models**: Azure AI Foundry — gpt-4o (vision) + gpt-5-mini (reasoning)
 - **Observability**: OpenTelemetry → Azure Application Insights + Aspire Dashboard
 - **Auth**: JWT (local dev) / Azure Entra ID (prod)
-- **Infra**: Terraform → Azure Container Apps
+- **Infra**: Terraform → Azure Container Apps (API) + Static Web App (frontend)
 - **CI/CD**: GitHub Actions
 
 ## AI Pipeline
@@ -44,7 +44,7 @@ The app uses a multi-agent graph workflow to analyze captured photos:
        └──────────▶ back to Domain Expert with feedback
 ```
 
-Agent prompts are stored as markdown files in `src/AgentInitiator/Prompts/` and viewable (read-only) in the admin panel. To update prompts, edit the files and re-run `task test:agent:init`.
+Agent prompts are stored as markdown files in `src/AgentInitiator/Prompts/` and viewable (read-only) in the admin panel. To update prompts, edit the files and re-run `task local:agents`.
 
 When AI Foundry is not configured, the system falls back to keyword-based local extraction.
 
@@ -61,7 +61,7 @@ When AI Foundry is not configured, the system falls back to keyword-based local 
 ```bash
 az login
 task local:up          # Provision AI Foundry
-task test:agent:init   # Create Foundry agents
+task local:agents      # Create Foundry agents
 task test:run          # Start API + Web
 ```
 
@@ -96,7 +96,7 @@ Access the admin panel at `/admin` (requires admin role — the first registered
 ├── infrastructure/
 │   ├── local/                  # Terraform — local dev (AI Foundry only)
 │   ├── azure/                  # Terraform — full Azure environment
-│   ├── app/                    # Terraform — Container Apps deployment
+│   ├── app/                    # Terraform — Container App (API) + Static Web App
 │   └── modules/                # Shared Terraform modules
 ├── tasks/                      # Taskfile configs + Docker Compose
 ├── docs/                       # Documentation
@@ -104,8 +104,7 @@ Access the admin panel at `/admin` (requires admin role — the first registered
 │   ├── local-docker-deployment.md
 │   └── azure-deployment.md
 ├── .github/workflows/
-│   └── build.yml              # Build images + push to ACR
-├── docker-compose.yml             # Local Docker deployment
+│   └── build.yml              # Build API image + deploy SWA
 ├── Taskfile.yml
 └── README.md
 ```

@@ -28,6 +28,16 @@ tasks:
     vars:
       REGION: "{{default .DEFAULT_REGION .CLI_ARGS}}"
 
+  agents:
+    desc: Validates agent configuration against AI Foundry
+    env:
+      AiFoundry__ProjectEndpoint: "{{.PROJECT_ENDPOINT}}"
+    cmds:
+      - dotnet run --project ../../src/AgentInitiator
+    vars:
+      PROJECT_ENDPOINT:
+        sh: terraform output -raw FOUNDRY_PROJECT_ENDPOINT 2>/dev/null || echo ""
+
   output:
     desc: Shows Terraform outputs for {{.TITLE}}
     cmds:

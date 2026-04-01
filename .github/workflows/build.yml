@@ -1,4 +1,4 @@
-name: Build
+name: Build & Deploy
 
 on:
   push:
@@ -24,8 +24,8 @@ permissions:
   contents: read
 
 jobs:
-  build:
-    name: Build & Push Images
+  build-api:
+    name: Build API Image
     runs-on: ubuntu-latest
     environment: ${{ github.event.inputs.environment || 'dev' }}
     steps:
@@ -47,11 +47,31 @@ jobs:
             --file src/api/Dockerfile \
             src
 
-      - name: Build Web Image (ACR Build Task)
+  deploy-web:
+    name: Deploy Web (Static Web App)
+    runs-on: ubuntu-latest
+    environment: ${{ github.event.inputs.environment || 'dev' }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: src/web/package-lock.json
+
+      - name: Build
+        working-directory: src/web
         run: |
-          az acr build \
-            --registry ${{ secrets.ACR_NAME }} \
-            --image whiskey-and-smokes-web:${{ github.sha }} \
-            --image whiskey-and-smokes-web:latest \
-            --file src/web/Dockerfile \
-            src/web
+          npm ci
+          npm run build
+
+      - name: Deploy to Azure Static Web Apps
+        uses: Azure/static-web-apps-deploy@v1
+        with:
+          azure_static_web_apps_api_token: ${{ secrets.SWA_DEPLOYMENT_TOKEN }}
+          action: upload
+          app_location: src/web/dist
+          skip_app_build: true
+          skip_api_build: true

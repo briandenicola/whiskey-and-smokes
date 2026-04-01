@@ -20,7 +20,7 @@ This project deploys to Azure using **Terraform** for infrastructure and **GitHu
 │  App Stack (infrastructure/app/)                        │
 │                                                         │
 │  Resource Group ─┬─ API Container App                   │
-│                  ├─ Web Container App                    │
+│                  ├─ Static Web App (Vue SPA)             │
 │                  ├─ User Assigned Managed Identity       │
 │                  └─ Role Assignments (Cosmos, Storage,   │
 │                     Cognitive Services, ACR)             │
@@ -66,29 +66,17 @@ Deploys the container apps and role assignments. Requires the azure stack to be 
 
 ## GitHub Actions Workflows
 
-### `infra.yml` — Infrastructure
+### `build.yml` — Build & Deploy
 
-Runs Terraform plan/apply for the azure and app stacks.
-
-**Triggers:**
-- Push to `main` when files change in `infrastructure/azure/**` or `infrastructure/app/**`
-- Manual dispatch with plan/apply/destroy action and stack selection
-
-**Flow:**
-1. `terraform-azure` job runs first (init → fmt check → plan → apply)
-2. `terraform-app` job runs after azure completes (init → plan → apply)
-
-### `deploy.yml` — Application Deployment
-
-Builds container images and deploys to Container Apps.
+Builds the API container image and deploys the Vue frontend to Azure Static Web Apps.
 
 **Triggers:**
-- Push to `main`
+- Push to `main` (ignores docs, infrastructure, and tasks changes)
 - Manual dispatch with environment selection (dev/prod)
 
-**Flow:**
-1. `build` job — uses `az acr build` (ACR Build Tasks) to build and push images directly in ACR (no local Docker needed)
-2. `deploy` job — updates Container Apps with new image tags
+**Jobs:**
+1. `build-api` — uses `az acr build` (ACR Build Tasks) to build and push the API image directly in ACR
+2. `deploy-web` — runs `npm ci && npm run build`, then deploys the `dist/` folder to Azure Static Web Apps using the SWA deployment token
 
 ## GitHub Configuration
 
@@ -101,6 +89,8 @@ Configure these in **Settings → Environments → dev** (and `prod` if applicab
 | `AZURE_CLIENT_ID` | Service principal app (client) ID for OIDC | `00000000-0000-0000-0000-000000000000` |
 | `AZURE_TENANT_ID` | Azure AD tenant ID | `00000000-0000-0000-0000-000000000000` |
 | `AZURE_SUBSCRIPTION_ID` | Azure subscription ID | `00000000-0000-0000-0000-000000000000` |
+| `ACR_NAME` | Azure Container Registry name | `whiskeyandsmokesacr` |
+| `SWA_DEPLOYMENT_TOKEN` | Static Web App deployment token (from `terraform output SWA_DEPLOYMENT_TOKEN`) | `(auto-generated)` |
 
 ### Variables (per environment)
 
@@ -109,9 +99,6 @@ Configure these in **Settings → Environments → dev**:
 | Variable | Description | Example |
 |----------|-------------|---------|
 | `APP_NAME` | Base resource name | `whiskey-and-smokes` |
-| `ACR_NAME` | Azure Container Registry name | `whiskeyandsmokesacr` |
-| `COSMOSDB_ENDPOINT` | Cosmos DB endpoint (from `task azure:output`) | `https://xxx.documents.azure.com:443/` |
-| `STORAGE_BLOB_ENDPOINT` | Blob storage endpoint (from `task azure:output`) | `https://xxx.blob.core.windows.net/` |
 
 ### OIDC Setup
 
@@ -217,15 +204,18 @@ echo "AZURE_SUBSCRIPTION_ID: $SUBSCRIPTION_ID"
 | `APPLICATIONINSIGHTS_CONNECTION_STRING` | App Insights |
 | `AZURE_CLIENT_ID` | Managed identity client ID |
 
+## Static Web App
+
 ### Web (`{app_name}-web`)
 
 | Setting | Value |
 |---------|-------|
-| Image | `{acr_name}.azurecr.io/whiskey-and-smokes-web:{sha}` |
-| Port | 80 |
-| CPU / Memory | 0.25 core / 0.5Gi |
-| Replicas | 1–3 |
-| Identity | User-assigned managed identity |
+| SKU | Free |
+| Framework | Vue 3 (pre-built, deployed as static files) |
+| Deployment | GitHub Actions via `Azure/static-web-apps-deploy@v1` |
+
+The Vue SPA is built in CI and deployed as static files to Azure Static Web Apps.
+API calls are proxied to the API Container App via a linked backend (configured in Azure Portal: SWA → Settings → APIs → Link to Container App).
 
 ## Role Assignments
 
@@ -246,16 +236,24 @@ For a fresh environment:
 # 1. Provision Azure infrastructure
 task azure:up
 
-# 2. Note the outputs
+# 2. Deploy Container Apps + Static Web App
+task azure:app
+
+# 3. Note the outputs
 task azure:output
+task azure:app:output
 
-# 3. Configure GitHub environment secrets and variables (see tables above)
+# 4. Add SWA_DEPLOYMENT_TOKEN to GitHub Secrets
+#    (from `terraform -chdir=infrastructure/app output SWA_DEPLOYMENT_TOKEN`)
 
-# 4. Initialize Foundry agents
-task app:agent:init
+# 5. Link SWA backend to API Container App
+#    Azure Portal → Static Web App → Settings → APIs → Link to Container App
 
-# 5. Push to main (or manually trigger deploy.yml)
+# 6. Initialize Foundry agents
+task local:agents
+
+# 7. Push to main (or manually trigger build.yml)
 git push origin main
 ```
 
-For subsequent deployments, just push to `main` — the workflows handle build and deploy automatically.
+For subsequent deployments, just push to `main` — the workflow builds the API image and deploys the SWA automatically.

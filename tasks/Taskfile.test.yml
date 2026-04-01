@@ -83,30 +83,20 @@ tasks:
       - npm install --silent
       - npm run dev
 
-  agent:init:
-    desc: Validates agent configuration against AI Foundry
-    env:
-      AiFoundry__ProjectEndpoint: "{{.PROJECT_ENDPOINT}}"
-    cmds:
-      - dotnet run --project ./src/AgentInitiator
-    vars:
-      PROJECT_ENDPOINT:
-        sh: terraform -chdir=./infrastructure/local output -raw FOUNDRY_PROJECT_ENDPOINT 2>/dev/null || echo ""
-
   services:up:
     desc: Starts all services via Docker Compose
     dir: ./tasks
     cmds:
-      - docker compose up -d
+      - docker compose --file docker-compose.local.test.yml up -d
 
   services:down:
     desc: Stops all Docker Compose services
     dir: ./tasks
     cmds:
-      - docker compose down
+      - docker compose --file docker-compose.local.test.yml down
 
   services:logs:
     desc: Tails Docker Compose logs
     dir: ./tasks
     cmds:
-      - docker compose logs -f
+      - docker compose --file docker-compose.local.test.yml logs -f

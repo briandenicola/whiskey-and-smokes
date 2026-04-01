@@ -19,7 +19,7 @@ cp .env.example .env
 az login
 
 # 3. Build and start
-docker compose up --build -d
+docker compose up --build -d --file ./tasks/docker-compose.local.prod.yml
 
 # 4. Open the app
 open http://localhost:8080

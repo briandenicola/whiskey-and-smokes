@@ -35,16 +35,16 @@ tasks:
         -var="cosmosdb_endpoint={{.COSMOSDB_ENDPOINT}}"
         -var="storage_blob_endpoint={{.STORAGE_BLOB_ENDPOINT}}"
     vars:
-      APP_NAME: hare-22173
-        #sh: terraform -chdir={{.AZURE_DIR}} output -raw APP_NAME 2>/dev/null || echo ""
-      APP_LOCATION: canadacentral
-        #sh: terraform -chdir={{.AZURE_DIR}} output -raw APP_LOCATION 2>/dev/null || echo ""
+      APP_NAME: 
+        sh: terraform -chdir={{.AZURE_DIR}} output -raw APP_NAME 2>/dev/null || echo ""
+      APP_LOCATION: 
+        sh: terraform -chdir={{.AZURE_DIR}} output -raw APP_LOCATION 2>/dev/null || echo ""
       COMMIT_VERSION:
         sh: git rev-parse HEAD
-      COSMOSDB_ENDPOINT: https://hare-22173-db.documents.azure.com:443/
-        #sh: terraform -chdir={{.AZURE_DIR}} output -raw COSMOSDB_ENDPOINT 2>/dev/null || echo ""
-      STORAGE_BLOB_ENDPOINT: https://1edf95d9cde5bf1da9a282sa.blob.core.windows.net/
-        #sh: terraform -chdir={{.AZURE_DIR}} output -raw STORAGE_BLOB_ENDPOINT 2>/dev/null || echo ""
+      COSMOSDB_ENDPOINT: 
+        sh: terraform -chdir={{.AZURE_DIR}} output -raw COSMOSDB_ENDPOINT 2>/dev/null || echo ""
+      STORAGE_BLOB_ENDPOINT: 
+        sh: terraform -chdir={{.AZURE_DIR}} output -raw STORAGE_BLOB_ENDPOINT 2>/dev/null || echo ""
 
   output:
     desc: Shows Container Apps deployment outputs

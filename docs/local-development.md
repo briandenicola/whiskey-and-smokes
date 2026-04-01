@@ -45,18 +45,12 @@ Creates a resource group, an Azure AI Foundry account, deploys **gpt-4o** (visio
 task local:up
 ```
 
-Verify the endpoint was created:
-
-```bash
-task local:output
-```
-
 ### 4. Initialize Foundry Agents
 
 Creates (or recreates) the three agents in your Foundry project with prompts from `src/AgentInitiator/Prompts/`:
 
 ```bash
-task app:agent:init
+task local:agents
 ```
 
 ### 5. Run the application
@@ -64,7 +58,7 @@ task app:agent:init
 The API starts with LiteDB and local filesystem storage — no CosmosDB or Blob Storage emulators needed. AI Foundry and Application Insights endpoints are automatically injected from your Terraform state.
 
 ```bash
-task app:run
+task test:run
 ```
 
 This starts both the Aspire AppHost (API + OpenTelemetry dashboard) and the Vue dev server:
@@ -112,7 +106,6 @@ Run `task --list` to see all tasks. Key ones for local dev:
 | `app:apphost` | Runs the Aspire AppHost (API + dashboard) |
 | `app:api` | Runs the .NET API standalone |
 | `app:web` | Runs the Vue dev server |
-| `app:agent:init` | Creates/recreates agents in AI Foundry |
 | `app:services:up` | Starts Docker Compose services |
 | `app:services:down` | Stops Docker Compose services |
 
