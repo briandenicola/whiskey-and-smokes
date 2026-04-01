@@ -27,7 +27,12 @@ public static class CaptureWorkflow
         var endpoint = config["AiFoundry:ProjectEndpoint"]
             ?? throw new InvalidOperationException("AiFoundry:ProjectEndpoint is required for the capture workflow.");
 
-        var azureClient = new AzureOpenAIClient(new Uri(endpoint), new DefaultAzureCredential());
+        var credential = new ChainedTokenCredential(
+            new AzureCliCredential(),
+            new EnvironmentCredential(),
+            new ManagedIdentityCredential(ManagedIdentityId.SystemAssigned));
+
+        var azureClient = new AzureOpenAIClient(new Uri(endpoint), credential);
 
         var visionModel = config["AiFoundry:Models:Vision"] ?? "gpt-4o";
         var reasoningModel = config["AiFoundry:Models:Reasoning"] ?? "gpt-5.1-mini";

@@ -5,18 +5,20 @@ Run Whiskey & Smokes locally with Docker Compose. Data is stored in LiteDB (file
 ## Prerequisites
 
 - Docker and Docker Compose
-- Azure AI Foundry project (for the AI agent pipeline)
-- Azure CLI (for `az login` — Foundry auth uses DefaultAzureCredential)
+- Azure AI Foundry project (provisioned via `task local:up`)
+- [Task](https://taskfile.dev) (task runner)
+- [Terraform](https://developer.hashicorp.com/terraform/install) (provisions Foundry + service principal)
 
 ## Quick Start
 
 ```bash
-# 1. Copy and configure environment variables
-cp tasks/.env.example tasks/.env
-# Edit tasks/.env — set JWT_SECRET and AI_FOUNDRY_PROJECT_ENDPOINT
+# 1. Provision Azure AI Foundry + service principal
+task local:up
 
-# 2. Log in to Azure (for Foundry access from the container)
-az login
+# 2. Copy env template and populate from Terraform outputs
+cp tasks/.env.example tasks/.env
+# Then fill in values from: task local:output
+# For the secret: terraform -chdir=infrastructure/local output -raw SPN_CLIENT_SECRET
 
 # 3. Build and start
 docker compose --file tasks/docker-compose.local.prod.yml up --build -d
@@ -35,6 +37,9 @@ All configuration is in `tasks/.env`:
 |----------|----------|-------------|
 | `JWT_SECRET` | Yes | JWT signing key (min 32 characters) |
 | `AI_FOUNDRY_PROJECT_ENDPOINT` | Yes | Azure AI Foundry project endpoint URL |
+| `AZURE_CLIENT_ID` | Yes | Service principal client ID (from `task local:output`) |
+| `AZURE_TENANT_ID` | Yes | Azure AD tenant ID (from `task local:output`) |
+| `AZURE_CLIENT_SECRET` | Yes | Service principal secret (from TF output) |
 | `WEB_PORT` | No | Web UI port (default: 8080) |
 | `ENTRA_TENANT_ID` | No | Entra ID tenant for Microsoft sign-in |
 | `ENTRA_CLIENT_ID` | No | Entra ID app registration client ID |
@@ -48,27 +53,23 @@ Data is stored in a Docker volume (`app-data`):
 
 To back up your data:
 ```bash
-docker compose cp api:/data ./backup
+docker compose --file tasks/docker-compose.local.prod.yml cp api:/data ./backup
 ```
 
 To restore:
 ```bash
-docker compose cp ./backup/. api:/data
+docker compose --file tasks/docker-compose.local.prod.yml cp ./backup/. api:/data
 ```
 
 ## Azure AI Foundry Authentication
 
-The API container uses `DefaultAzureCredential` to authenticate with Foundry. For local Docker, this picks up credentials from:
+The API container uses a `ChainedTokenCredential` to authenticate with Foundry. The credential chain tries these sources in order:
 
-1. **Environment variables** — Set `AZURE_CLIENT_ID`, `AZURE_TENANT_ID`, `AZURE_CLIENT_SECRET` in `tasks/.env` for a service principal
-2. **Azure CLI** — If running on the same machine with `az login` active, mount the Azure CLI cache:
+1. **Azure CLI** — `AzureCliCredential` (for local dev without Docker)
+2. **Environment variables** — `EnvironmentCredential` reads `AZURE_CLIENT_ID`, `AZURE_TENANT_ID`, `AZURE_CLIENT_SECRET` (for Docker deployments)
+3. **Managed Identity** — `ManagedIdentityCredential` (for Azure Container Apps)
 
-```yaml
-# Add to tasks/docker-compose.local.prod.yml api service volumes:
-volumes:
-  - app-data:/data
-  - ~/.azure:/root/.azure:ro
-```
+The `task local:up` command creates a service principal with the required Foundry roles and outputs the credentials for the `.env` file.
 
 ## Stopping and Cleanup
 

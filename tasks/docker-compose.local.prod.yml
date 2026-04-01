@@ -16,6 +16,9 @@ services:
       - AiFoundry__ProjectEndpoint=${AI_FOUNDRY_PROJECT_ENDPOINT:-}
       - AiFoundry__Models__Vision=gpt-4o
       - AiFoundry__Models__Reasoning=gpt-5-mini
+      - AZURE_CLIENT_ID=${AZURE_CLIENT_ID:-}
+      - AZURE_TENANT_ID=${AZURE_TENANT_ID:-}
+      - AZURE_CLIENT_SECRET=${AZURE_CLIENT_SECRET:-}
       - EntraId__TenantId=${ENTRA_TENANT_ID:-}
       - EntraId__ClientId=${ENTRA_CLIENT_ID:-}
       - Cors__AllowedOrigins__0=http://localhost:${WEB_PORT:-8080}

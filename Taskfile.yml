@@ -8,7 +8,7 @@ env:
 
 includes:
   test:
-    taskfile: ./tasks/Taskfile.test.yml
+    taskfile: ./tasks/Taskfile.local.test.yml
     internal: false
     dir: .
 

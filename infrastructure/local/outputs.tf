@@ -22,3 +22,18 @@ output "APPLICATION_INSIGHTS_CONNECTION_STRING" {
   value     = azurerm_application_insights.this.connection_string
   sensitive = true
 }
+
+output "SPN_CLIENT_ID" {
+  value     = azuread_application.local_docker.client_id
+  sensitive = false
+}
+
+output "SPN_CLIENT_SECRET" {
+  value     = azuread_application_password.local_docker.value
+  sensitive = true
+}
+
+output "SPN_TENANT_ID" {
+  value     = data.azurerm_client_config.current.tenant_id
+  sensitive = false
+}
