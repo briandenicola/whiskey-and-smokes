@@ -41,7 +41,7 @@ jobs:
       - name: Build API Image (ACR Build Task)
         run: |
           az acr build \
-            --registry ${{ vars.ACR_NAME }} \
+            --registry ${{ secrets.ACR_NAME }} \
             --image whiskey-and-smokes-api:${{ github.sha }} \
             --image whiskey-and-smokes-api:latest \
             --file src/api/Dockerfile \
@@ -50,7 +50,7 @@ jobs:
       - name: Build Web Image (ACR Build Task)
         run: |
           az acr build \
-            --registry ${{ vars.ACR_NAME }} \
+            --registry ${{ secrets.ACR_NAME }} \
             --image whiskey-and-smokes-web:${{ github.sha }} \
             --image whiskey-and-smokes-web:latest \
             --file src/web/Dockerfile \
