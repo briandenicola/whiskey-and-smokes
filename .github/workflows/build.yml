@@ -1,8 +1,13 @@
-name: Deploy
+name: Build
 
 on:
   push:
     branches: [main]
+    paths-ignore:
+      - 'docs/**'
+      - '*.md'
+      - 'infrastructure/**'
+      - 'tasks/**'
   workflow_dispatch:
     inputs:
       environment:
@@ -20,10 +25,9 @@ permissions:
 
 jobs:
   build:
+    name: Build & Push Images
     runs-on: ubuntu-latest
     environment: ${{ github.event.inputs.environment || 'dev' }}
-    outputs:
-      image_tag: ${{ github.sha }}
     steps:
       - uses: actions/checkout@v4
 
@@ -37,7 +41,7 @@ jobs:
       - name: Build API Image (ACR Build Task)
         run: |
           az acr build \
-            --registry ${{ secrets.ACR_NAME }} \
+            --registry ${{ vars.ACR_NAME }} \
             --image whiskey-and-smokes-api:${{ github.sha }} \
             --image whiskey-and-smokes-api:latest \
             --file src/api/Dockerfile \
@@ -46,36 +50,8 @@ jobs:
       - name: Build Web Image (ACR Build Task)
         run: |
           az acr build \
-            --registry ${{ secrets.ACR_NAME }} \
+            --registry ${{ vars.ACR_NAME }} \
             --image whiskey-and-smokes-web:${{ github.sha }} \
             --image whiskey-and-smokes-web:latest \
             --file src/web/Dockerfile \
             src/web
-
-  deploy:
-    needs: build
-    runs-on: ubuntu-latest
-    environment: ${{ github.event.inputs.environment || 'dev' }}
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Azure Login
-        uses: azure/login@v2
-        with:
-          client-id: ${{ secrets.AZURE_CLIENT_ID }}
-          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
-          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
-
-      - name: Deploy API to Container Apps
-        run: |
-          az containerapp update \
-            --name ${{ secrets.APP_NAME }}-api \
-            --resource-group ${{ secrets.APP_NAME }}_apps_rg \
-            --image ${{ secrets.ACR_NAME }}.azurecr.io/whiskey-and-smokes-api:${{ github.sha }}
-
-      - name: Deploy Web to Container Apps
-        run: |
-          az containerapp update \
-            --name ${{ secrets.APP_NAME }}-web \
-            --resource-group ${{ secrets.APP_NAME }}_apps_rg \
-            --image ${{ secrets.ACR_NAME }}.azurecr.io/whiskey-and-smokes-web:${{ github.sha }}

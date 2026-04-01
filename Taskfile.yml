@@ -22,6 +22,11 @@ includes:
     internal: false
     dir: ./infrastructure/azure/
 
+  deploy:
+    taskfile: ./tasks/Taskfile.deploy.yml
+    internal: false
+    dir: .
+
 tasks:
   default:
     cmds:

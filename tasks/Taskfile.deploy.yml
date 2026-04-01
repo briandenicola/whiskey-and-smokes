@@ -1,0 +1,84 @@
+version: "3"
+
+vars:
+  TITLE: Whiskey & Smokes
+  APP_DIR: ../../infrastructure/app
+  AZURE_DIR: ../../infrastructure/azure
+
+tasks:
+  default:
+    cmds:
+      - task --list
+
+  init:
+    desc: Initializes Terraform for the Container Apps deployment
+    dir: "{{.APP_DIR}}"
+    cmds:
+      - terraform init
+
+  plan:
+    desc: Plans Container Apps deployment for {{.TITLE}}
+    dir: "{{.APP_DIR}}"
+    cmds:
+      - terraform plan
+        -var="app_name={{.APP_NAME}}"
+        -var="tags={{.TITLE}}"
+        -var="commit_version={{.COMMIT_VERSION}}"
+        -var="cosmosdb_endpoint={{.COSMOSDB_ENDPOINT}}"
+        -var="storage_blob_endpoint={{.STORAGE_BLOB_ENDPOINT}}"
+    vars:
+      APP_NAME:
+        sh: terraform -chdir={{.AZURE_DIR}} output -raw APP_NAME 2>/dev/null || echo ""
+      COMMIT_VERSION:
+        sh: git rev-parse HEAD
+      COSMOSDB_ENDPOINT:
+        sh: terraform -chdir={{.AZURE_DIR}} output -raw COSMOSDB_ENDPOINT 2>/dev/null || echo ""
+      STORAGE_BLOB_ENDPOINT:
+        sh: terraform -chdir={{.AZURE_DIR}} output -raw STORAGE_BLOB_ENDPOINT 2>/dev/null || echo ""
+
+  deploy:
+    desc: Deploys Container Apps for {{.TITLE}} (creates or updates)
+    dir: "{{.APP_DIR}}"
+    cmds:
+      - task: init
+      - terraform apply -auto-approve -compact-warnings
+        -var="app_name={{.APP_NAME}}"
+        -var="tags={{.TITLE}}"
+        -var="commit_version={{.COMMIT_VERSION}}"
+        -var="cosmosdb_endpoint={{.COSMOSDB_ENDPOINT}}"
+        -var="storage_blob_endpoint={{.STORAGE_BLOB_ENDPOINT}}"
+    vars:
+      APP_NAME:
+        sh: terraform -chdir={{.AZURE_DIR}} output -raw APP_NAME 2>/dev/null || echo ""
+      COMMIT_VERSION:
+        sh: git rev-parse HEAD
+      COSMOSDB_ENDPOINT:
+        sh: terraform -chdir={{.AZURE_DIR}} output -raw COSMOSDB_ENDPOINT 2>/dev/null || echo ""
+      STORAGE_BLOB_ENDPOINT:
+        sh: terraform -chdir={{.AZURE_DIR}} output -raw STORAGE_BLOB_ENDPOINT 2>/dev/null || echo ""
+
+  output:
+    desc: Shows Container Apps deployment outputs
+    dir: "{{.APP_DIR}}"
+    cmds:
+      - terraform output
+
+  down:
+    desc: Destroys Container Apps for {{.TITLE}}
+    dir: "{{.APP_DIR}}"
+    cmds:
+      - terraform destroy -auto-approve
+        -var="app_name={{.APP_NAME}}"
+        -var="tags={{.TITLE}}"
+        -var="commit_version={{.COMMIT_VERSION}}"
+        -var="cosmosdb_endpoint={{.COSMOSDB_ENDPOINT}}"
+        -var="storage_blob_endpoint={{.STORAGE_BLOB_ENDPOINT}}"
+    vars:
+      APP_NAME:
+        sh: terraform -chdir={{.AZURE_DIR}} output -raw APP_NAME 2>/dev/null || echo ""
+      COMMIT_VERSION:
+        sh: git rev-parse HEAD
+      COSMOSDB_ENDPOINT:
+        sh: terraform -chdir={{.AZURE_DIR}} output -raw COSMOSDB_ENDPOINT 2>/dev/null || echo ""
+      STORAGE_BLOB_ENDPOINT:
+        sh: terraform -chdir={{.AZURE_DIR}} output -raw STORAGE_BLOB_ENDPOINT 2>/dev/null || echo ""
