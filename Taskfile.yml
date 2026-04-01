@@ -25,7 +25,7 @@ includes:
   deploy:
     taskfile: ./tasks/Taskfile.deploy.yml
     internal: false
-    dir: .
+    dir: ./tasks
 
 tasks:
   default:

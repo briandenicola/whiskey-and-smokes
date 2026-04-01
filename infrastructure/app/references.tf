@@ -13,10 +13,10 @@ data "azurerm_container_app_environment" "this" {
 
 data "azurerm_cognitive_account" "ai_services" {
   name                = local.ai_services_name
-  resource_group_name = local.ai_rg_name
+  resource_group_name = local.apps_rg_name
 }
 
 data "azurerm_application_insights" "this" {
-  name                = "${local.project_name}-appinsights"
-  resource_group_name = "${local.project_name}_rg"
-}
+  name                = local.appinsights_name
+  resource_group_name = local.apps_rg_name
+a}

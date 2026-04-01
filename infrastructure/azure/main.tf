@@ -2,7 +2,6 @@ locals {
   location             = var.region
   resource_name        = "${random_pet.this.id}-${random_id.this.dec}"
   ai_services_name     = "${local.resource_name}-foundry"
-  appinsights_name     = "${local.resource_name}-appinsights"
   vnet_name            = "${local.resource_name}-network"
   loganalytics_name    = "${local.resource_name}-logs"
   nsg_name             = "${local.resource_name}-nsg"

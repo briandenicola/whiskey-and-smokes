@@ -2,7 +2,7 @@
 resource "azurerm_container_app" "api" {
   name                         = local.api_app_name
   container_app_environment_id = data.azurerm_container_app_environment.this.id
-  resource_group_name          = azurerm_resource_group.apps.name
+  resource_group_name          = local.apps_rg_name
   revision_mode                = "Single"
 
   identity {
@@ -86,7 +86,7 @@ resource "azurerm_container_app" "api" {
 resource "azurerm_container_app" "web" {
   name                         = local.web_app_name
   container_app_environment_id = data.azurerm_container_app_environment.this.id
-  resource_group_name          = azurerm_resource_group.apps.name
+  resource_group_name          = local.apps_rg_name
   revision_mode                = "Single"
 
   identity {

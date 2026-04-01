@@ -2,8 +2,9 @@ version: "3"
 
 vars:
   TITLE: Whiskey & Smokes
-  APP_DIR: ../../infrastructure/app
-  AZURE_DIR: ../../infrastructure/azure
+  APP_DIR: ../infrastructure/app
+  AZURE_DIR: ../azure
+  DEFAULT_REGION: eastus2
 
 tasks:
   default:
@@ -14,29 +15,13 @@ tasks:
     desc: Initializes Terraform for the Container Apps deployment
     dir: "{{.APP_DIR}}"
     cmds:
+      - terraform workspace new {{.REGION}} || true
+      - terraform workspace select {{.REGION}}
       - terraform init
-
-  plan:
-    desc: Plans Container Apps deployment for {{.TITLE}}
-    dir: "{{.APP_DIR}}"
-    cmds:
-      - terraform plan
-        -var="app_name={{.APP_NAME}}"
-        -var="tags={{.TITLE}}"
-        -var="commit_version={{.COMMIT_VERSION}}"
-        -var="cosmosdb_endpoint={{.COSMOSDB_ENDPOINT}}"
-        -var="storage_blob_endpoint={{.STORAGE_BLOB_ENDPOINT}}"
     vars:
-      APP_NAME:
-        sh: terraform -chdir={{.AZURE_DIR}} output -raw APP_NAME 2>/dev/null || echo ""
-      COMMIT_VERSION:
-        sh: git rev-parse HEAD
-      COSMOSDB_ENDPOINT:
-        sh: terraform -chdir={{.AZURE_DIR}} output -raw COSMOSDB_ENDPOINT 2>/dev/null || echo ""
-      STORAGE_BLOB_ENDPOINT:
-        sh: terraform -chdir={{.AZURE_DIR}} output -raw STORAGE_BLOB_ENDPOINT 2>/dev/null || echo ""
+      REGION: "{{default .DEFAULT_REGION .CLI_ARGS}}"
 
-  deploy:
+  app:
     desc: Deploys Container Apps for {{.TITLE}} (creates or updates)
     dir: "{{.APP_DIR}}"
     cmds:
@@ -48,8 +33,8 @@ tasks:
         -var="cosmosdb_endpoint={{.COSMOSDB_ENDPOINT}}"
         -var="storage_blob_endpoint={{.STORAGE_BLOB_ENDPOINT}}"
     vars:
-      APP_NAME:
-        sh: terraform -chdir={{.AZURE_DIR}} output -raw APP_NAME 2>/dev/null || echo ""
+      APP_NAME: hare-22173
+        #sh: terraform -chdir={{.AZURE_DIR}} output -raw APP_NAME 2>/dev/null || echo ""
       COMMIT_VERSION:
         sh: git rev-parse HEAD
       COSMOSDB_ENDPOINT:

@@ -23,7 +23,7 @@ resource "azurerm_role_assignment" "ai_developer" {
 
 # Cosmos DB data plane access for application data
 resource "azurerm_cosmosdb_sql_role_assignment" "cosmos_contributor" {
-  resource_group_name = local.core_rg_name
+  resource_group_name = local.apps_rg_name
   account_name        = local.cosmosdb_name
   scope               = "/subscriptions/${data.azurerm_client_config.current.subscription_id}/resourceGroups/${local.core_rg_name}/providers/Microsoft.DocumentDB/databaseAccounts/${local.cosmosdb_name}"
   role_definition_id  = "/subscriptions/${data.azurerm_client_config.current.subscription_id}/resourceGroups/${local.core_rg_name}/providers/Microsoft.DocumentDB/databaseAccounts/${local.cosmosdb_name}/sqlRoleDefinitions/00000000-0000-0000-0000-000000000002"
