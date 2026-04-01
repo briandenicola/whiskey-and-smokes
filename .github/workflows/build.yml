@@ -1,13 +1,6 @@
 name: Build & Deploy
 
 on:
-  push:
-    branches: [main]
-    paths-ignore:
-      - 'docs/**'
-      - '*.md'
-      - 'infrastructure/**'
-      - 'tasks/**'
   workflow_dispatch:
     inputs:
       environment:
