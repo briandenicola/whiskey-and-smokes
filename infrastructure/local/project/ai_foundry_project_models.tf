@@ -17,6 +17,7 @@ resource "azapi_resource" "model_deployment_gpt4o" {
       capacity = 100
     }
   }
+  depends_on = [azapi_resource.ai_foundry_project]
 }
 
 resource "azapi_resource" "model_deployment_gpt51-mini" {
@@ -38,5 +39,5 @@ resource "azapi_resource" "model_deployment_gpt51-mini" {
     }
   }
 
-  depends_on = [azapi_resource.model_deployment_gpt4o]
+  depends_on = [azapi_resource.model_deployment_gpt4o, azapi_resource.ai_foundry_project]
 }
