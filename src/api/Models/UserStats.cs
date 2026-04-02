@@ -89,7 +89,7 @@ public class TopItem
     public string? Brand { get; set; }
 
     [JsonPropertyName("rating")]
-    public int Rating { get; set; }
+    public double Rating { get; set; }
 
     [JsonPropertyName("photoUrl")]
     public string? PhotoUrl { get; set; }

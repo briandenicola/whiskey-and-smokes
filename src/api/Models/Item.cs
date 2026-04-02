@@ -42,7 +42,7 @@ public class Item
     public string? AiSummary { get; set; }
 
     [JsonPropertyName("userRating")]
-    public int? UserRating { get; set; }
+    public double? UserRating { get; set; }
 
     [JsonPropertyName("userNotes")]
     public string? UserNotes { get; set; }

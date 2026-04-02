@@ -3,6 +3,7 @@ import { ref, inject, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useItemsStore } from '../stores/items'
 import { itemsApi, type Item } from '../services/items'
+import StarRating from '../components/common/StarRating.vue'
 import { RefreshKey } from '../composables/refreshKey'
 
 const route = useRoute()
@@ -161,9 +162,8 @@ function isAiGenerated(data: Item): boolean {
       <!-- Rating -->
       <div v-if="!isEditing && item.userRating" class="flex items-center gap-2">
         <span class="text-xs text-stone-500 uppercase tracking-wide w-16">Rating</span>
-        <span class="text-amber-500 text-lg tracking-wider">
-          {{ '★'.repeat(item.userRating) }}{{ '☆'.repeat(5 - item.userRating) }}
-        </span>
+        <StarRating :rating="item.userRating" size="md" />
+        <span class="text-xs text-stone-500">{{ item.userRating }}</span>
       </div>
 
       <!-- Venue -->
@@ -279,14 +279,9 @@ function isAiGenerated(data: Item): boolean {
       <!-- Star rating -->
       <div>
         <label class="block text-sm text-stone-400 mb-2">Rating</label>
-        <div class="flex gap-1">
-          <button
-            v-for="star in 5"
-            :key="star"
-            @click="editRating = star"
-            class="text-3xl transition-colors"
-            :class="star <= editRating ? 'text-amber-500' : 'text-stone-700'"
-          >★</button>
+        <div class="flex items-center gap-3">
+          <StarRating :rating="editRating" size="lg" interactive @update="editRating = $event" />
+          <span class="text-sm text-stone-500">{{ editRating > 0 ? editRating : '' }}</span>
         </div>
       </div>
 

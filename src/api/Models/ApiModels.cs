@@ -74,7 +74,7 @@ public class UpdateItemRequest
     public VenueInfo? Venue { get; set; }
 
     [JsonPropertyName("userRating")]
-    public int? UserRating { get; set; }
+    public double? UserRating { get; set; }
 
     [JsonPropertyName("userNotes")]
     public string? UserNotes { get; set; }

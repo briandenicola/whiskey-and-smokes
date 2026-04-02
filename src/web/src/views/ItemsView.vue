@@ -4,6 +4,7 @@ import { useRouter } from 'vue-router'
 import { useItemsStore } from '../stores/items'
 import { useAuthStore } from '../stores/auth'
 import { RefreshKey } from '../composables/refreshKey'
+import StarRating from '../components/common/StarRating.vue'
 
 const router = useRouter()
 const itemsStore = useItemsStore()
@@ -307,8 +308,8 @@ onUnmounted(() => {
               </div>
               <h3 class="font-medium text-stone-100 truncate">{{ item.name }}</h3>
               <p v-if="item.brand" class="text-sm text-stone-500 truncate">{{ item.brand }}</p>
-              <div v-if="item.userRating" class="mt-1 text-amber-500 text-sm">
-                {{ '\u2605'.repeat(item.userRating) }}{{ '\u2606'.repeat(5 - item.userRating) }}
+              <div v-if="item.userRating" class="mt-1">
+                <StarRating :rating="item.userRating" size="sm" />
               </div>
             </div>
           </div>
