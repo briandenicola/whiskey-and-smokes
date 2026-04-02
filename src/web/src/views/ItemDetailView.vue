@@ -146,10 +146,40 @@ function isAiGenerated(data: Item): boolean {
   <div v-if="!item" class="p-4 text-stone-500 text-center py-12">Loading...</div>
 
   <div v-else class="p-4 max-w-lg mx-auto">
-    <!-- Back -->
-    <button @click="router.back()" class="text-stone-400 hover:text-stone-200 text-sm mb-4">
-      ← Back
-    </button>
+    <!-- Top bar: Back + actions -->
+    <div class="flex items-center justify-between mb-4">
+      <button @click="router.back()" class="text-stone-400 hover:text-stone-200 text-sm">
+        ← Back
+      </button>
+      <div class="flex items-center gap-3">
+        <!-- View mode: Edit + Delete icons -->
+        <template v-if="!isEditing">
+          <button @click="startEditing" class="text-amber-500 hover:text-amber-400 p-1" title="Edit">
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+            </svg>
+          </button>
+          <button @click="showDeleteConfirm = true" class="text-red-400 hover:text-red-300 p-1" title="Delete">
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+            </svg>
+          </button>
+        </template>
+        <!-- Edit mode: Save + Cancel icons -->
+        <template v-else>
+          <button @click="save" :disabled="isSaving" class="text-green-400 hover:text-green-300 disabled:text-stone-600 p-1" title="Save">
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+            </svg>
+          </button>
+          <button @click="isEditing = false" class="text-stone-400 hover:text-stone-200 p-1" title="Cancel">
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </template>
+      </div>
+    </div>
 
     <!-- Photos -->
     <div v-if="item.photoUrls.length" class="mb-4 -mx-4">
@@ -343,19 +373,6 @@ function isAiGenerated(data: Item): boolean {
           >+ Add</button>
         </div>
       </div>
-
-      <div class="flex gap-3 pt-2">
-        <button
-          @click="save"
-          :disabled="isSaving"
-          class="flex-1 bg-amber-700 hover:bg-amber-600 disabled:bg-stone-700 text-white py-3 rounded-xl font-medium"
-        >
-          {{ isSaving ? 'Saving...' : 'Save' }}
-        </button>
-        <button @click="isEditing = false" class="px-6 bg-stone-800 hover:bg-stone-700 text-stone-300 py-3 rounded-xl">
-          Cancel
-        </button>
-      </div>
     </div>
 
     <!-- Tags (read-only, outside edit mode) -->
@@ -363,22 +380,6 @@ function isAiGenerated(data: Item): boolean {
       <span v-for="tag in item.tags" :key="tag" class="text-xs bg-stone-800 text-stone-400 px-2 py-1 rounded-full">
         {{ tag }}
       </span>
-    </div>
-
-    <!-- Actions (view mode, bottom of page) -->
-    <div v-if="!isEditing" class="flex gap-3 mt-6 pt-4 border-t border-stone-800">
-      <button
-        @click="startEditing"
-        class="flex-1 bg-amber-700 hover:bg-amber-600 text-white py-3 rounded-xl font-medium"
-      >
-        Edit
-      </button>
-      <button
-        @click="showDeleteConfirm = true"
-        class="px-4 bg-stone-800 hover:bg-stone-700 text-red-400 py-3 rounded-xl text-sm"
-      >
-        Delete
-      </button>
     </div>
 
     <!-- Delete Confirmation Modal -->
