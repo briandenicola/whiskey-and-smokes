@@ -1,36 +1,26 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
   <defs>
-    <!-- Whiskey gradient -->
     <linearGradient id="whiskey" x1="0" y1="0" x2="0" y2="1">
       <stop offset="0%" stop-color="#e8a020"/>
       <stop offset="100%" stop-color="#b5651d"/>
     </linearGradient>
-    <!-- Glass highlight -->
     <linearGradient id="glass" x1="0" y1="0" x2="1" y2="1">
       <stop offset="0%" stop-color="#ffffff" stop-opacity="0.25"/>
       <stop offset="100%" stop-color="#ffffff" stop-opacity="0.05"/>
     </linearGradient>
-    <!-- Ice cube highlight -->
     <linearGradient id="ice" x1="0" y1="0" x2="1" y2="1">
       <stop offset="0%" stop-color="#ffffff" stop-opacity="0.7"/>
       <stop offset="50%" stop-color="#d0e8f0" stop-opacity="0.5"/>
       <stop offset="100%" stop-color="#a0c4d0" stop-opacity="0.3"/>
     </linearGradient>
-    <!-- Dark background circle -->
-    <radialGradient id="bg" cx="0.5" cy="0.5" r="0.5">
-      <stop offset="0%" stop-color="#2a1a0e"/>
-      <stop offset="100%" stop-color="#1a0e06"/>
-    </radialGradient>
-    <!-- Smoke blur -->
     <filter id="smoke-blur">
-      <feGaussianBlur stdDeviation="6"/>
+      <feGaussianBlur stdDeviation="7"/>
     </filter>
     <filter id="smoke-blur-lg">
-      <feGaussianBlur stdDeviation="10"/>
+      <feGaussianBlur stdDeviation="12"/>
     </filter>
-    <!-- Glow behind glass -->
     <filter id="glow">
-      <feGaussianBlur stdDeviation="15" result="blur"/>
+      <feGaussianBlur stdDeviation="18" result="blur"/>
       <feMerge>
         <feMergeNode in="blur"/>
         <feMergeNode in="SourceGraphic"/>
@@ -38,71 +28,66 @@
     </filter>
   </defs>
 
-  <!-- Background circle -->
-  <circle cx="256" cy="256" r="246" fill="url(#bg)" stroke="#3d2510" stroke-width="6"/>
+  <!-- Solid black background -->
+  <rect width="512" height="512" rx="96" fill="#000000"/>
 
   <!-- Ambient glow from whiskey -->
-  <ellipse cx="256" cy="310" rx="100" ry="60" fill="#e8a020" opacity="0.12" filter="url(#smoke-blur-lg)"/>
+  <ellipse cx="256" cy="340" rx="130" ry="80" fill="#e8a020" opacity="0.1" filter="url(#smoke-blur-lg)"/>
 
-  <!-- === Rocks Glass === -->
-  <!-- Glass body (tapered tumbler) -->
-  <path d="M168 210 L185 400 Q190 420 210 425 L302 425 Q322 420 327 400 L344 210 Z"
-        fill="url(#glass)" stroke="#ffffff" stroke-opacity="0.3" stroke-width="1.5"/>
+  <!-- === Rocks Glass (scaled up ~30%) === -->
+  <!-- Glass body -->
+  <path d="M132 180 L155 430 Q162 455 188 460 L324 460 Q350 455 357 430 L380 180 Z"
+        fill="url(#glass)" stroke="#ffffff" stroke-opacity="0.3" stroke-width="2"/>
 
   <!-- Glass bottom -->
-  <path d="M190 415 Q195 430 215 432 L297 432 Q317 430 322 415"
+  <path d="M162 448 Q168 468 194 470 L318 470 Q344 468 350 448"
         fill="none" stroke="#ffffff" stroke-opacity="0.2" stroke-width="1.5"/>
 
   <!-- Whiskey fill -->
-  <path d="M180 290 Q182 295 195 300 Q256 315 317 300 Q330 295 332 290 L327 400 Q322 420 302 425 L210 425 Q190 420 185 400 Z"
+  <path d="M145 280 Q148 286 165 292 Q256 310 347 292 Q364 286 367 280 L357 430 Q350 455 324 460 L188 460 Q162 455 155 430 Z"
         fill="url(#whiskey)" opacity="0.85"/>
 
-  <!-- Whiskey surface (meniscus) -->
-  <ellipse cx="256" cy="293" rx="76" ry="12" fill="#daa520" opacity="0.6"/>
+  <!-- Whiskey surface -->
+  <ellipse cx="256" cy="284" rx="110" ry="16" fill="#daa520" opacity="0.6"/>
 
-  <!-- Ice cube 1 (large, above liquid) -->
-  <g transform="rotate(-8 240 275)">
-    <rect x="215" y="258" width="42" height="38" rx="6" fill="url(#ice)" stroke="#ffffff" stroke-opacity="0.3" stroke-width="1"/>
-    <line x1="225" y1="262" x2="235" y2="270" stroke="#ffffff" stroke-opacity="0.25" stroke-width="1.5" stroke-linecap="round"/>
-    <line x1="240" y1="275" x2="248" y2="280" stroke="#ffffff" stroke-opacity="0.15" stroke-width="1" stroke-linecap="round"/>
+  <!-- Ice cube 1 -->
+  <g transform="rotate(-8 230 262)">
+    <rect x="198" y="240" width="56" height="50" rx="8" fill="url(#ice)" stroke="#ffffff" stroke-opacity="0.3" stroke-width="1.5"/>
+    <line x1="210" y1="246" x2="224" y2="258" stroke="#ffffff" stroke-opacity="0.25" stroke-width="2" stroke-linecap="round"/>
+    <line x1="232" y1="266" x2="243" y2="274" stroke="#ffffff" stroke-opacity="0.15" stroke-width="1.5" stroke-linecap="round"/>
   </g>
 
-  <!-- Ice cube 2 (smaller, tilted) -->
-  <g transform="rotate(15 290 270)">
-    <rect x="268" y="260" width="34" height="30" rx="5" fill="url(#ice)" stroke="#ffffff" stroke-opacity="0.25" stroke-width="1"/>
-    <line x1="276" y1="264" x2="282" y2="272" stroke="#ffffff" stroke-opacity="0.2" stroke-width="1" stroke-linecap="round"/>
+  <!-- Ice cube 2 -->
+  <g transform="rotate(15 298 258)">
+    <rect x="270" y="244" width="46" height="40" rx="7" fill="url(#ice)" stroke="#ffffff" stroke-opacity="0.25" stroke-width="1.5"/>
+    <line x1="280" y1="250" x2="290" y2="262" stroke="#ffffff" stroke-opacity="0.2" stroke-width="1.5" stroke-linecap="round"/>
   </g>
 
   <!-- Glass left highlight -->
-  <path d="M175 220 Q178 310 188 400" stroke="#ffffff" stroke-opacity="0.15" stroke-width="3" fill="none" stroke-linecap="round"/>
+  <path d="M140 192 Q145 310 158 428" stroke="#ffffff" stroke-opacity="0.15" stroke-width="4" fill="none" stroke-linecap="round"/>
 
   <!-- === Orange Peel Garnish === -->
-  <path d="M290 240 Q310 225 330 235 Q340 240 335 250 Q325 255 310 248"
-        fill="#e87020" opacity="0.9" stroke="#c45e18" stroke-width="1"/>
-  <path d="M295 243 Q310 232 325 240" fill="none" stroke="#f0a050" stroke-opacity="0.5" stroke-width="1"/>
+  <path d="M310 225 Q336 206 362 218 Q374 224 368 238 Q356 244 336 234"
+        fill="#e87020" opacity="0.9" stroke="#c45e18" stroke-width="1.5"/>
+  <path d="M316 228 Q336 214 358 224" fill="none" stroke="#f0a050" stroke-opacity="0.5" stroke-width="1.5"/>
 
   <!-- === Smoke Wisps === -->
-  <!-- Wisp 1 - main center -->
-  <path d="M245 240 Q235 200 250 170 Q265 140 248 105 Q240 88 250 70"
-        fill="none" stroke="#c8b8a0" stroke-opacity="0.35" stroke-width="4"
+  <path d="M240 218 Q226 166 246 128 Q264 92 244 48 Q234 26 246 4"
+        fill="none" stroke="#c8b8a0" stroke-opacity="0.35" stroke-width="5"
         stroke-linecap="round" filter="url(#smoke-blur)"/>
 
-  <!-- Wisp 2 - left -->
-  <path d="M230 245 Q215 210 225 180 Q240 145 220 115 Q210 95 218 78"
-        fill="none" stroke="#b8a890" stroke-opacity="0.25" stroke-width="3.5"
+  <path d="M218 224 Q198 180 212 142 Q230 98 206 60 Q194 36 204 14"
+        fill="none" stroke="#b8a890" stroke-opacity="0.25" stroke-width="4.5"
         stroke-linecap="round" filter="url(#smoke-blur)"/>
 
-  <!-- Wisp 3 - right -->
-  <path d="M270 235 Q285 195 275 165 Q260 135 280 108 Q290 90 282 72"
-        fill="none" stroke="#c0b098" stroke-opacity="0.3" stroke-width="3"
+  <path d="M272 214 Q292 162 278 124 Q260 86 286 52 Q298 30 288 8"
+        fill="none" stroke="#c0b098" stroke-opacity="0.3" stroke-width="4"
         stroke-linecap="round" filter="url(#smoke-blur)"/>
 
-  <!-- Wisp 4 - far right, thin -->
-  <path d="M300 230 Q310 200 300 175 Q288 150 305 125"
-        fill="none" stroke="#b0a090" stroke-opacity="0.18" stroke-width="2.5"
+  <path d="M326 205 Q338 168 326 136 Q312 104 334 68"
+        fill="none" stroke="#b0a090" stroke-opacity="0.18" stroke-width="3"
         stroke-linecap="round" filter="url(#smoke-blur)"/>
 
-  <!-- Wisp 5 - diffuse top -->
-  <path d="M235 110 Q260 95 280 105" fill="none" stroke="#c8b8a0" stroke-opacity="0.12"
-        stroke-width="8" stroke-linecap="round" filter="url(#smoke-blur-lg)"/>
+  <path d="M220 60 Q256 42 290 56" fill="none" stroke="#c8b8a0" stroke-opacity="0.12"
+        stroke-width="10" stroke-linecap="round" filter="url(#smoke-blur-lg)"/>
 </svg>
