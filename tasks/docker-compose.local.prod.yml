@@ -9,7 +9,7 @@ services:
       - Storage__Provider=local
       - LiteDb__Path=/data/whiskey-and-smokes.db
       - LocalStorage__Path=/data/uploads
-      - LocalStorage__BaseUrl=http://whiskey-and-smokes-api:8080/uploads
+      - LocalStorage__BaseUrl=/uploads
       - Jwt__Secret=${JWT_SECRET:?Set JWT_SECRET in .env (min 32 chars)}
       - Jwt__Issuer=whiskey-and-smokes
       - Jwt__Audience=whiskey-and-smokes

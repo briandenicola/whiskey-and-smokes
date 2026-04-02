@@ -11,7 +11,10 @@ public class LocalBlobStorageService : IBlobStorageService
         _storagePath = config["LocalStorage:Path"] ?? Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
             "whiskey-and-smokes", "uploads");
-        _baseUrl = config["LocalStorage:BaseUrl"] ?? "http://localhost:5062/uploads";
+        // Use a relative base URL so the browser resolves against its own origin.
+        // This avoids mixed-content errors when the web is served over HTTPS
+        // and the API is internal HTTP behind an nginx reverse proxy.
+        _baseUrl = config["LocalStorage:BaseUrl"] ?? "/uploads";
         _logger = logger;
 
         Directory.CreateDirectory(_storagePath);
@@ -36,8 +39,7 @@ public class LocalBlobStorageService : IBlobStorageService
     {
         try
         {
-            var uri = new Uri(blobUrl);
-            var relativePath = uri.AbsolutePath.Replace("/uploads/", "");
+            var relativePath = ExtractRelativePath(blobUrl);
             var fullPath = Path.Combine(_storagePath, relativePath.Replace('/', Path.DirectorySeparatorChar));
             if (File.Exists(fullPath))
             {
@@ -55,8 +57,7 @@ public class LocalBlobStorageService : IBlobStorageService
     {
         try
         {
-            var uri = new Uri(blobUrl);
-            var relativePath = uri.AbsolutePath.Replace("/uploads/", "");
+            var relativePath = ExtractRelativePath(blobUrl);
             var fullPath = Path.Combine(_storagePath, relativePath.Replace('/', Path.DirectorySeparatorChar));
 
             if (File.Exists(fullPath))
@@ -72,6 +73,19 @@ public class LocalBlobStorageService : IBlobStorageService
             _logger.LogWarning(ex, "Failed to download local blob: {Url}", blobUrl);
             return null;
         }
+    }
+
+    /// <summary>
+    /// Extracts the storage-relative path from either a full URL or a relative path.
+    /// Handles both "http://host:port/uploads/user/file.jpg" and "/uploads/user/file.jpg".
+    /// </summary>
+    private static string ExtractRelativePath(string blobUrl)
+    {
+        var uploadsIndex = blobUrl.IndexOf("/uploads/", StringComparison.OrdinalIgnoreCase);
+        if (uploadsIndex >= 0)
+            return blobUrl[(uploadsIndex + "/uploads/".Length)..];
+
+        return blobUrl;
     }
 
     public string StoragePath => _storagePath;

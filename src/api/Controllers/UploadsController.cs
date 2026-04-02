@@ -9,7 +9,7 @@ namespace WhiskeyAndSmokes.Api.Controllers;
 public class UploadsController : ControllerBase
 {
     private readonly string _storagePath;
-    private readonly IWebHostEnvironment _env;
+    private readonly bool _isLocalStorage;
     private readonly ILogger<UploadsController> _logger;
 
     public UploadsController(IConfiguration config, IWebHostEnvironment env, ILogger<UploadsController> logger)
@@ -17,7 +17,9 @@ public class UploadsController : ControllerBase
         _storagePath = config["LocalStorage:Path"] ?? Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
             "whiskey-and-smokes", "uploads");
-        _env = env;
+        var provider = config["Storage:Provider"]?.ToLowerInvariant() ?? "auto";
+        _isLocalStorage = provider == "local" ||
+            (provider == "auto" && env.IsDevelopment());
         _logger = logger;
     }
 
@@ -30,7 +32,7 @@ public class UploadsController : ControllerBase
         activity?.SetTag("upload.path", path);
         _logger.LogDebug("Direct upload requested for path {Path}", path);
 
-        if (!_env.IsDevelopment())
+        if (!_isLocalStorage)
             return NotFound();
 
         var safePath = path.Replace("..", "").Replace('\\', '/');
@@ -55,7 +57,7 @@ public class UploadsController : ControllerBase
         activity?.SetTag("upload.path", filePath);
         _logger.LogDebug("File requested: {FilePath}", filePath);
 
-        if (!_env.IsDevelopment())
+        if (!_isLocalStorage)
             return NotFound();
 
         var safePath = filePath.Replace("..", "");

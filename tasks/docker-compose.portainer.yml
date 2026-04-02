@@ -8,7 +8,7 @@ services:
       - Storage__Provider=local
       - LiteDb__Path=/data/whiskey-and-smokes.db
       - LocalStorage__Path=/data/uploads
-      - LocalStorage__BaseUrl=http://whiskey-and-smokes-api:8080/uploads
+      - LocalStorage__BaseUrl=/uploads
       - Jwt__Issuer=whiskey-and-smokes
       - Jwt__Audience=whiskey-and-smokes
       - AiFoundry__Models__Vision=gpt-4o
