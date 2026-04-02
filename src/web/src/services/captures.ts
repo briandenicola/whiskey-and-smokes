@@ -47,6 +47,9 @@ export const capturesApi = {
   get: (id: string) =>
     api.get<CaptureResponse>(`/captures/${id}`),
 
+  reprocess: (id: string) =>
+    api.post<CaptureResponse>(`/captures/${id}/reprocess`),
+
   list: (continuationToken?: string) =>
     api.get<{ items: CaptureResponse[]; continuationToken?: string; hasMore: boolean }>(
       '/captures', { params: { continuationToken } }

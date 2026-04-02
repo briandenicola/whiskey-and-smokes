@@ -98,6 +98,43 @@ public class CapturesController : ControllerBase
         return Ok(MapToResponse(capture));
     }
 
+    [HttpPost("{id}/reprocess")]
+    public async Task<ActionResult<CaptureResponse>> ReprocessCapture(string id)
+    {
+        using var activity = Diagnostics.Captures.StartActivity("CaptureReprocess");
+        var userId = GetUserId();
+        activity?.SetTag("capture.id", id);
+        activity?.SetTag("user.id", userId);
+
+        var capture = await _cosmosDb.GetAsync<Capture>(ContainerName, id, userId);
+        if (capture == null)
+            return NotFound();
+
+        if (capture.Status == CaptureStatus.Processing)
+            return Conflict(new { message = "Capture is already being processed" });
+
+        // Delete previously created items
+        foreach (var itemId in capture.ItemIds)
+        {
+            try { await _cosmosDb.DeleteAsync("items", itemId, userId); }
+            catch (Exception ex) { _logger.LogWarning(ex, "Could not delete item {ItemId} during reprocess", itemId); }
+        }
+
+        // Reset capture for reprocessing
+        capture.ItemIds = [];
+        capture.WorkflowSteps = [];
+        capture.ProcessingError = null;
+        capture.ProcessedBy = ProcessingSource.Pending;
+        capture.Status = CaptureStatus.Pending;
+        capture.UpdatedAt = DateTime.UtcNow;
+        await _cosmosDb.UpsertAsync(ContainerName, capture, capture.PartitionKey);
+
+        await _captureQueue.Writer.WriteAsync(capture);
+
+        _logger.LogInformation("Capture {CaptureId} queued for reprocessing by user {UserId}", id, userId);
+        return Ok(MapToResponse(capture));
+    }
+
     [HttpGet]
     public async Task<ActionResult<PagedResponse<CaptureResponse>>> ListCaptures([FromQuery] string? continuationToken)
     {

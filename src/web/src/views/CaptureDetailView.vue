@@ -10,6 +10,7 @@ const router = useRouter()
 const capture = ref<CaptureResponse | null>(null)
 const items = ref<Item[]>([])
 const isLoading = ref(true)
+const isReprocessing = ref(false)
 let pollInterval: ReturnType<typeof setInterval> | null = null
 
 const fallbackAgentNames = ['Local Extraction', 'Fallback']
@@ -23,15 +24,15 @@ const usedAi = computed(() => {
   return capture.value.workflowSteps.some(s => isAiStep(s))
 })
 
+const canReprocess = computed(() => {
+  if (!capture.value) return false
+  return capture.value.status === 'completed' || capture.value.status === 'failed'
+})
+
 onMounted(async () => {
   await loadCapture()
   if (capture.value && capture.value.status === 'processing') {
-    pollInterval = setInterval(async () => {
-      await loadCapture()
-      if (capture.value && capture.value.status !== 'processing') {
-        if (pollInterval) clearInterval(pollInterval)
-      }
-    }, 3000)
+    startPolling()
   }
 })
 
@@ -52,11 +53,37 @@ async function loadCapture() {
         } catch { /* item may not exist yet */ }
       }
       items.value = loaded
+    } else {
+      items.value = []
     }
   } catch {
     capture.value = null
   } finally {
     isLoading.value = false
+  }
+}
+
+function startPolling() {
+  if (pollInterval) clearInterval(pollInterval)
+  pollInterval = setInterval(async () => {
+    await loadCapture()
+    if (capture.value && capture.value.status !== 'processing') {
+      if (pollInterval) clearInterval(pollInterval)
+      pollInterval = null
+    }
+  }, 3000)
+}
+
+async function reprocess() {
+  if (!capture.value || isReprocessing.value) return
+  isReprocessing.value = true
+  try {
+    const { data } = await capturesApi.reprocess(capture.value.id)
+    capture.value = data
+    items.value = []
+    startPolling()
+  } finally {
+    isReprocessing.value = false
   }
 }
 
@@ -136,9 +163,19 @@ function captureStatusLabel(status: string): string {
       <span :class="captureStatusColor(capture.status)" class="text-sm font-medium">
         {{ captureStatusLabel(capture.status) }}
       </span>
-      <span class="text-xs text-stone-600">
-        {{ new Date(capture.createdAt).toLocaleString() }}
-      </span>
+      <div class="flex items-center gap-3">
+        <button
+          v-if="canReprocess"
+          @click="reprocess"
+          :disabled="isReprocessing"
+          class="text-xs px-3 py-1.5 rounded-lg bg-amber-700 hover:bg-amber-600 disabled:bg-stone-700 disabled:text-stone-500 text-white transition-colors"
+        >
+          {{ isReprocessing ? 'Reprocessing...' : 'Rerun AI Workflow' }}
+        </button>
+        <span class="text-xs text-stone-600">
+          {{ new Date(capture.createdAt).toLocaleString() }}
+        </span>
+      </div>
     </div>
 
     <p v-if="capture.userNote" class="text-sm text-stone-400 mb-4 italic">"{{ capture.userNote }}"</p>
