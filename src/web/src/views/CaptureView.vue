@@ -134,7 +134,7 @@ async function submit() {
       <textarea
         v-model="userNote"
         placeholder="Amazing old fashioned here, also tried a Lagavulin 16..."
-        rows="3"
+        rows="5"
         class="w-full bg-stone-800 border border-stone-700 rounded-xl px-4 py-3 text-stone-100 placeholder-stone-600 focus:outline-none focus:border-amber-700 resize-none"
       />
     </div>
