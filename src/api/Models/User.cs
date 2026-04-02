@@ -65,4 +65,7 @@ public class UserPreferences
 
     [JsonPropertyName("defaultView")]
     public string DefaultView { get; set; } = "recent";
+
+    [JsonPropertyName("collectionSort")]
+    public string CollectionSort { get; set; } = "rating";
 }

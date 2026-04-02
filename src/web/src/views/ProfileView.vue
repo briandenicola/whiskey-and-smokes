@@ -6,8 +6,15 @@ import { RefreshKey } from '../composables/refreshKey'
 
 const auth = useAuthStore()
 const displayName = ref('')
+const collectionSort = ref('rating')
 const isSaving = ref(false)
 const saveMessage = ref('')
+
+const sortOptions = [
+  { label: 'Rating', value: 'rating' },
+  { label: 'Date Added', value: 'createdAt' },
+  { label: 'Date Updated', value: 'updatedAt' },
+]
 
 // Password change
 const currentPassword = ref('')
@@ -52,6 +59,7 @@ async function exportData() {
 onMounted(() => {
   if (auth.user) {
     displayName.value = auth.user.displayName
+    collectionSort.value = auth.user.preferences?.collectionSort || 'rating'
   }
 })
 
@@ -59,7 +67,13 @@ async function saveProfile() {
   isSaving.value = true
   saveMessage.value = ''
   try {
-    await usersApi.updateMe({ displayName: displayName.value })
+    await usersApi.updateMe({
+      displayName: displayName.value,
+      preferences: {
+        ...auth.user!.preferences,
+        collectionSort: collectionSort.value,
+      },
+    })
     await auth.loadUser()
     saveMessage.value = 'Profile updated!'
     setTimeout(() => { saveMessage.value = '' }, 3000)
@@ -134,6 +148,23 @@ async function changePassword() {
             :class="auth.user.role === 'admin' ? 'border-amber-600 text-amber-500' : 'border-stone-700 text-stone-400'">
             {{ auth.user.role }}
           </span>
+        </div>
+
+        <div>
+          <label class="block text-sm text-stone-400 mb-2">Default Collection Sort</label>
+          <div class="flex gap-2">
+            <button
+              v-for="opt in sortOptions"
+              :key="opt.value"
+              @click="collectionSort = opt.value"
+              class="px-3 py-1.5 rounded-full text-sm border transition-colors"
+              :class="collectionSort === opt.value
+                ? 'bg-amber-700 border-amber-600 text-white'
+                : 'bg-stone-800 border-stone-700 text-stone-400 hover:border-stone-600'"
+            >
+              {{ opt.label }}
+            </button>
+          </div>
         </div>
 
         <div v-if="saveMessage" class="text-sm" :class="saveMessage.includes('Failed') ? 'text-red-400' : 'text-green-400'">

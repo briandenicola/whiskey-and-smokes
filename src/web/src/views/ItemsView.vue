@@ -2,12 +2,15 @@
 import { ref, inject, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useItemsStore } from '../stores/items'
+import { useAuthStore } from '../stores/auth'
 import { RefreshKey } from '../composables/refreshKey'
 
 const router = useRouter()
 const itemsStore = useItemsStore()
+const auth = useAuthStore()
 const activeFilter = ref<string | undefined>()
 const activeTab = ref<'collection' | 'wishlist'>('collection')
+const activeSort = ref(auth.user?.preferences?.collectionSort || 'rating')
 const registerRefresh = inject(RefreshKey)
 
 // Wishlist add form
@@ -17,6 +20,12 @@ const newType = ref('whiskey')
 const newBrand = ref('')
 const newNotes = ref('')
 const isAdding = ref(false)
+
+const sortOptions = [
+  { label: 'Rating', value: 'rating' },
+  { label: 'Added', value: 'createdAt' },
+  { label: 'Updated', value: 'updatedAt' },
+]
 
 registerRefresh?.(async () => {
   if (activeTab.value === 'wishlist') {
@@ -88,9 +97,27 @@ async function deleteItem(id: string) {
   await itemsStore.deleteItem(id)
 }
 
-const displayItems = computed(() =>
-  activeTab.value === 'wishlist' ? itemsStore.wishlistItems : itemsStore.items
-)
+const displayItems = computed(() => {
+  const source = activeTab.value === 'wishlist' ? itemsStore.wishlistItems : itemsStore.items
+  const sorted = [...source]
+  const sort = activeSort.value
+
+  sorted.sort((a, b) => {
+    if (sort === 'rating') {
+      const ra = a.userRating ?? 0
+      const rb = b.userRating ?? 0
+      if (rb !== ra) return rb - ra
+      return new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
+    }
+    if (sort === 'updatedAt') {
+      return new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
+    }
+    // createdAt (default)
+    return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+  })
+
+  return sorted
+})
 
 const isLoadingList = computed(() =>
   activeTab.value === 'wishlist' ? itemsStore.isLoadingWishlist : itemsStore.isLoading
@@ -133,6 +160,22 @@ onMounted(() => {
           : 'bg-stone-900 border-stone-700 text-stone-400 hover:border-stone-600'"
       >
         {{ filter.label }}
+      </button>
+    </div>
+
+    <!-- Sort options -->
+    <div class="flex items-center gap-2 mb-4">
+      <span class="text-xs text-stone-600">Sort:</span>
+      <button
+        v-for="opt in sortOptions"
+        :key="opt.value"
+        @click="activeSort = opt.value"
+        class="px-2.5 py-1 rounded-full text-xs border transition-colors"
+        :class="activeSort === opt.value
+          ? 'bg-stone-700 border-stone-600 text-stone-200'
+          : 'border-stone-800 text-stone-600 hover:border-stone-700'"
+      >
+        {{ opt.label }}
       </button>
     </div>
 

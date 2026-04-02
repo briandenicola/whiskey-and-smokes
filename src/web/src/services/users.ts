@@ -9,6 +9,7 @@ export interface User {
   preferences: {
     favoriteTypes: string[]
     defaultView: string
+    collectionSort: string
   }
   createdAt: string
   updatedAt: string
