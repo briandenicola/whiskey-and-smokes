@@ -89,6 +89,9 @@ export const usersApi = {
   changePassword: (data: { currentPassword: string; newPassword: string }) =>
     api.put('/users/me/password', data),
 
+  exportData: () =>
+    api.get('/users/me/export', { responseType: 'blob' }),
+
   // Admin - Foundry
   getFoundryStatus: () => api.get<FoundryStatus>('/admin/foundry'),
 

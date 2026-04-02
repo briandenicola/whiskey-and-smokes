@@ -23,6 +23,32 @@ registerRefresh?.(async () => {
   if (auth.user) displayName.value = auth.user.displayName
 })
 
+const isExporting = ref(false)
+const exportMessage = ref('')
+
+async function exportData() {
+  isExporting.value = true
+  exportMessage.value = ''
+  try {
+    const response = await usersApi.exportData()
+    const blob = new Blob([response.data], { type: 'application/zip' })
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.download = `whiskey-and-smokes-export-${new Date().toISOString().slice(0, 10)}.zip`
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+    URL.revokeObjectURL(url)
+    exportMessage.value = 'Export downloaded'
+    setTimeout(() => { exportMessage.value = '' }, 3000)
+  } catch {
+    exportMessage.value = 'Export failed'
+  } finally {
+    isExporting.value = false
+  }
+}
+
 onMounted(() => {
   if (auth.user) {
     displayName.value = auth.user.displayName
@@ -155,6 +181,26 @@ async function changePassword() {
           class="w-full bg-stone-700 hover:bg-stone-600 disabled:bg-stone-800 disabled:text-stone-600 text-white py-3 rounded-xl font-medium"
         >
           {{ isChangingPassword ? 'Changing...' : 'Change Password' }}
+        </button>
+      </section>
+
+      <!-- Export Data -->
+      <section class="bg-stone-900 border border-stone-800 rounded-xl p-4 space-y-4">
+        <h3 class="text-sm font-medium text-stone-400 uppercase tracking-wide">Data Export</h3>
+        <p class="text-sm text-stone-400">
+          Download all your data including items, captures, and images as a ZIP file.
+        </p>
+
+        <div v-if="exportMessage" class="text-sm" :class="exportMessage.includes('failed') ? 'text-red-400' : 'text-green-400'">
+          {{ exportMessage }}
+        </div>
+
+        <button
+          @click="exportData"
+          :disabled="isExporting"
+          class="w-full bg-stone-700 hover:bg-stone-600 disabled:bg-stone-800 disabled:text-stone-600 text-white py-3 rounded-xl font-medium"
+        >
+          {{ isExporting ? 'Exporting...' : 'Export All Data' }}
         </button>
       </section>
 
