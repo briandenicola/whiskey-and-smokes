@@ -27,25 +27,37 @@ public class ItemsController : ControllerBase
     [HttpGet]
     public async Task<ActionResult<PagedResponse<Item>>> ListItems(
         [FromQuery] string? type,
+        [FromQuery] string? status,
         [FromQuery] string? continuationToken)
     {
         using var activity = Diagnostics.General.StartActivity("ItemsList");
         var userId = GetUserId();
         activity?.SetTag("user.id", userId);
         activity?.SetTag("item.type", type);
-        _logger.LogDebug("Listing items for user {UserId}, typeFilter={TypeFilter}, hasContinuation={HasContinuation}",
-            userId, type, continuationToken != null);
+        activity?.SetTag("item.status", status);
+        _logger.LogDebug("Listing items for user {UserId}, typeFilter={TypeFilter}, statusFilter={StatusFilter}",
+            userId, type, status);
 
         System.Linq.Expressions.Expression<Func<Item, bool>>? predicate = null;
 
-        if (!string.IsNullOrEmpty(type))
-            predicate = i => i.Type == type;
+        if (status == ItemStatus.Wishlist)
+        {
+            predicate = !string.IsNullOrEmpty(type)
+                ? i => i.Status == ItemStatus.Wishlist && i.Type == type
+                : i => i.Status == ItemStatus.Wishlist;
+        }
+        else
+        {
+            predicate = !string.IsNullOrEmpty(type)
+                ? i => i.Status != ItemStatus.Wishlist && i.Type == type
+                : i => i.Status != ItemStatus.Wishlist;
+        }
 
         var (items, nextToken) = await _cosmosDb.QueryAsync(ContainerName, userId, continuationToken, predicate: predicate);
 
         activity?.SetTag("items.count", items.Count);
-        _logger.LogInformation("Listed {Count} items for user {UserId} (typeFilter={TypeFilter}), hasMore={HasMore}",
-            items.Count, userId, type, nextToken != null);
+        _logger.LogInformation("Listed {Count} items for user {UserId} (type={TypeFilter}, status={StatusFilter}), hasMore={HasMore}",
+            items.Count, userId, type, status, nextToken != null);
         return Ok(new PagedResponse<Item>
         {
             Items = items,
@@ -162,5 +174,61 @@ public class ItemsController : ControllerBase
 
         _logger.LogInformation("Deleted item {ItemId} for user {UserId}", id, userId);
         return NoContent();
+    }
+
+    [HttpPost("wishlist")]
+    public async Task<ActionResult<Item>> CreateWishlistItem([FromBody] CreateWishlistRequest request)
+    {
+        using var activity = Diagnostics.General.StartActivity("WishlistCreate");
+        var userId = GetUserId();
+        activity?.SetTag("user.id", userId);
+
+        if (string.IsNullOrWhiteSpace(request.Name))
+            return BadRequest(new { message = "Name is required" });
+        if (string.IsNullOrWhiteSpace(request.Type) || !ItemType.All.Contains(request.Type))
+            return BadRequest(new { message = "Valid type is required (whiskey, wine, cocktail, cigar)" });
+
+        var item = new Item
+        {
+            UserId = userId,
+            Name = request.Name.Trim(),
+            Type = request.Type,
+            Brand = request.Brand?.Trim(),
+            UserNotes = request.Notes?.Trim(),
+            Tags = request.Tags ?? [],
+            Venue = !string.IsNullOrWhiteSpace(request.VenueName)
+                ? new VenueInfo { Name = request.VenueName.Trim() }
+                : null,
+            Status = ItemStatus.Wishlist,
+            ProcessedBy = ProcessingSource.Manual,
+        };
+
+        item = await _cosmosDb.CreateAsync(ContainerName, item, item.PartitionKey);
+
+        _logger.LogInformation("Created wishlist item {ItemId} (type={ItemType}) for user {UserId}", item.Id, item.Type, userId);
+        return CreatedAtAction(nameof(GetItem), new { id = item.Id }, item);
+    }
+
+    [HttpPost("{id}/convert")]
+    public async Task<ActionResult<Item>> ConvertWishlistItem(string id)
+    {
+        using var activity = Diagnostics.General.StartActivity("WishlistConvert");
+        var userId = GetUserId();
+        activity?.SetTag("item.id", id);
+        activity?.SetTag("user.id", userId);
+
+        var item = await _cosmosDb.GetAsync<Item>(ContainerName, id, userId);
+        if (item == null)
+            return NotFound();
+
+        if (item.Status != ItemStatus.Wishlist)
+            return BadRequest(new { message = "Item is not a wishlist item" });
+
+        item.Status = ItemStatus.Reviewed;
+        item.UpdatedAt = DateTime.UtcNow;
+        item = await _cosmosDb.UpsertAsync(ContainerName, item, item.PartitionKey);
+
+        _logger.LogInformation("Converted wishlist item {ItemId} to collection for user {UserId}", id, userId);
+        return Ok(item);
     }
 }

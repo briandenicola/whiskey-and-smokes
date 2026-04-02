@@ -89,6 +89,28 @@ public class UpdateItemRequest
     public string? Status { get; set; }
 }
 
+// Wishlist
+public class CreateWishlistRequest
+{
+    [JsonPropertyName("name")]
+    public string Name { get; set; } = string.Empty;
+
+    [JsonPropertyName("type")]
+    public string Type { get; set; } = string.Empty;
+
+    [JsonPropertyName("brand")]
+    public string? Brand { get; set; }
+
+    [JsonPropertyName("notes")]
+    public string? Notes { get; set; }
+
+    [JsonPropertyName("venueName")]
+    public string? VenueName { get; set; }
+
+    [JsonPropertyName("tags")]
+    public List<string>? Tags { get; set; }
+}
+
 // User update
 public class UpdateUserRequest
 {

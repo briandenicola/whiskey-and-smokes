@@ -47,10 +47,19 @@ export interface UpdateItemRequest {
   status?: string
 }
 
+export interface CreateWishlistRequest {
+  name: string
+  type: string
+  brand?: string
+  notes?: string
+  venueName?: string
+  tags?: string[]
+}
+
 export const itemsApi = {
-  list: (type?: string, continuationToken?: string) =>
+  list: (type?: string, continuationToken?: string, status?: string) =>
     api.get<{ items: Item[]; continuationToken?: string; hasMore: boolean }>(
-      '/items', { params: { type, continuationToken } }
+      '/items', { params: { type, continuationToken, status } }
     ),
 
   get: (id: string) =>
@@ -61,4 +70,10 @@ export const itemsApi = {
 
   delete: (id: string) =>
     api.delete(`/items/${id}`),
+
+  createWishlistItem: (data: CreateWishlistRequest) =>
+    api.post<Item>('/items/wishlist', data),
+
+  convertWishlistItem: (id: string) =>
+    api.post<Item>(`/items/${id}/convert`),
 }

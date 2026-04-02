@@ -96,4 +96,5 @@ public static class ProcessingSource
     public const string AiFoundry = "ai-foundry";
     public const string LocalExtraction = "local-extraction";
     public const string AiFallback = "ai-fallback";
+    public const string Manual = "manual";
 }

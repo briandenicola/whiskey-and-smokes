@@ -107,4 +107,5 @@ public static class ItemStatus
 {
     public const string AiDraft = "ai-draft";
     public const string Reviewed = "reviewed";
+    public const string Wishlist = "wishlist";
 }
