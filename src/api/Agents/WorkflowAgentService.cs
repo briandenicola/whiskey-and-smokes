@@ -324,7 +324,13 @@ public class WorkflowAgentService : IAgentService
 
     private static List<Item> ConvertToItems(List<CuratorItemResult> curatorItems, Capture capture, NoteAnalysis? noteAnalysis = null)
     {
-        return curatorItems.Select(p =>
+        // Hard cap: take only the top 3 items by confidence
+        var capped = curatorItems
+            .OrderByDescending(p => p.Confidence ?? 0.8)
+            .Take(3)
+            .ToList();
+
+        return capped.Select(p =>
         {
             // Prefer curator venue, fall back to note analyst venue
             VenueInfo? venue = null;
@@ -453,6 +459,7 @@ public class WorkflowAgentService : IAgentService
             {(vision.Location != null ? $"GPS Location: {vision.Location.Latitude}, {vision.Location.Longitude}" : "")}
 
             Please identify each item and provide your expert analysis.
+            Focus on the 1-3 PRIMARY items only. Do not add items beyond what was described.
             """;
     }
 
