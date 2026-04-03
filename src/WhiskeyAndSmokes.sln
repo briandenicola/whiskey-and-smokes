@@ -19,6 +19,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "AgentInitiator", "AgentInit
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WhiskeyAndSmokes.AgentInitiator", "AgentInitiator\WhiskeyAndSmokes.AgentInitiator.csproj", "{6E43D4EE-630C-4653-9053-98BA0E18CDA2}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WhiskeyAndSmokes.Tests", "..\tests\WhiskeyAndSmokes.Tests\WhiskeyAndSmokes.Tests.csproj", "{6FF9726A-3C5A-4F37-AA8C-46897ACBDAED}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -77,6 +79,18 @@ Global
 		{6E43D4EE-630C-4653-9053-98BA0E18CDA2}.Release|x64.Build.0 = Release|Any CPU
 		{6E43D4EE-630C-4653-9053-98BA0E18CDA2}.Release|x86.ActiveCfg = Release|Any CPU
 		{6E43D4EE-630C-4653-9053-98BA0E18CDA2}.Release|x86.Build.0 = Release|Any CPU
+		{6FF9726A-3C5A-4F37-AA8C-46897ACBDAED}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6FF9726A-3C5A-4F37-AA8C-46897ACBDAED}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6FF9726A-3C5A-4F37-AA8C-46897ACBDAED}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{6FF9726A-3C5A-4F37-AA8C-46897ACBDAED}.Debug|x64.Build.0 = Debug|Any CPU
+		{6FF9726A-3C5A-4F37-AA8C-46897ACBDAED}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{6FF9726A-3C5A-4F37-AA8C-46897ACBDAED}.Debug|x86.Build.0 = Debug|Any CPU
+		{6FF9726A-3C5A-4F37-AA8C-46897ACBDAED}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6FF9726A-3C5A-4F37-AA8C-46897ACBDAED}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6FF9726A-3C5A-4F37-AA8C-46897ACBDAED}.Release|x64.ActiveCfg = Release|Any CPU
+		{6FF9726A-3C5A-4F37-AA8C-46897ACBDAED}.Release|x64.Build.0 = Release|Any CPU
+		{6FF9726A-3C5A-4F37-AA8C-46897ACBDAED}.Release|x86.ActiveCfg = Release|Any CPU
+		{6FF9726A-3C5A-4F37-AA8C-46897ACBDAED}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

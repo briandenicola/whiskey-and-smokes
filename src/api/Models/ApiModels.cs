@@ -1,3 +1,4 @@
+using System.ComponentModel.DataAnnotations;
 using System.Text.Json.Serialization;
 
 namespace WhiskeyAndSmokes.Api.Models;
@@ -6,12 +7,16 @@ namespace WhiskeyAndSmokes.Api.Models;
 public class CreateCaptureRequest
 {
     [JsonPropertyName("userNote")]
+    [StringLength(1000)]
     public string? UserNote { get; set; }
 
     [JsonPropertyName("location")]
     public GeoLocation? Location { get; set; }
 
     [JsonPropertyName("photos")]
+    [Required]
+    [MinLength(1)]
+    [MaxLength(10)]
     public List<string>? Photos { get; set; }
 }
 
@@ -62,33 +67,42 @@ public class UploadUrlResponse
 public class UpdateItemRequest
 {
     [JsonPropertyName("name")]
+    [StringLength(200)]
     public string? Name { get; set; }
 
     [JsonPropertyName("type")]
+    [StringLength(50)]
     public string? Type { get; set; }
 
     [JsonPropertyName("brand")]
+    [StringLength(200)]
     public string? Brand { get; set; }
 
     [JsonPropertyName("category")]
+    [StringLength(100)]
     public string? Category { get; set; }
 
     [JsonPropertyName("venue")]
     public VenueInfo? Venue { get; set; }
 
     [JsonPropertyName("userRating")]
+    [Range(0, 5)]
     public double? UserRating { get; set; }
 
     [JsonPropertyName("userNotes")]
+    [StringLength(2000)]
     public string? UserNotes { get; set; }
 
     [JsonPropertyName("journalEntry")]
+    [StringLength(2000)]
     public string? JournalEntry { get; set; }
 
     [JsonPropertyName("tags")]
+    [MaxLength(20)]
     public List<string>? Tags { get; set; }
 
     [JsonPropertyName("status")]
+    [StringLength(50)]
     public string? Status { get; set; }
 }
 
@@ -96,21 +110,29 @@ public class UpdateItemRequest
 public class CreateWishlistRequest
 {
     [JsonPropertyName("name")]
+    [Required]
+    [StringLength(200)]
     public string Name { get; set; } = string.Empty;
 
     [JsonPropertyName("type")]
+    [Required]
+    [StringLength(50)]
     public string Type { get; set; } = string.Empty;
 
     [JsonPropertyName("brand")]
+    [StringLength(200)]
     public string? Brand { get; set; }
 
     [JsonPropertyName("notes")]
+    [StringLength(2000)]
     public string? Notes { get; set; }
 
     [JsonPropertyName("venueName")]
+    [StringLength(200)]
     public string? VenueName { get; set; }
 
     [JsonPropertyName("tags")]
+    [MaxLength(20)]
     public List<string>? Tags { get; set; }
 }
 
@@ -118,6 +140,7 @@ public class CreateWishlistRequest
 public class UpdateUserRequest
 {
     [JsonPropertyName("displayName")]
+    [StringLength(100)]
     public string? DisplayName { get; set; }
 
     [JsonPropertyName("preferences")]
@@ -128,6 +151,8 @@ public class UpdateUserRequest
 public class UpdateUserRoleRequest
 {
     [JsonPropertyName("role")]
+    [Required]
+    [RegularExpression("^(user|admin)$", ErrorMessage = "Role must be 'user' or 'admin'")]
     public string Role { get; set; } = "user";
 }
 
@@ -147,21 +172,33 @@ public class PagedResponse<T>
 public class RegisterRequest
 {
     [JsonPropertyName("email")]
+    [Required]
+    [EmailAddress]
+    [StringLength(254)]
     public string Email { get; set; } = string.Empty;
 
     [JsonPropertyName("password")]
+    [Required]
+    [StringLength(128, MinimumLength = 8)]
     public string Password { get; set; } = string.Empty;
 
     [JsonPropertyName("displayName")]
+    [Required]
+    [StringLength(100)]
     public string DisplayName { get; set; } = string.Empty;
 }
 
 public class LoginRequest
 {
     [JsonPropertyName("email")]
+    [Required]
+    [EmailAddress]
+    [StringLength(254)]
     public string Email { get; set; } = string.Empty;
 
     [JsonPropertyName("password")]
+    [Required]
+    [StringLength(128, MinimumLength = 8)]
     public string Password { get; set; } = string.Empty;
 }
 
@@ -180,15 +217,19 @@ public class AuthResponse
 public class ChangePasswordRequest
 {
     [JsonPropertyName("currentPassword")]
+    [Required]
     public string CurrentPassword { get; set; } = string.Empty;
 
     [JsonPropertyName("newPassword")]
+    [Required]
+    [StringLength(128, MinimumLength = 8)]
     public string NewPassword { get; set; } = string.Empty;
 }
 
 public class EntraTokenRequest
 {
     [JsonPropertyName("accessToken")]
+    [Required]
     public string AccessToken { get; set; } = string.Empty;
 }
 
@@ -207,29 +248,39 @@ public class EntraConfigResponse
 public class AdminResetPasswordRequest
 {
     [JsonPropertyName("newPassword")]
+    [Required]
+    [StringLength(128, MinimumLength = 8)]
     public string NewPassword { get; set; } = string.Empty;
 }
 
 public class UpdatePromptRequest
 {
     [JsonPropertyName("content")]
+    [Required]
+    [StringLength(10000)]
     public string Content { get; set; } = string.Empty;
 }
 
 public class CreateApiKeyRequest
 {
     [JsonPropertyName("name")]
+    [Required]
+    [StringLength(100)]
     public string Name { get; set; } = string.Empty;
 }
 
 public class AddPhotoRequest
 {
     [JsonPropertyName("blobUrl")]
+    [Required]
+    [StringLength(2048)]
     public string BlobUrl { get; set; } = string.Empty;
 }
 
 public class RemovePhotoRequest
 {
     [JsonPropertyName("blobUrl")]
+    [Required]
+    [StringLength(2048)]
     public string BlobUrl { get; set; } = string.Empty;
 }

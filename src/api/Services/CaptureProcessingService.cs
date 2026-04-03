@@ -34,14 +34,30 @@ public class CaptureProcessingService : BackgroundService
 
         await foreach (var capture in _channel.Reader.ReadAllAsync(stoppingToken))
         {
-            try
+            const int maxRetries = 3;
+            for (int attempt = 1; attempt <= maxRetries; attempt++)
             {
-                _logger.LogInformation("Dequeued capture {CaptureId} for processing", capture.Id);
-                await _agentService.ProcessCaptureAsync(capture);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Unhandled error processing capture {CaptureId}", capture.Id);
+                try
+                {
+                    _logger.LogInformation("Processing capture {CaptureId} (attempt {Attempt}/{Max})",
+                        capture.Id, attempt, maxRetries);
+                    await _agentService.ProcessCaptureAsync(capture);
+                    break;
+                }
+                catch (Exception ex) when (attempt < maxRetries)
+                {
+                    var delay = TimeSpan.FromSeconds(Math.Pow(4, attempt - 1)); // 1s, 4s, 16s
+                    _logger.LogWarning(ex,
+                        "Error processing capture {CaptureId} on attempt {Attempt}/{Max}. Retrying in {Delay}s",
+                        capture.Id, attempt, maxRetries, delay.TotalSeconds);
+                    await Task.Delay(delay, stoppingToken);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex,
+                        "Capture {CaptureId} failed after {Max} attempts. UserId={UserId}, PhotoCount={PhotoCount}",
+                        capture.Id, maxRetries, capture.UserId, capture.Photos.Count);
+                }
             }
         }
 

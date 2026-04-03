@@ -28,7 +28,7 @@ public class UploadsController : ControllerBase
 
     [HttpPut("direct-upload")]
     [Authorize]
-    [RequestSizeLimit(20_000_000)] // 20MB
+    [RequestSizeLimit(15_728_640)] // 15MB
     public async Task<IActionResult> DirectUpload([FromQuery] string path)
     {
         using var activity = Diagnostics.Storage.StartActivity("UploadDirectUpload");
@@ -41,8 +41,9 @@ public class UploadsController : ControllerBase
         if (string.IsNullOrWhiteSpace(path))
             return BadRequest(new { message = "Path is required" });
 
+        var canonicalBase = Path.GetFullPath(_storagePath) + Path.DirectorySeparatorChar;
         var fullPath = Path.GetFullPath(Path.Combine(_storagePath, path.Replace('/', Path.DirectorySeparatorChar)));
-        if (!fullPath.StartsWith(Path.GetFullPath(_storagePath), StringComparison.OrdinalIgnoreCase))
+        if (!fullPath.StartsWith(canonicalBase, StringComparison.OrdinalIgnoreCase))
         {
             _logger.LogWarning("Path traversal attempt blocked: {Path}", path);
             return BadRequest(new { message = "Invalid path" });
@@ -78,8 +79,9 @@ public class UploadsController : ControllerBase
         if (!_isLocalStorage)
             return NotFound();
 
+        var canonicalBase = Path.GetFullPath(_storagePath) + Path.DirectorySeparatorChar;
         var fullPath = Path.GetFullPath(Path.Combine(_storagePath, filePath.Replace('/', Path.DirectorySeparatorChar)));
-        if (!fullPath.StartsWith(Path.GetFullPath(_storagePath), StringComparison.OrdinalIgnoreCase))
+        if (!fullPath.StartsWith(canonicalBase, StringComparison.OrdinalIgnoreCase))
         {
             _logger.LogWarning("Path traversal attempt blocked on read: {FilePath}", filePath);
             return BadRequest(new { message = "Invalid path" });

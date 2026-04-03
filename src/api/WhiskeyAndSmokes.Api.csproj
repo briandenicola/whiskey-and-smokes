@@ -30,4 +30,8 @@
     <ProjectReference Include="..\ServiceDefaults\WhiskeyAndSmokes.ServiceDefaults.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <InternalsVisibleTo Include="WhiskeyAndSmokes.Tests" />
+  </ItemGroup>
+
 </Project>

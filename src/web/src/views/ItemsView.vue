@@ -160,14 +160,14 @@ onUnmounted(() => {
     <div class="flex bg-stone-900 border border-stone-800 rounded-xl p-1 mb-4">
       <button
         @click="switchTab('collection')"
-        class="flex-1 py-2 rounded-lg text-sm font-medium transition-colors"
+        class="flex-1 py-2 min-h-[44px] rounded-lg text-sm font-medium transition-colors"
         :class="activeTab === 'collection' ? 'bg-amber-700 text-white' : 'text-stone-400 hover:text-stone-200'"
       >
         Collection
       </button>
       <button
         @click="switchTab('wishlist')"
-        class="flex-1 py-2 rounded-lg text-sm font-medium transition-colors"
+        class="flex-1 py-2 min-h-[44px] rounded-lg text-sm font-medium transition-colors"
         :class="activeTab === 'wishlist' ? 'bg-amber-700 text-white' : 'text-stone-400 hover:text-stone-200'"
       >
         Wishlist
@@ -180,7 +180,7 @@ onUnmounted(() => {
       <div class="relative filter-dropdown">
         <button
           @click="showFilterMenu = !showFilterMenu"
-          class="flex items-center gap-1 px-3 py-1.5 rounded-full text-xs border transition-colors"
+          class="flex items-center gap-1 px-3 py-2.5 min-h-[44px] rounded-full text-xs border transition-colors"
           :class="activeFilter
             ? 'bg-amber-700 border-amber-600 text-white'
             : 'border-stone-700 text-stone-400 hover:border-stone-600'"
@@ -215,7 +215,7 @@ onUnmounted(() => {
       <div class="relative shrink-0 sort-dropdown">
         <button
           @click="showSortMenu = !showSortMenu"
-          class="flex items-center gap-1 px-2 py-1.5 rounded-full text-xs border border-stone-700 text-stone-400 hover:border-stone-600 transition-colors"
+          class="flex items-center gap-1 px-3 py-2.5 min-h-[44px] rounded-full text-xs border border-stone-700 text-stone-400 hover:border-stone-600 transition-colors"
         >
           <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
             <path stroke-linecap="round" stroke-linejoin="round" d="M3 4h13M3 8h9m-9 4h6m4 0l4-4m0 0l4 4m-4-4v12" />
@@ -374,13 +374,13 @@ onUnmounted(() => {
           <div class="flex gap-2 mt-3">
             <button
               @click="convertItem(item.id)"
-              class="flex-1 bg-amber-700 hover:bg-amber-600 text-white py-2 rounded-xl text-sm font-medium transition-colors"
+              class="flex-1 bg-amber-700 hover:bg-amber-600 text-white py-2 min-h-[44px] rounded-xl text-sm font-medium transition-colors"
             >
               Add to Collection
             </button>
             <button
               @click="deleteItem(item.id)"
-              class="px-4 py-2 bg-stone-800 text-red-400 hover:bg-stone-700 rounded-xl text-sm transition-colors"
+              class="px-4 py-2 min-h-[44px] bg-stone-800 text-red-400 hover:bg-stone-700 rounded-xl text-sm transition-colors"
             >
               Remove
             </button>

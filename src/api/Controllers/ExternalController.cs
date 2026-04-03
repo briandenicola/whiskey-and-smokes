@@ -48,6 +48,10 @@ public class ExternalController : ControllerBase
         [FromForm] List<IFormFile>? images)
     {
         var userId = GetUserId();
+
+        if (note != null && note.Length > 1000)
+            return BadRequest(new { message = "Note must be 1000 characters or less" });
+
         _logger.LogInformation("External capture from user {UserId}: images={ImageCount}, hasNote={HasNote}",
             userId, images?.Count ?? 0, !string.IsNullOrWhiteSpace(note));
 
@@ -82,7 +86,7 @@ public class ExternalController : ControllerBase
             if (location == null)
             {
                 try { location = ExifLocationService.ExtractGpsFromStream(memStream); }
-                catch { /* EXIF extraction is best-effort */ }
+                catch (Exception ex) { _logger.LogWarning(ex, "EXIF extraction failed for uploaded file {FileName}", image.FileName); }
                 memStream.Position = 0;
             }
 

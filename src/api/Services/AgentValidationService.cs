@@ -112,24 +112,22 @@ public class AgentValidationService : IHostedService
         }
         catch (Exception ex)
         {
-            // Unwrap the full exception chain to surface the root cause
-            var innerMessages = new List<string>();
-            var current = ex;
-            while (current != null)
+            var errorCategory = ex switch
             {
-                innerMessages.Add($"[{current.GetType().Name}] {current.Message}");
-                current = current.InnerException;
-            }
-            var fullError = string.Join(" → ", innerMessages);
+                Azure.RequestFailedException => "AzureServiceError",
+                HttpRequestException => "ConnectionError",
+                TaskCanceledException => "Timeout",
+                _ => "UnexpectedError"
+            };
 
             _logger.LogWarning(ex,
-                "Could not validate Foundry agents: {Error}. " +
+                "Could not validate Foundry agents: {ErrorCategory}. " +
                 "The app will fall back to local extraction.",
-                fullError);
+                errorCategory);
             _foundryStatus.Update(s =>
             {
                 s.AgentValidation.Status = "error";
-                s.AgentValidation.Error = fullError;
+                s.AgentValidation.Error = errorCategory;
             });
         }
     }

@@ -33,6 +33,7 @@ if (string.IsNullOrEmpty(jwtOptions.Secret))
 {
     if (builder.Environment.IsDevelopment())
     {
+        // Dev-only fallback — never used in production (production throws below)
         jwtOptions.Secret = "dev-secret-key-change-in-production-min-32-chars!!";
     }
     else
@@ -209,9 +210,10 @@ builder.Services.AddSingleton<IAgentService, WorkflowAgentService>();
 builder.Services.AddHostedService<AgentValidationService>();
 
 // Background capture processing queue
-builder.Services.AddSingleton(Channel.CreateUnbounded<Capture>(new UnboundedChannelOptions
+builder.Services.AddSingleton(Channel.CreateBounded<Capture>(new BoundedChannelOptions(100)
 {
-    SingleReader = true
+    SingleReader = true,
+    FullMode = BoundedChannelFullMode.Wait
 }));
 builder.Services.AddHostedService<CaptureProcessingService>();
 

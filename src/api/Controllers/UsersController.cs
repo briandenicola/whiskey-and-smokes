@@ -52,6 +52,8 @@ public class UsersController : ControllerBase
     [HttpPut("me")]
     public async Task<ActionResult<User>> UpdateCurrentUser([FromBody] UpdateUserRequest request)
     {
+        if (!ModelState.IsValid) return BadRequest(ModelState);
+
         using var activity = Diagnostics.Auth.StartActivity("UserUpdateProfile");
         var userId = GetUserId();
         activity?.SetTag("user.id", userId);
@@ -77,6 +79,8 @@ public class UsersController : ControllerBase
     [HttpPut("me/password")]
     public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordRequest request)
     {
+        if (!ModelState.IsValid) return BadRequest(ModelState);
+
         using var activity = Diagnostics.Auth.StartActivity("UserChangePassword");
         _logger.LogDebug("Password change attempt");
 
@@ -134,6 +138,8 @@ public class UsersController : ControllerBase
     [HttpPost("me/api-keys")]
     public async Task<ActionResult<CreateApiKeyResponse>> CreateApiKey([FromBody] CreateApiKeyRequest request)
     {
+        if (!ModelState.IsValid) return BadRequest(ModelState);
+
         var userId = GetUserId();
         var user = await _cosmosDb.GetAsync<User>(ContainerName, userId, userId);
         if (user == null) return NotFound();
