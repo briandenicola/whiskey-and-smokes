@@ -29,12 +29,23 @@ public class CapturesController : ControllerBase
 
     private string GetUserId() => User.FindFirstValue(ClaimTypes.NameIdentifier) ?? throw new UnauthorizedAccessException();
 
+    private static readonly HashSet<string> AllowedImageExtensions =
+        [".jpg", ".jpeg", ".png", ".gif", ".webp", ".heic", ".heif"];
+
     [HttpGet("upload-url")]
     public async Task<ActionResult<UploadUrlResponse>> GetUploadUrl([FromQuery] string fileName)
     {
         using var activity = Diagnostics.Captures.StartActivity("CaptureGetUploadUrl");
         var userId = GetUserId();
         activity?.SetTag("user.id", userId);
+
+        if (string.IsNullOrWhiteSpace(fileName) || fileName.Length > 255)
+            return BadRequest(new { message = "Valid fileName is required (max 255 chars)" });
+
+        var ext = Path.GetExtension(fileName).ToLowerInvariant();
+        if (!AllowedImageExtensions.Contains(ext))
+            return BadRequest(new { message = $"File type {ext} is not allowed. Accepted: jpg, jpeg, png, gif, webp, heic, heif" });
+
         _logger.LogDebug("Upload URL requested by user {UserId} for file {FileName}", userId, fileName);
 
         var (uploadUrl, blobUrl) = await _blobStorage.GenerateUploadUrlAsync(userId, fileName);
@@ -46,6 +57,8 @@ public class CapturesController : ControllerBase
     [HttpPost]
     public async Task<ActionResult<CaptureResponse>> CreateCapture([FromBody] CreateCaptureRequest request)
     {
+        if (!ModelState.IsValid) return BadRequest(ModelState);
+
         using var activity = Diagnostics.Captures.StartActivity("CaptureCreate");
         var userId = GetUserId();
         var photoCount = request.Photos?.Count ?? 0;

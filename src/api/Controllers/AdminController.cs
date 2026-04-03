@@ -58,13 +58,13 @@ public class AdminController : ControllerBase
     [HttpPut("users/{userId}/role")]
     public async Task<ActionResult<User>> UpdateUserRole(string userId, [FromBody] UpdateUserRoleRequest request)
     {
+        if (!ModelState.IsValid) return BadRequest(ModelState);
+
         using var activity = Diagnostics.Admin.StartActivity("AdminUpdateRole");
         activity?.SetTag("target.user_id", userId);
         activity?.SetTag("target.new_role", request.Role);
 
-        if (request.Role != "user" && request.Role != "admin")
-            return BadRequest(new { message = "Role must be 'user' or 'admin'" });
-
+        // Constitution exception: admin operations inherently require cross-partition access
         var user = await _cosmosDb.GetAsync<User>(UsersContainer, userId, userId);
         if (user == null)
         {
@@ -85,12 +85,12 @@ public class AdminController : ControllerBase
     [HttpPut("users/{userId}/password")]
     public async Task<IActionResult> ResetUserPassword(string userId, [FromBody] AdminResetPasswordRequest request)
     {
+        if (!ModelState.IsValid) return BadRequest(ModelState);
+
         using var activity = Diagnostics.Admin.StartActivity("AdminResetPassword");
         activity?.SetTag("target.user_id", userId);
 
-        if (string.IsNullOrWhiteSpace(request.NewPassword) || request.NewPassword.Length < 8)
-            return BadRequest(new { message = "Password must be at least 8 characters" });
-
+        // Constitution exception: admin operations inherently require cross-partition access
         var user = await _cosmosDb.GetAsync<User>(UsersContainer, userId, userId);
         if (user == null)
         {
@@ -161,7 +161,7 @@ public class AdminController : ControllerBase
     {
         // Prompts are now managed as files in AgentInitiator/Prompts/ and baked into Foundry agents.
         // To change a prompt, edit the file and re-run the agent:init task.
-        return StatusCode(405, new { message = "Prompts are read-only. Edit the prompt files in AgentInitiator/Prompts/ and re-run the agent:init task to update agents." });
+        return StatusCode(405, new { message = "Prompts are read-only and managed through the deployment pipeline." });
     }
 
     // ── Logging Configuration ────────────────────────────────
@@ -229,7 +229,8 @@ public class AdminController : ControllerBase
 
             var agentRef = new Azure.AI.Projects.OpenAI.AgentReference(healthCheckAgent, "1");
             var responsesClient = projectClient.OpenAI.GetProjectResponsesClientForAgent(agentRef);
-            var response = await responsesClient.CreateResponseAsync(healthCheckPrompt);
+            using var cts = new CancellationTokenSource(TimeSpan.FromMinutes(1));
+            var response = await responsesClient.CreateResponseAsync(healthCheckPrompt, cancellationToken: cts.Token);
 
             sw.Stop();
             var responseText = response.Value.GetOutputText() ?? "(empty)";
@@ -244,21 +245,11 @@ public class AdminController : ControllerBase
         catch (Exception ex)
         {
             sw.Stop();
-            // Unwrap the full exception chain to surface the root cause (e.g. SSL inner exceptions)
-            var innerMessages = new List<string>();
-            var current = ex;
-            while (current != null)
-            {
-                innerMessages.Add($"[{current.GetType().Name}] {current.Message}");
-                current = current.InnerException;
-            }
-            var fullError = string.Join(" → ", innerMessages);
-
             testResult.Status = "error";
-            testResult.Message = fullError;
+            testResult.Message = "Foundry connectivity test failed. Check logs for details.";
             testResult.LatencyMs = sw.ElapsedMilliseconds;
 
-            _logger.LogWarning(ex, "Foundry connectivity test failed: {Error}", fullError);
+            _logger.LogWarning(ex, "Foundry connectivity test failed");
         }
 
         _foundryStatus.Update(s => s.ConnectivityTest = testResult);

@@ -199,7 +199,7 @@ async function testFoundryConnectivity() {
     <div class="flex gap-2 mb-4">
       <button
         @click="activeTab = 'users'"
-        class="flex-1 py-2 rounded-xl text-sm font-medium transition-colors"
+        class="flex-1 py-2 min-h-[44px] rounded-xl text-sm font-medium transition-colors"
         :class="activeTab === 'users'
           ? 'bg-amber-700/30 text-amber-500 border border-amber-700'
           : 'bg-stone-800 text-stone-400 border border-stone-700 hover:bg-stone-750'"
@@ -208,7 +208,7 @@ async function testFoundryConnectivity() {
       </button>
       <button
         @click="activeTab = 'prompts'"
-        class="flex-1 py-2 rounded-xl text-sm font-medium transition-colors"
+        class="flex-1 py-2 min-h-[44px] rounded-xl text-sm font-medium transition-colors"
         :class="activeTab === 'prompts'
           ? 'bg-amber-700/30 text-amber-500 border border-amber-700'
           : 'bg-stone-800 text-stone-400 border border-stone-700 hover:bg-stone-750'"
@@ -217,7 +217,7 @@ async function testFoundryConnectivity() {
       </button>
       <button
         @click="activeTab = 'foundry'"
-        class="flex-1 py-2 rounded-xl text-sm font-medium transition-colors"
+        class="flex-1 py-2 min-h-[44px] rounded-xl text-sm font-medium transition-colors"
         :class="activeTab === 'foundry'
           ? 'bg-amber-700/30 text-amber-500 border border-amber-700'
           : 'bg-stone-800 text-stone-400 border border-stone-700 hover:bg-stone-750'"
@@ -226,7 +226,7 @@ async function testFoundryConnectivity() {
       </button>
       <button
         @click="activeTab = 'logging'"
-        class="flex-1 py-2 rounded-xl text-sm font-medium transition-colors"
+        class="flex-1 py-2 min-h-[44px] rounded-xl text-sm font-medium transition-colors"
         :class="activeTab === 'logging'
           ? 'bg-amber-700/30 text-amber-500 border border-amber-700'
           : 'bg-stone-800 text-stone-400 border border-stone-700 hover:bg-stone-750'"
@@ -278,14 +278,14 @@ async function testFoundryConnectivity() {
           <div class="flex gap-2 mt-3 pt-3 border-t border-stone-800">
             <button
               @click="startResetPassword(user.id)"
-              class="text-xs px-3 py-1.5 rounded-lg bg-stone-800 text-stone-300 hover:bg-stone-700 transition-colors"
+              class="text-xs px-3 py-2.5 min-h-[44px] rounded-lg bg-stone-800 text-stone-300 hover:bg-stone-700 transition-colors"
             >
               Reset Password
             </button>
             <button
               v-if="user.id !== auth.user?.id"
               @click="startDeleteUser(user.id)"
-              class="text-xs px-3 py-1.5 rounded-lg bg-red-900/30 text-red-400 hover:bg-red-900/50 border border-red-800/50 transition-colors"
+              class="text-xs px-3 py-2.5 min-h-[44px] rounded-lg bg-red-900/30 text-red-400 hover:bg-red-900/50 border border-red-800/50 transition-colors"
             >
               Delete
             </button>
@@ -396,7 +396,7 @@ async function testFoundryConnectivity() {
             <button
               @click="testFoundryConnectivity"
               :disabled="foundryTesting || !foundryStatus.isProjectConfigured"
-              class="text-xs px-4 py-2 rounded-xl bg-amber-700 text-white hover:bg-amber-600 transition-colors disabled:opacity-50"
+              class="text-xs px-4 py-2 min-h-[44px] rounded-xl bg-amber-700 text-white hover:bg-amber-600 transition-colors disabled:opacity-50"
             >
               {{ foundryTesting ? 'Testing...' : 'Test Connection' }}
             </button>
@@ -446,7 +446,7 @@ async function testFoundryConnectivity() {
             <select
               v-model="editedDefaultLevel"
               :class="getLevelColor(editedDefaultLevel)"
-              class="bg-stone-800 border border-stone-700 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:border-amber-700"
+              class="bg-stone-800 border border-stone-700 rounded-xl px-3 py-1.5 text-sm focus:outline-none focus:border-amber-700"
             >
               <option v-for="level in loggingData.availableLevels" :key="level" :value="level">
                 {{ level }}
@@ -466,7 +466,7 @@ async function testFoundryConnectivity() {
             <select
               v-model="editedLevels[category]"
               :class="getLevelColor(editedLevels[category])"
-              class="bg-stone-800 border border-stone-700 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:border-amber-700"
+              class="bg-stone-800 border border-stone-700 rounded-xl px-3 py-1.5 text-sm focus:outline-none focus:border-amber-700"
             >
               <option v-for="level in loggingData.availableLevels" :key="level" :value="level">
                 {{ level }}

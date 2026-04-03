@@ -211,7 +211,7 @@ async function changePassword() {
               v-for="opt in sortOptions"
               :key="opt.value"
               @click="collectionSort = opt.value"
-              class="px-3 py-1.5 rounded-full text-sm border transition-colors"
+              class="px-4 py-2.5 min-h-[44px] rounded-full text-sm border transition-colors"
               :class="collectionSort === opt.value
                 ? 'bg-amber-700 border-amber-600 text-white'
                 : 'bg-stone-800 border-stone-700 text-stone-400 hover:border-stone-600'"

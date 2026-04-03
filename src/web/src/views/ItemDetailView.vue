@@ -288,18 +288,18 @@ function isAiGenerated(data: Item): boolean {
   <div v-else class="p-4 max-w-lg mx-auto">
     <!-- Top bar: Back + actions -->
     <div class="flex items-center justify-between mb-4">
-      <button @click="router.back()" class="text-stone-400 hover:text-stone-200 text-sm">
+      <button @click="router.back()" class="text-stone-400 hover:text-stone-200 hover:opacity-80 text-sm min-h-[44px] min-w-[44px] px-2 py-2 transition-opacity">
         ← Back
       </button>
       <div class="flex items-center gap-3">
         <!-- View mode: Edit + Delete icons -->
         <template v-if="!isEditing">
-          <button @click="startEditing" class="text-amber-500 hover:text-amber-400 p-1" title="Edit">
+          <button @click="startEditing" class="text-amber-500 hover:text-amber-400 p-2.5 min-h-[44px] min-w-[44px]" title="Edit">
             <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
               <path stroke-linecap="round" stroke-linejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
             </svg>
           </button>
-          <button @click="showDeleteConfirm = true" class="text-red-400 hover:text-red-300 p-1" title="Delete">
+          <button @click="showDeleteConfirm = true" class="text-red-400 hover:text-red-300 p-2.5 min-h-[44px] min-w-[44px]" title="Delete">
             <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
               <path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
             </svg>
@@ -307,12 +307,12 @@ function isAiGenerated(data: Item): boolean {
         </template>
         <!-- Edit mode: Save + Cancel icons -->
         <template v-else>
-          <button @click="save" :disabled="isSaving" class="text-green-400 hover:text-green-300 disabled:text-stone-600 p-1" title="Save">
+          <button @click="save" :disabled="isSaving" class="text-green-400 hover:text-green-300 disabled:text-stone-600 p-2.5 min-h-[44px] min-w-[44px]" title="Save">
             <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
               <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
             </svg>
           </button>
-          <button @click="isEditing = false" class="text-stone-400 hover:text-stone-200 p-1" title="Cancel">
+          <button @click="isEditing = false" class="text-stone-400 hover:text-stone-200 p-2.5 min-h-[44px] min-w-[44px]" title="Cancel">
             <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
               <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
             </svg>
@@ -352,7 +352,7 @@ function isAiGenerated(data: Item): boolean {
           <button
             v-if="!pendingPhotoDeletes.has(url)"
             @click="markPhotoForDelete(url)"
-            class="absolute top-1 right-1 bg-black/70 text-red-400 hover:text-red-300 rounded-full w-6 h-6 flex items-center justify-center text-xs"
+            class="absolute top-1 right-1 bg-black/70 text-red-400 hover:text-red-300 rounded-full w-11 h-11 flex items-center justify-center text-xs"
             title="Remove photo"
           >×</button>
           <button
@@ -374,7 +374,7 @@ function isAiGenerated(data: Item): boolean {
           />
           <button
             @click="removePendingPhoto(i)"
-            class="absolute top-1 right-1 bg-black/70 text-red-400 hover:text-red-300 rounded-full w-6 h-6 flex items-center justify-center text-xs"
+            class="absolute top-1 right-1 bg-black/70 text-red-400 hover:text-red-300 rounded-full w-11 h-11 flex items-center justify-center text-xs"
             title="Remove"
           >×</button>
           <span class="absolute bottom-1 left-1 text-[10px] bg-amber-700/80 text-white px-1.5 py-0.5 rounded">New</span>

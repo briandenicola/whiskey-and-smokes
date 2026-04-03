@@ -142,11 +142,11 @@ function captureStatusLabel(status: string): string {
 
   <div v-else-if="!capture" class="p-4 text-stone-500 text-center py-12">
     <p>Capture not found.</p>
-    <button @click="router.push('/history')" class="text-amber-500 mt-2">Back to History</button>
+    <button @click="router.push('/history')" class="text-amber-500 mt-2 min-h-[44px] min-w-[44px] px-3 py-2 hover:opacity-80 transition-opacity">Back to History</button>
   </div>
 
   <div v-else class="p-4 max-w-lg mx-auto">
-    <button @click="router.push('/history')" class="text-stone-400 hover:text-stone-200 text-sm mb-4">
+    <button @click="router.push('/history')" class="text-stone-400 hover:text-stone-200 hover:opacity-80 text-sm mb-4 min-h-[44px] min-w-[44px] px-3 py-2 transition-opacity">
       Back to History
     </button>
 

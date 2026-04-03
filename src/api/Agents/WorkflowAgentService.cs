@@ -484,10 +484,16 @@ public class WorkflowAgentService : IAgentService
     {
         return $"""
             The data curator rejected your previous analysis with this feedback:
+
+            --- BEGIN REJECTION REASON (untrusted) ---
             {rejection.Reason}
+            --- END REJECTION REASON ---
 
             Original vision description for reference:
+
+            --- BEGIN VISION CONTEXT (untrusted) ---
             {visionContext}
+            --- END VISION CONTEXT ---
 
             Please refine your analysis addressing the curator's feedback.
             """;
@@ -519,18 +525,7 @@ public class WorkflowAgentService : IAgentService
             _logger.LogWarning(ex, "Failed to parse curator JSON for capture {CaptureId}: {Error}", captureId, ex.Message);
         }
 
-        // Best-effort: try to extract a JSON array from the response
-        var bestEffort = ExtractBestEffortItems(responseText);
-        if (bestEffort is { Count: > 0 })
-        {
-            _logger.LogWarning("Curator response for capture {CaptureId} was not valid JSON, using best-effort extraction ({Count} items)",
-                captureId, bestEffort.Count);
-            return new CuratorDecision
-            {
-                Decision = "approve",
-                Items = bestEffort
-            };
-        }
+        _logger.LogWarning("Failed to parse curator response for capture {CaptureId} — rejecting", captureId);
 
         // If we can't parse anything, reject to avoid creating garbage items
         _logger.LogWarning("Curator response for capture {CaptureId} is unparseable — rejecting", captureId);

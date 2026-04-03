@@ -57,7 +57,8 @@ public class LocalBlobStorageService : IBlobStorageService
         {
             var relativePath = ExtractRelativePath(blobUrl);
             var fullPath = Path.GetFullPath(Path.Combine(_storagePath, relativePath.Replace('/', Path.DirectorySeparatorChar)));
-            if (!fullPath.StartsWith(Path.GetFullPath(_storagePath), StringComparison.OrdinalIgnoreCase))
+            var canonicalBase = Path.GetFullPath(_storagePath) + Path.DirectorySeparatorChar;
+            if (!fullPath.StartsWith(canonicalBase, StringComparison.OrdinalIgnoreCase))
             {
                 _logger.LogWarning("Path traversal attempt blocked on blob delete: {Url}", blobUrl);
                 return Task.CompletedTask;
@@ -80,7 +81,8 @@ public class LocalBlobStorageService : IBlobStorageService
         {
             var relativePath = ExtractRelativePath(blobUrl);
             var fullPath = Path.GetFullPath(Path.Combine(_storagePath, relativePath.Replace('/', Path.DirectorySeparatorChar)));
-            if (!fullPath.StartsWith(Path.GetFullPath(_storagePath), StringComparison.OrdinalIgnoreCase))
+            var canonicalBase = Path.GetFullPath(_storagePath) + Path.DirectorySeparatorChar;
+            if (!fullPath.StartsWith(canonicalBase, StringComparison.OrdinalIgnoreCase))
             {
                 _logger.LogWarning("Path traversal attempt blocked on blob download: {Url}", blobUrl);
                 return null;

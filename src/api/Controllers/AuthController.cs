@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Protocols;
@@ -12,6 +13,7 @@ namespace WhiskeyAndSmokes.Api.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
+[Authorize]
 public class AuthController : ControllerBase
 {
     private readonly ICosmosDbService _cosmosDb;
@@ -32,9 +34,12 @@ public class AuthController : ControllerBase
         _logger = logger;
     }
 
+    [AllowAnonymous]
     [HttpPost("register")]
     public async Task<ActionResult<AuthResponse>> Register([FromBody] RegisterRequest request)
     {
+        if (!ModelState.IsValid) return BadRequest(ModelState);
+
         using var activity = Diagnostics.Auth.StartActivity("AuthRegister");
         activity?.SetTag("auth.method", "register");
         activity?.SetTag("user.email", request.Email);
@@ -86,9 +91,12 @@ public class AuthController : ControllerBase
         return Ok(response);
     }
 
+    [AllowAnonymous]
     [HttpPost("login")]
     public async Task<ActionResult<AuthResponse>> Login([FromBody] LoginRequest request)
     {
+        if (!ModelState.IsValid) return BadRequest(ModelState);
+
         using var activity = Diagnostics.Auth.StartActivity("AuthLogin");
         activity?.SetTag("auth.method", "login");
         activity?.SetTag("user.email", request.Email);
@@ -123,9 +131,12 @@ public class AuthController : ControllerBase
     /// <summary>
     /// Exchange an Entra ID access token for a local JWT. Auto-provisions user on first sign-in.
     /// </summary>
+    [AllowAnonymous]
     [HttpPost("entra")]
     public async Task<ActionResult<AuthResponse>> EntraLogin([FromBody] EntraTokenRequest request)
     {
+        if (!ModelState.IsValid) return BadRequest(ModelState);
+
         using var activity = Diagnostics.Auth.StartActivity("AuthEntraLogin");
         activity?.SetTag("auth.method", "entra");
 
@@ -148,7 +159,8 @@ public class AuthController : ControllerBase
                 new OpenIdConnectConfigurationRetriever(),
                 new HttpDocumentRetriever());
 
-            var openIdConfig = await configManager.GetConfigurationAsync(CancellationToken.None);
+            var openIdConfig = await configManager.GetConfigurationAsync(
+                new CancellationTokenSource(TimeSpan.FromSeconds(30)).Token);
 
             var validationParams = new TokenValidationParameters
             {
@@ -253,6 +265,7 @@ public class AuthController : ControllerBase
     /// <summary>
     /// Returns Entra ID configuration for the frontend MSAL setup. No auth required.
     /// </summary>
+    [AllowAnonymous]
     [HttpGet("entra/config")]
     public ActionResult<EntraConfigResponse> GetEntraConfig()
     {

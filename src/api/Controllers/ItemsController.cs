@@ -26,6 +26,9 @@ public class ItemsController : ControllerBase
 
     private string GetUserId() => User.FindFirstValue(ClaimTypes.NameIdentifier) ?? throw new UnauthorizedAccessException();
 
+    private static readonly HashSet<string> AllowedImageExtensions =
+        [".jpg", ".jpeg", ".png", ".gif", ".webp", ".heic", ".heif"];
+
     [HttpGet]
     public async Task<ActionResult<PagedResponse<Item>>> ListItems(
         [FromQuery] string? type,
@@ -118,6 +121,8 @@ public class ItemsController : ControllerBase
     [HttpPut("{id}")]
     public async Task<ActionResult<Item>> UpdateItem(string id, [FromBody] UpdateItemRequest request)
     {
+        if (!ModelState.IsValid) return BadRequest(ModelState);
+
         using var activity = Diagnostics.General.StartActivity("ItemUpdate");
         var userId = GetUserId();
         activity?.SetTag("item.id", id);
@@ -208,6 +213,8 @@ public class ItemsController : ControllerBase
     [HttpPost("wishlist")]
     public async Task<ActionResult<Item>> CreateWishlistItem([FromBody] CreateWishlistRequest request)
     {
+        if (!ModelState.IsValid) return BadRequest(ModelState);
+
         using var activity = Diagnostics.General.StartActivity("WishlistCreate");
         var userId = GetUserId();
         activity?.SetTag("user.id", userId);
@@ -273,6 +280,13 @@ public class ItemsController : ControllerBase
         if (string.IsNullOrWhiteSpace(fileName))
             return BadRequest(new { message = "fileName is required" });
 
+        if (fileName.Length > 255)
+            return BadRequest(new { message = "fileName too long (max 255 chars)" });
+
+        var ext = Path.GetExtension(fileName).ToLowerInvariant();
+        if (!AllowedImageExtensions.Contains(ext))
+            return BadRequest(new { message = $"File type {ext} is not allowed. Accepted: jpg, jpeg, png, gif, webp, heic, heif" });
+
         var (uploadUrl, blobUrl) = await _blobStorage.GenerateUploadUrlAsync(userId, fileName);
         return Ok(new UploadUrlResponse { UploadUrl = uploadUrl, BlobUrl = blobUrl });
     }
@@ -280,6 +294,8 @@ public class ItemsController : ControllerBase
     [HttpPost("{id}/photos")]
     public async Task<ActionResult<Item>> AddPhoto(string id, [FromBody] AddPhotoRequest request)
     {
+        if (!ModelState.IsValid) return BadRequest(ModelState);
+
         var userId = GetUserId();
 
         var item = await _cosmosDb.GetAsync<Item>(ContainerName, id, userId);
@@ -306,6 +322,8 @@ public class ItemsController : ControllerBase
     [HttpDelete("{id}/photos")]
     public async Task<ActionResult<Item>> RemovePhoto(string id, [FromBody] RemovePhotoRequest request)
     {
+        if (!ModelState.IsValid) return BadRequest(ModelState);
+
         var userId = GetUserId();
 
         var item = await _cosmosDb.GetAsync<Item>(ContainerName, id, userId);
@@ -336,11 +354,30 @@ public class ItemsController : ControllerBase
     }
 
     /// <summary>
-    /// Validates that a blob URL belongs to the specified user by checking for the userId in the path.
+    /// Validates that a blob URL belongs to the specified user by parsing URL segments structurally.
     /// Blob naming convention: {baseUrl}/{userId}/yyyy/MM/dd/{guid}.{ext}
     /// </summary>
     private static bool ValidateBlobOwnership(string blobUrl, string userId)
     {
-        return blobUrl.Contains($"/{userId}/", StringComparison.OrdinalIgnoreCase);
+        try
+        {
+            // Handle both absolute URLs and relative paths
+            string[] segments;
+            if (Uri.TryCreate(blobUrl, UriKind.Absolute, out var uri))
+            {
+                segments = uri.AbsolutePath.Split('/', StringSplitOptions.RemoveEmptyEntries);
+            }
+            else
+            {
+                segments = blobUrl.Split('/', StringSplitOptions.RemoveEmptyEntries);
+            }
+
+            // userId must appear as an exact path segment
+            return segments.Any(s => s.Equals(userId, StringComparison.OrdinalIgnoreCase));
+        }
+        catch
+        {
+            return false;
+        }
     }
 }
