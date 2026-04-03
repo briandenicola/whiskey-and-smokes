@@ -611,7 +611,7 @@ function isAiGenerated(data: Item): boolean {
     <Teleport to="body">
       <div
         v-if="lightboxUrl"
-        class="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-6"
+        class="fixed inset-0 bg-black/80 flex items-center justify-center z-50"
         @click.self="closeLightbox"
         @wheel.prevent="onLightboxWheel"
       >
@@ -637,35 +637,33 @@ function isAiGenerated(data: Item): boolean {
           >+</button>
         </div>
 
-        <!-- Image with multi-photo navigation -->
-        <div class="flex items-center gap-4 max-w-[85vw] max-h-[80vh]">
-          <!-- Previous arrow -->
-          <button
-            v-if="item.photoUrls.length > 1"
-            @click.stop="openLightbox(item.photoUrls[(item.photoUrls.indexOf(lightboxUrl!) - 1 + item.photoUrls.length) % item.photoUrls.length])"
-            class="text-white/50 hover:text-white text-3xl flex-shrink-0 w-10 h-10 flex items-center justify-center"
-          >&lsaquo;</button>
+        <!-- Navigation arrows (absolute, overlaid on edges) -->
+        <button
+          v-if="item.photoUrls.length > 1"
+          @click.stop="openLightbox(item.photoUrls[(item.photoUrls.indexOf(lightboxUrl!) - 1 + item.photoUrls.length) % item.photoUrls.length])"
+          class="absolute left-2 top-1/2 -translate-y-1/2 text-white/50 hover:text-white bg-black/30 rounded-full w-10 h-10 flex items-center justify-center text-2xl z-10"
+        >&lsaquo;</button>
 
-          <img
-            :src="lightboxUrl"
-            class="max-w-full max-h-[80vh] rounded-2xl object-contain select-none"
-            :style="{
-              transform: `scale(${lightboxScale}) translate(${lightboxTranslateX / lightboxScale}px, ${lightboxTranslateY / lightboxScale}px)`,
-              transition: isPanning ? 'none' : 'transform 0.15s ease'
-            }"
-            @touchstart="onLightboxTouchStart"
-            @touchmove="onLightboxTouchMove"
-            @touchend="onLightboxTouchEnd"
-            draggable="false"
-          />
+        <button
+          v-if="item.photoUrls.length > 1"
+          @click.stop="openLightbox(item.photoUrls[(item.photoUrls.indexOf(lightboxUrl!) + 1) % item.photoUrls.length])"
+          class="absolute right-2 top-1/2 -translate-y-1/2 text-white/50 hover:text-white bg-black/30 rounded-full w-10 h-10 flex items-center justify-center text-2xl z-10"
+        >&rsaquo;</button>
 
-          <!-- Next arrow -->
-          <button
-            v-if="item.photoUrls.length > 1"
-            @click.stop="openLightbox(item.photoUrls[(item.photoUrls.indexOf(lightboxUrl!) + 1) % item.photoUrls.length])"
-            class="text-white/50 hover:text-white text-3xl flex-shrink-0 w-10 h-10 flex items-center justify-center"
-          >&rsaquo;</button>
-        </div>
+        <!-- Centered image -->
+        <img
+          :src="lightboxUrl"
+          class="max-w-[90vw] max-h-[80vh] rounded-2xl object-contain select-none"
+          :style="{
+            transform: `scale(${lightboxScale}) translate(${lightboxTranslateX / lightboxScale}px, ${lightboxTranslateY / lightboxScale}px)`,
+            transition: isPanning ? 'none' : 'transform 0.15s ease'
+          }"
+          @touchstart="onLightboxTouchStart"
+          @touchmove="onLightboxTouchMove"
+          @touchend="onLightboxTouchEnd"
+          @click.stop
+          draggable="false"
+        />
 
         <!-- Photo counter -->
         <div v-if="item.photoUrls.length > 1" class="absolute top-4 left-1/2 -translate-x-1/2 text-xs text-white/50">
