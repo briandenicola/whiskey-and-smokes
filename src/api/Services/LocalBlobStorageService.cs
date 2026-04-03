@@ -56,7 +56,12 @@ public class LocalBlobStorageService : IBlobStorageService
         try
         {
             var relativePath = ExtractRelativePath(blobUrl);
-            var fullPath = Path.Combine(_storagePath, relativePath.Replace('/', Path.DirectorySeparatorChar));
+            var fullPath = Path.GetFullPath(Path.Combine(_storagePath, relativePath.Replace('/', Path.DirectorySeparatorChar)));
+            if (!fullPath.StartsWith(Path.GetFullPath(_storagePath), StringComparison.OrdinalIgnoreCase))
+            {
+                _logger.LogWarning("Path traversal attempt blocked on blob delete: {Url}", blobUrl);
+                return Task.CompletedTask;
+            }
             if (File.Exists(fullPath))
             {
                 File.Delete(fullPath);
@@ -74,7 +79,12 @@ public class LocalBlobStorageService : IBlobStorageService
         try
         {
             var relativePath = ExtractRelativePath(blobUrl);
-            var fullPath = Path.Combine(_storagePath, relativePath.Replace('/', Path.DirectorySeparatorChar));
+            var fullPath = Path.GetFullPath(Path.Combine(_storagePath, relativePath.Replace('/', Path.DirectorySeparatorChar)));
+            if (!fullPath.StartsWith(Path.GetFullPath(_storagePath), StringComparison.OrdinalIgnoreCase))
+            {
+                _logger.LogWarning("Path traversal attempt blocked on blob download: {Url}", blobUrl);
+                return null;
+            }
 
             if (File.Exists(fullPath))
             {

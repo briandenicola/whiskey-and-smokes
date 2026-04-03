@@ -29,9 +29,17 @@ builder.Services.Configure<CosmosDbOptions>(builder.Configuration.GetSection(Cos
 builder.Services.Configure<BlobStorageOptions>(builder.Configuration.GetSection(BlobStorageOptions.Section));
 
 var jwtOptions = builder.Configuration.GetSection(JwtOptions.Section).Get<JwtOptions>() ?? new JwtOptions();
-if (string.IsNullOrEmpty(jwtOptions.Secret) && builder.Environment.IsDevelopment())
+if (string.IsNullOrEmpty(jwtOptions.Secret))
 {
-    jwtOptions.Secret = "dev-secret-key-change-in-production-min-32-chars!!";
+    if (builder.Environment.IsDevelopment())
+    {
+        jwtOptions.Secret = "dev-secret-key-change-in-production-min-32-chars!!";
+    }
+    else
+    {
+        throw new InvalidOperationException(
+            "JWT secret is not configured. Set the Jwt__Secret environment variable.");
+    }
 }
 
 var entraOptions = builder.Configuration.GetSection(EntraIdOptions.Section).Get<EntraIdOptions>() ?? new EntraIdOptions();
@@ -265,6 +273,20 @@ app.MapDefaultEndpoints();
 
 app.UseExceptionHandler();
 app.UseStatusCodePages();
+
+// Map UnauthorizedAccessException to 401 instead of 500
+app.Use(async (context, next) =>
+{
+    try
+    {
+        await next();
+    }
+    catch (UnauthorizedAccessException)
+    {
+        context.Response.StatusCode = 401;
+        await context.Response.WriteAsJsonAsync(new { message = "Unauthorized" });
+    }
+});
 
 app.UseHttpsRedirection();
 app.UseCors("AllowFrontend");

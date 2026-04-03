@@ -45,7 +45,11 @@ public class ApiKeyAuthHandler : AuthenticationHandler<AuthenticationSchemeOptio
         if (user == null)
             return AuthenticateResult.Fail("Invalid API key");
 
-        var matchedKey = user.ApiKeys.FirstOrDefault(k => k.KeyHash == keyHash && !k.IsRevoked);
+        var matchedKey = user.ApiKeys.FirstOrDefault(k =>
+            !k.IsRevoked &&
+            CryptographicOperations.FixedTimeEquals(
+                Encoding.UTF8.GetBytes(k.KeyHash),
+                Encoding.UTF8.GetBytes(keyHash)));
         if (matchedKey == null)
             return AuthenticateResult.Fail("API key is revoked");
 
@@ -57,7 +61,10 @@ public class ApiKeyAuthHandler : AuthenticationHandler<AuthenticationSchemeOptio
                 matchedKey.LastUsedAt = DateTime.UtcNow;
                 await _cosmosDb.UpsertAsync(ContainerName, user, user.PartitionKey);
             }
-            catch { /* best effort */ }
+            catch (Exception ex)
+            {
+                Logger.LogWarning(ex, "Failed to update API key last used timestamp for user {UserId}", user.Id);
+            }
         });
 
         var claims = new[]

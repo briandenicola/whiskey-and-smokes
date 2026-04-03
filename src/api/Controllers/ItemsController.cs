@@ -289,6 +289,9 @@ public class ItemsController : ControllerBase
         if (string.IsNullOrWhiteSpace(request.BlobUrl))
             return BadRequest(new { message = "blobUrl is required" });
 
+        if (!ValidateBlobOwnership(request.BlobUrl, userId))
+            return BadRequest(new { message = "Invalid blob URL" });
+
         if (!item.PhotoUrls.Contains(request.BlobUrl))
         {
             item.PhotoUrls.Add(request.BlobUrl);
@@ -320,15 +323,24 @@ public class ItemsController : ControllerBase
             try
             {
                 await _blobStorage.DeleteBlobAsync(request.BlobUrl);
-                _logger.LogInformation("Deleted blob {BlobUrl} for item {ItemId}", request.BlobUrl, id);
+                _logger.LogInformation("Deleted blob for item {ItemId}", id);
             }
             catch (Exception ex)
             {
-                _logger.LogWarning(ex, "Failed to delete blob {BlobUrl} for item {ItemId}", request.BlobUrl, id);
+                _logger.LogWarning(ex, "Failed to delete blob for item {ItemId}", id);
             }
         }
 
         _logger.LogInformation("Removed photo from item {ItemId} for user {UserId}, remaining: {Count}", id, userId, item.PhotoUrls.Count);
         return Ok(item);
+    }
+
+    /// <summary>
+    /// Validates that a blob URL belongs to the specified user by checking for the userId in the path.
+    /// Blob naming convention: {baseUrl}/{userId}/yyyy/MM/dd/{guid}.{ext}
+    /// </summary>
+    private static bool ValidateBlobOwnership(string blobUrl, string userId)
+    {
+        return blobUrl.Contains($"/{userId}/", StringComparison.OrdinalIgnoreCase);
     }
 }

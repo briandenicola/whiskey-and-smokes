@@ -1,5 +1,8 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
+using Microsoft.IdentityModel.Protocols;
+using Microsoft.IdentityModel.Protocols.OpenIdConnect;
+using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using WhiskeyAndSmokes.Api;
 using WhiskeyAndSmokes.Api.Models;
@@ -135,16 +138,44 @@ public class AuthController : ControllerBase
         if (string.IsNullOrWhiteSpace(request.AccessToken))
             return BadRequest(new { message = "Access token is required" });
 
-        // Decode the token to extract claims (validation is done by the middleware)
+        // Validate the Entra ID token with proper signature verification
         JwtSecurityToken jwt;
         try
         {
+            var authority = $"{_entraOptions.Instance}{_entraOptions.TenantId}/v2.0";
+            var configManager = new ConfigurationManager<OpenIdConnectConfiguration>(
+                $"{authority}/.well-known/openid-configuration",
+                new OpenIdConnectConfigurationRetriever(),
+                new HttpDocumentRetriever());
+
+            var openIdConfig = await configManager.GetConfigurationAsync(CancellationToken.None);
+
+            var validationParams = new TokenValidationParameters
+            {
+                ValidateIssuer = true,
+                ValidIssuer = authority,
+                ValidateAudience = true,
+                ValidAudience = !string.IsNullOrEmpty(_entraOptions.Audience)
+                    ? _entraOptions.Audience
+                    : _entraOptions.ClientId,
+                ValidateLifetime = true,
+                ValidateIssuerSigningKey = true,
+                IssuerSigningKeys = openIdConfig.SigningKeys,
+                ClockSkew = TimeSpan.FromMinutes(5)
+            };
+
             var handler = new JwtSecurityTokenHandler();
-            jwt = handler.ReadJwtToken(request.AccessToken);
+            handler.ValidateToken(request.AccessToken, validationParams, out var validatedToken);
+            jwt = (JwtSecurityToken)validatedToken;
+        }
+        catch (SecurityTokenException ex)
+        {
+            _logger.LogWarning(ex, "Entra token validation failed");
+            return Unauthorized(new { message = "Invalid or expired token" });
         }
         catch (Exception ex)
         {
-            _logger.LogWarning(ex, "Failed to read Entra token");
+            _logger.LogWarning(ex, "Failed to validate Entra token");
             return BadRequest(new { message = "Invalid token format" });
         }
 

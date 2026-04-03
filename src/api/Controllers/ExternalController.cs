@@ -17,6 +17,10 @@ public class ExternalController : ControllerBase
     private readonly Channel<Capture> _captureQueue;
     private readonly ILogger<ExternalController> _logger;
     private const string CaptureContainer = "captures";
+    private const long MaxFileSize = 15_000_000; // 15MB per file
+
+    private static readonly HashSet<string> AllowedImageExtensions =
+        [".jpg", ".jpeg", ".png", ".gif", ".webp", ".heic", ".heif"];
 
     public ExternalController(
         ICosmosDbService cosmosDb,
@@ -56,6 +60,19 @@ public class ExternalController : ControllerBase
         foreach (var image in images)
         {
             if (image.Length == 0) continue;
+
+            if (image.Length > MaxFileSize)
+            {
+                _logger.LogWarning("Rejected upload exceeding size limit: {Size} bytes", image.Length);
+                return BadRequest(new { message = $"File {image.FileName} exceeds the 15MB size limit" });
+            }
+
+            var ext = Path.GetExtension(image.FileName).ToLowerInvariant();
+            if (!AllowedImageExtensions.Contains(ext))
+            {
+                _logger.LogWarning("Rejected upload with disallowed extension: {Extension}", ext);
+                return BadRequest(new { message = $"File type {ext} is not allowed. Accepted: jpg, png, gif, webp, heic" });
+            }
 
             using var memStream = new MemoryStream();
             await image.OpenReadStream().CopyToAsync(memStream);

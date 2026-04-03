@@ -12,6 +12,9 @@ public class UploadsController : ControllerBase
     private readonly bool _isLocalStorage;
     private readonly ILogger<UploadsController> _logger;
 
+    private static readonly HashSet<string> AllowedImageExtensions =
+        [".jpg", ".jpeg", ".png", ".gif", ".webp", ".heic", ".heif"];
+
     public UploadsController(IConfiguration config, IWebHostEnvironment env, ILogger<UploadsController> logger)
     {
         _storagePath = config["LocalStorage:Path"] ?? Path.Combine(
@@ -35,8 +38,23 @@ public class UploadsController : ControllerBase
         if (!_isLocalStorage)
             return NotFound();
 
-        var safePath = path.Replace("..", "").Replace('\\', '/');
-        var fullPath = Path.Combine(_storagePath, safePath.Replace('/', Path.DirectorySeparatorChar));
+        if (string.IsNullOrWhiteSpace(path))
+            return BadRequest(new { message = "Path is required" });
+
+        var fullPath = Path.GetFullPath(Path.Combine(_storagePath, path.Replace('/', Path.DirectorySeparatorChar)));
+        if (!fullPath.StartsWith(Path.GetFullPath(_storagePath), StringComparison.OrdinalIgnoreCase))
+        {
+            _logger.LogWarning("Path traversal attempt blocked: {Path}", path);
+            return BadRequest(new { message = "Invalid path" });
+        }
+
+        // Validate file extension
+        var ext = Path.GetExtension(fullPath).ToLowerInvariant();
+        if (!AllowedImageExtensions.Contains(ext))
+        {
+            _logger.LogWarning("Rejected upload with disallowed extension: {Extension}", ext);
+            return BadRequest(new { message = $"File type {ext} is not allowed" });
+        }
 
         Directory.CreateDirectory(Path.GetDirectoryName(fullPath)!);
 
@@ -45,7 +63,7 @@ public class UploadsController : ControllerBase
 
         var sizeBytes = stream.Length;
         activity?.SetTag("upload.size_bytes", sizeBytes);
-        _logger.LogInformation("File uploaded: path={Path}, size={SizeBytes} bytes", safePath, sizeBytes);
+        _logger.LogInformation("File uploaded: path={Path}, size={SizeBytes} bytes", path, sizeBytes);
         return Ok();
     }
 
@@ -60,12 +78,16 @@ public class UploadsController : ControllerBase
         if (!_isLocalStorage)
             return NotFound();
 
-        var safePath = filePath.Replace("..", "");
-        var fullPath = Path.Combine(_storagePath, safePath.Replace('/', Path.DirectorySeparatorChar));
+        var fullPath = Path.GetFullPath(Path.Combine(_storagePath, filePath.Replace('/', Path.DirectorySeparatorChar)));
+        if (!fullPath.StartsWith(Path.GetFullPath(_storagePath), StringComparison.OrdinalIgnoreCase))
+        {
+            _logger.LogWarning("Path traversal attempt blocked on read: {FilePath}", filePath);
+            return BadRequest(new { message = "Invalid path" });
+        }
 
         if (!System.IO.File.Exists(fullPath))
         {
-            _logger.LogWarning("File not found: {FilePath}", safePath);
+            _logger.LogWarning("File not found: {FilePath}", filePath);
             return NotFound();
         }
 
@@ -79,7 +101,7 @@ public class UploadsController : ControllerBase
             _ => "application/octet-stream"
         };
 
-        _logger.LogInformation("Serving file: {FilePath}, contentType={ContentType}", safePath, contentType);
+        _logger.LogInformation("Serving file: {FilePath}, contentType={ContentType}", filePath, contentType);
         return PhysicalFile(fullPath, contentType);
     }
 }
