@@ -22,6 +22,7 @@ export interface Item {
   journal?: JournalEntry[]
   tags: string[]
   status: string
+  processedBy?: string
   createdAt: string
   updatedAt: string
 }

@@ -97,8 +97,12 @@ public class WishlistUrlProcessingService : BackgroundService
 
                 if (result.Success)
                 {
+                    // Always update name — never leave the placeholder
                     if (!string.IsNullOrWhiteSpace(result.Name))
                         item.Name = result.Name.Trim();
+                    else if (IsPlaceholderName(item.Name))
+                        item.Name = ExtractDomainLabel(workItem.Url);
+
                     if (!string.IsNullOrWhiteSpace(result.Brand))
                         item.Brand = result.Brand.Trim();
                     if (!string.IsNullOrWhiteSpace(result.Category))
@@ -121,6 +125,11 @@ public class WishlistUrlProcessingService : BackgroundService
                 {
                     _logger.LogWarning("URL extraction failed for item {ItemId}: {Error}",
                         workItem.ItemId, result.Error);
+
+                    // Still provide a meaningful name from the domain
+                    if (IsPlaceholderName(item.Name))
+                        item.Name = ExtractDomainLabel(workItem.Url);
+
                     item.UserNotes = $"URL extraction failed: {result.Error}\nSource: {workItem.Url}";
                     capture.Status = CaptureStatus.Failed;
                     capture.ProcessingError = result.Error;
@@ -148,5 +157,34 @@ public class WishlistUrlProcessingService : BackgroundService
         }
 
         _logger.LogInformation("Wishlist URL processing service stopped");
+    }
+
+    private static bool IsPlaceholderName(string name) =>
+        string.IsNullOrWhiteSpace(name) ||
+        name.Contains("Extracting from", StringComparison.OrdinalIgnoreCase);
+
+    /// <summary>
+    /// Extracts a human-readable label from a URL's domain name.
+    /// e.g. "https://www.coolvenue.com/product/123" → "coolvenue"
+    /// </summary>
+    private static string ExtractDomainLabel(string url)
+    {
+        try
+        {
+            if (Uri.TryCreate(url, UriKind.Absolute, out var uri))
+            {
+                var host = uri.Host;
+                if (host.StartsWith("www.", StringComparison.OrdinalIgnoreCase))
+                    host = host[4..];
+                var dotIndex = host.IndexOf('.');
+                if (dotIndex > 0)
+                    host = host[..dotIndex];
+                if (!string.IsNullOrWhiteSpace(host))
+                    return host;
+            }
+        }
+        catch { }
+
+        return "Wishlist Item";
     }
 }

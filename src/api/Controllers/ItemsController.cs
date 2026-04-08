@@ -259,11 +259,11 @@ public class ItemsController : ControllerBase
 
         _logger.LogInformation("Queuing wishlist URL extraction for user {UserId}: {Url}", userId, request.Url);
 
-        // Create placeholder item immediately
+        // Create placeholder item with domain name while AI extracts details
         var item = new Item
         {
             UserId = userId,
-            Name = "Extracting from URL...",
+            Name = ExtractDomainLabel(request.Url),
             Type = "custom",
             Tags = ["from-url"],
             Status = ItemStatus.Wishlist,
@@ -418,5 +418,32 @@ public class ItemsController : ControllerBase
         {
             return false;
         }
+    }
+
+    /// <summary>
+    /// Extracts a human-readable label from a URL's domain name.
+    /// e.g. "https://www.coolvenue.com/product/123" → "coolvenue"
+    /// </summary>
+    private static string ExtractDomainLabel(string url)
+    {
+        try
+        {
+            if (Uri.TryCreate(url, UriKind.Absolute, out var uri))
+            {
+                var host = uri.Host;
+                // Strip common prefixes
+                if (host.StartsWith("www.", StringComparison.OrdinalIgnoreCase))
+                    host = host[4..];
+                // Take the first segment before .com/.co/.org etc.
+                var dotIndex = host.IndexOf('.');
+                if (dotIndex > 0)
+                    host = host[..dotIndex];
+                if (!string.IsNullOrWhiteSpace(host))
+                    return host;
+            }
+        }
+        catch { }
+
+        return "Wishlist Item";
     }
 }

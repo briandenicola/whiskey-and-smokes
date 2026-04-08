@@ -425,7 +425,7 @@ onUnmounted(() => {
                 <h3 class="font-medium text-stone-100 truncate">{{ item.name }}</h3>
                 <p v-if="item.brand" class="text-sm text-stone-400 truncate">{{ item.brand }}</p>
                 <p v-if="item.userNotes" class="text-xs text-stone-500 mt-1 line-clamp-2">{{ item.userNotes }}</p>
-                <p v-if="item.name === 'Extracting from URL...'" class="text-xs text-amber-500 mt-1">Processing...</p>
+                <p v-if="item.processedBy === 'pending'" class="text-xs text-amber-500 mt-1">Processing...</p>
               </div>
             </div>
           </router-link>
