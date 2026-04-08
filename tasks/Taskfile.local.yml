@@ -34,9 +34,9 @@ tasks:
       AiFoundry__ProjectEndpoint: "{{.PROJECT_ENDPOINT}}"
     cmds:
       - dotnet run --project ../../src/AgentInitiator
-    vars:
-      PROJECT_ENDPOINT:
-        sh: terraform output -raw FOUNDRY_PROJECT_ENDPOINT 2>/dev/null || echo ""
+    # vars:
+    #   PROJECT_ENDPOINT: https://poodle-63974-foundry.services.ai.azure.com/api/projects/poodle-63974-project
+    #     #sh: terraform output -raw FOUNDRY_PROJECT_ENDPOINT 2>/dev/null || echo ""
 
   output:
     desc: Shows Terraform outputs for {{.TITLE}}
