@@ -207,6 +207,7 @@ builder.Services.AddSingleton<IAuthService, AuthService>();
 builder.Services.AddSingleton<IPromptService, PromptService>();
 builder.Services.AddSingleton<ExifLocationService>();
 builder.Services.AddSingleton<IAgentService, WorkflowAgentService>();
+builder.Services.AddHttpClient<IWishlistUrlService, WishlistUrlService>();
 builder.Services.AddHostedService<AgentValidationService>();
 
 // Background capture processing queue

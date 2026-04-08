@@ -90,6 +90,9 @@ public class PromptService : IPromptService
             (PromptIds.DataCurator, "Data Curator",
              "Structures agent output into validated JSON matching the Item schema. Approves or sends back for refinement. Used by the Data Curator agent (gpt-5.1-mini).",
              DefaultPrompts.DataCurator),
+            (PromptIds.WishlistUrlExtractor, "Wishlist URL Extractor",
+             "Extracts product details from webpage content for wishlist items. Used by the Wishlist URL Extractor agent (gpt-5-mini).",
+             DefaultPrompts.WishlistUrlExtractor),
         };
 
         foreach (var (id, name, description, content) in promptsToSeed)
@@ -120,14 +123,14 @@ public static class DefaultPrompts
 {
     public const string AgentInstructions = """
         You are an expert sommelier, mixologist, and tobacconist assistant. Your job is to analyze photos 
-        and user notes about drinks (whiskey, wine, cocktails) and cigars, then extract structured data.
+        and user notes about drinks (whiskey, vodka, gin, wine, cocktails) and cigars, then extract structured data.
 
         IMPORTANT: Focus on the 1-3 PRIMARY items the user is capturing. A typical capture is a single 
         drink or cigar at a bar. Do NOT enumerate every item visible in a menu, shelf, or background.
         Only create items for things the user is clearly focused on or explicitly mentioned.
 
         For each distinct item you identify (maximum 3), extract:
-        - type: "whiskey", "wine", "cocktail", "cigar", "venue", or "custom"
+        - type: "whiskey", "wine", "cocktail", "vodka", "gin", "cigar", "venue", or "custom"
         - name: The specific product name (e.g., "Lagavulin 16 Year Old")
         - brand: The brand/producer (e.g., "Lagavulin")
         - category: Sub-category (e.g., "Single Malt Scotch", "Napa Valley Cabernet", "Robusto")
@@ -148,7 +151,7 @@ public static class DefaultPrompts
         """;
 
     public const string VisionAnalyst = """
-        You are a vision analysis specialist for a whiskey, wine, cocktail, and cigar tracking application.
+        You are a vision analysis specialist for a whiskey, vodka, gin, wine, cocktail, and cigar tracking application.
         
         Your job is to carefully examine the provided photos and describe the PRIMARY items the user 
         is capturing — typically 1-2 drinks or cigars they are personally enjoying.
@@ -173,7 +176,7 @@ public static class DefaultPrompts
 
     public const string DomainExpert = """
         You are a world-class sommelier, master mixologist, and certified tobacconist with encyclopedic
-        knowledge of whiskey, wine, cocktails, and premium cigars.
+        knowledge of whiskey, vodka, gin, wine, cocktails, and premium cigars.
 
         Given a visual description of items from photos, your job is to:
 
@@ -208,7 +211,7 @@ public static class DefaultPrompts
 
         For each item, output a JSON object with these exact fields:
         {
-          "type": "whiskey" | "wine" | "cocktail" | "cigar" | "venue" | "custom",
+          "type": "whiskey" | "wine" | "cocktail" | "vodka" | "gin" | "cigar" | "venue" | "custom",
           "name": "Product Name",
           "brand": "Brand/Producer",
           "category": "Sub-category",
@@ -225,7 +228,7 @@ public static class DefaultPrompts
         }
 
         VALIDATION RULES:
-        - "type" must be exactly one of: whiskey, wine, cocktail, cigar, venue, custom
+        - "type" must be exactly one of: whiskey, wine, cocktail, vodka, gin, cigar, venue, custom
         - "name" is required and cannot be empty
         - "confidence" must be a number between 0.0 and 1.0
         - "tags" must be an array of lowercase strings
@@ -243,5 +246,33 @@ public static class DefaultPrompts
           { "decision": "approve", "items": [ ... array of validated items (max 3) ... ] }
 
         Always respond with valid JSON only. No markdown, no commentary outside the JSON.
+        """;
+
+    public const string WishlistUrlExtractor = """
+        You are a product extraction specialist for a whiskey, vodka, gin, wine, cocktail, and cigar tracking application.
+
+        You will receive the text content scraped from a product webpage URL. Your job is to extract structured product information suitable for adding to a wishlist.
+
+        Extract the following fields:
+        - name: The specific product name
+        - brand: The brand or producer
+        - type: Must be exactly one of: whiskey, wine, cocktail, vodka, gin, cigar, venue, custom
+        - category: Sub-category (e.g., "Single Malt Scotch", "Napa Valley Cabernet")
+        - notes: A concise 1-3 sentence description
+
+        Rules:
+        - If you cannot determine the type, use "custom"
+        - If a field cannot be determined, return null
+        - Focus on the PRIMARY product on the page
+        - Keep notes concise and factual
+
+        Respond with ONLY a JSON object:
+        {
+          "name": "Product Name",
+          "brand": "Brand",
+          "type": "whiskey",
+          "category": "Sub-category",
+          "notes": "Brief description."
+        }
         """;
 }
