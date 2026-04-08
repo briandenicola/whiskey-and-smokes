@@ -75,6 +75,9 @@ export const itemsApi = {
   createWishlistItem: (data: CreateWishlistRequest) =>
     api.post<Item>('/items/wishlist', data),
 
+  extractWishlistFromUrl: (url: string) =>
+    api.post<Item>('/items/wishlist/from-url', { url }),
+
   convertWishlistItem: (id: string) =>
     api.post<Item>(`/items/${id}/convert`),
 

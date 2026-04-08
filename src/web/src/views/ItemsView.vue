@@ -24,6 +24,9 @@ const newType = ref('whiskey')
 const newBrand = ref('')
 const newNotes = ref('')
 const isAdding = ref(false)
+const newUrl = ref('')
+const isExtractingUrl = ref(false)
+const urlError = ref('')
 
 const sortOptions = [
   { label: 'Rating', value: 'rating' },
@@ -44,6 +47,8 @@ const typeFilters = [
   { label: 'Whiskey', value: 'whiskey' },
   { label: 'Wine', value: 'wine' },
   { label: 'Cocktail', value: 'cocktail' },
+  { label: 'Vodka', value: 'vodka' },
+  { label: 'Gin', value: 'gin' },
   { label: 'Cigar', value: 'cigar' },
   { label: 'Venue', value: 'venue' },
   { label: 'Custom', value: 'custom' },
@@ -53,6 +58,8 @@ const typeOptions = [
   { label: 'Whiskey', value: 'whiskey' },
   { label: 'Wine', value: 'wine' },
   { label: 'Cocktail', value: 'cocktail' },
+  { label: 'Vodka', value: 'vodka' },
+  { label: 'Gin', value: 'gin' },
   { label: 'Cigar', value: 'cigar' },
   { label: 'Venue', value: 'venue' },
   { label: 'Custom', value: 'custom' },
@@ -97,6 +104,24 @@ async function addWishlistItem() {
     showAddForm.value = false
   } finally {
     isAdding.value = false
+  }
+}
+
+async function addWishlistFromUrl() {
+  if (!newUrl.value.trim()) return
+  isExtractingUrl.value = true
+  urlError.value = ''
+  try {
+    await itemsStore.createWishlistFromUrl(newUrl.value.trim())
+    newUrl.value = ''
+    showAddForm.value = false
+    if (activeTab.value === 'wishlist') {
+      itemsStore.loadWishlist(activeFilter.value, true)
+    }
+  } catch (e: any) {
+    urlError.value = e.response?.data?.message ?? 'Failed to extract from URL'
+  } finally {
+    isExtractingUrl.value = false
   }
 }
 
@@ -254,25 +279,45 @@ onUnmounted(() => {
       </button>
 
       <div v-else class="bg-stone-900 border border-stone-800 rounded-xl p-4 space-y-3">
+        <!-- URL extraction -->
+        <div class="space-y-2">
+          <div class="flex gap-2">
+            <input
+              v-model="newUrl"
+              placeholder="Paste a product URL to auto-fill..."
+              class="flex-1 bg-stone-800 border border-stone-700 rounded-xl px-4 py-2.5 text-stone-100 text-sm placeholder-stone-600 focus:outline-none focus:border-amber-700"
+            />
+            <button
+              @click="addWishlistFromUrl"
+              :disabled="isExtractingUrl || !newUrl.trim()"
+              class="shrink-0 px-4 py-2.5 bg-amber-700 hover:bg-amber-600 disabled:bg-stone-700 disabled:text-stone-500 text-white rounded-xl text-sm font-medium min-h-[44px]"
+            >
+              {{ isExtractingUrl ? 'Extracting...' : 'Extract' }}
+            </button>
+          </div>
+          <p v-if="urlError" class="text-xs text-red-400">{{ urlError }}</p>
+        </div>
+
+        <div class="flex items-center gap-3 text-stone-600 text-xs">
+          <div class="flex-1 border-t border-stone-800"></div>
+          <span>or add manually</span>
+          <div class="flex-1 border-t border-stone-800"></div>
+        </div>
+
         <input
           v-model="newName"
           placeholder="Name (required)"
           class="w-full bg-stone-800 border border-stone-700 rounded-xl px-4 py-2.5 text-stone-100 text-sm placeholder-stone-600 focus:outline-none focus:border-amber-700"
         />
 
-        <div class="flex gap-2">
-          <button
-            v-for="opt in typeOptions"
-            :key="opt.value"
-            @click="newType = opt.value"
-            class="px-3 py-1.5 rounded-full text-xs border transition-colors"
-            :class="newType === opt.value
-              ? 'bg-amber-700 border-amber-600 text-white'
-              : 'bg-stone-800 border-stone-700 text-stone-400'"
-          >
+        <select
+          v-model="newType"
+          class="w-full bg-stone-800 border border-stone-700 rounded-xl px-4 py-2.5 text-stone-100 text-sm focus:outline-none focus:border-amber-700 appearance-none"
+        >
+          <option v-for="opt in typeOptions" :key="opt.value" :value="opt.value">
             {{ opt.label }}
-          </button>
-        </div>
+          </option>
+        </select>
 
         <input
           v-model="newBrand"

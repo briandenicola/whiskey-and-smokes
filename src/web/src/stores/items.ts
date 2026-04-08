@@ -71,10 +71,17 @@ export const useItemsStore = defineStore('items', () => {
     return response.data
   }
 
+  async function createWishlistFromUrl(url: string) {
+    const response = await itemsApi.extractWishlistFromUrl(url)
+    wishlistItems.value.unshift(response.data)
+    return response.data
+  }
+
   return {
     items, isLoading, loadItems,
     wishlistItems, isLoadingWishlist, loadWishlist,
     updateItem, deleteItem,
     createWishlistItem, convertWishlistItem,
+    createWishlistFromUrl,
   }
 })

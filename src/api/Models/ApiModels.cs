@@ -136,6 +136,15 @@ public class CreateWishlistRequest
     public List<string>? Tags { get; set; }
 }
 
+public class CreateWishlistFromUrlRequest
+{
+    [JsonPropertyName("url")]
+    [Required]
+    [StringLength(2048)]
+    [Url]
+    public string Url { get; set; } = string.Empty;
+}
+
 // User update
 public class UpdateUserRequest
 {
