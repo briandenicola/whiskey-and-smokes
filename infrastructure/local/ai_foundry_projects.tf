@@ -17,7 +17,10 @@ module "project_1" {
     }
 
     logs = {
-      workspace_id = azurerm_log_analytics_workspace.this.id
+      workspace_id                  = azurerm_log_analytics_workspace.this.id
+      app_insight_name              = azurerm_application_insights.this.name
+      app_insight_id                = azurerm_application_insights.this.id
+      app_insight_connection_string = azurerm_application_insights.this.connection_string
     }
 
     models = [

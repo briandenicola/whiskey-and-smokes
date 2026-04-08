@@ -9,7 +9,10 @@ variable "foundry_project" {
     })
     tag = string
     logs = object({
-      workspace_id = string
+      workspace_id                  = string
+      app_insight_name              = string
+      app_insight_id                = string
+      app_insight_connection_string = string
     })
     models = list(object({
       name    = string
