@@ -365,7 +365,7 @@ public class WorkflowAgentService : IAgentService
                 Venue = venue,
                 PhotoUrls = capture.Photos,
                 AiConfidence = p.Confidence ?? 0.8,
-                AiSummary = p.Summary,
+                UserNotes = p.Summary,
                 UserRating = noteAnalysis?.SuggestedRating,
                 Journal = LocalExtraction.InitialJournal(capture.UserNote),
                 Tags = tags,

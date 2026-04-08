@@ -21,6 +21,7 @@ const editRating = ref(0)
 const editName = ref('')
 const editType = ref('')
 const editBrand = ref('')
+const editNotes = ref('')
 const editVenueName = ref('')
 const editVenueAddress = ref('')
 const editTags = ref<string[]>([])
@@ -142,6 +143,7 @@ function resetEditFields(data: Item) {
   editName.value = data.name ?? ''
   editType.value = data.type ?? 'custom'
   editBrand.value = data.brand ?? ''
+  editNotes.value = data.userNotes ?? data.aiSummary ?? ''
   editVenueName.value = data.venue?.name ?? ''
   editVenueAddress.value = data.venue?.address ?? ''
   editTags.value = [...(data.tags ?? [])]
@@ -238,6 +240,7 @@ async function save() {
       name: editName.value || undefined,
       type: editType.value || undefined,
       brand: editBrand.value || undefined,
+      userNotes: editNotes.value || undefined,
       venue: editVenueName.value ? { name: editVenueName.value, address: editVenueAddress.value || undefined } : undefined,
       userRating: editRating.value || undefined,
       tags: editTags.value,
@@ -412,11 +415,13 @@ function isAiGenerated(data: Item): boolean {
       <p v-if="item.brand" class="text-stone-400">{{ item.brand }}</p>
     </div>
 
-    <!-- AI Summary -->
-    <div v-if="item.aiSummary" class="bg-stone-900 border border-stone-800 rounded-xl p-4 mb-4">
-      <p v-if="isAiGenerated(item)" class="text-xs text-amber-500 mb-1">AI Agent Analysis</p>
-      <p v-else class="text-xs text-stone-500 mb-1">Local Extraction (AI agents were not available)</p>
-      <p class="text-sm text-stone-300">{{ item.aiSummary }}</p>
+    <!-- Notes (view mode) — merged from AI summary and user notes -->
+    <div v-if="!isEditing && (item.userNotes || item.aiSummary)" class="bg-stone-900 border border-stone-800 rounded-xl p-4 mb-4">
+      <div class="flex items-center gap-2 mb-1">
+        <p class="text-xs text-stone-500 uppercase tracking-wide">Notes</p>
+        <span v-if="isAiGenerated(item) && !item.userNotes && item.aiSummary" class="text-xs text-amber-500">AI Generated</span>
+      </div>
+      <p class="text-sm text-stone-300 whitespace-pre-line">{{ item.userNotes || item.aiSummary }}</p>
       <p v-if="item.aiConfidence" class="text-xs text-stone-600 mt-2">
         Confidence: {{ Math.round(item.aiConfidence * 100) }}%
       </p>
@@ -527,6 +532,17 @@ function isAiGenerated(data: Item): boolean {
           v-model="editBrand"
           :suggestions="brandSuggestions"
           placeholder="e.g. Four Roses"
+        />
+      </div>
+
+      <!-- Notes -->
+      <div>
+        <label class="block text-sm text-stone-400 mb-1">Notes</label>
+        <textarea
+          v-model="editNotes"
+          rows="3"
+          placeholder="Tasting notes, impressions, details..."
+          class="w-full bg-stone-800 border border-stone-700 rounded-xl px-4 py-3 text-stone-100 text-sm placeholder-stone-600 focus:outline-none focus:border-amber-700 resize-none"
         />
       </div>
 

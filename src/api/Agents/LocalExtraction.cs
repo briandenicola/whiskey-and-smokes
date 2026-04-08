@@ -41,7 +41,7 @@ internal static class LocalExtraction
                 Name = !string.IsNullOrEmpty(note) ? Truncate(note, 60) : "Photo Capture",
                 PhotoUrls = capture.Photos,
                 AiConfidence = 0.3,
-                AiSummary = !string.IsNullOrEmpty(note)
+                UserNotes = !string.IsNullOrEmpty(note)
                     ? $"Captured with note: \"{note}\". AI analysis pending — configure AI Foundry for full extraction."
                     : "Photo captured. AI analysis pending — configure AI Foundry for full extraction.",
                 Venue = venue,
@@ -115,7 +115,7 @@ internal static class LocalExtraction
                         Name = name,
                         PhotoUrls = capture.Photos,
                         AiConfidence = 0.5,
-                        AiSummary = $"Extracted from note: \"{note}\". Matched keyword: {matchedKeyword}. Configure AI Foundry for richer analysis.",
+                        UserNotes = $"Extracted from note: \"{note}\". Matched keyword: {matchedKeyword}. Configure AI Foundry for richer analysis.",
                         Venue = venue,
                         UserRating = rating,
                         Journal = InitialJournal(note),
@@ -202,7 +202,7 @@ internal static class LocalExtraction
             CaptureId = capture.Id,
             Type = "unknown",
             Name = name,
-            AiSummary = summary,
+            UserNotes = summary,
             PhotoUrls = capture.Photos,
             AiConfidence = 0.0,
             Status = ItemStatus.AiDraft,
