@@ -216,6 +216,9 @@ public class AuthResponse
     [JsonPropertyName("token")]
     public string Token { get; set; } = string.Empty;
 
+    [JsonPropertyName("refreshToken")]
+    public string RefreshToken { get; set; } = string.Empty;
+
     [JsonPropertyName("expiresAt")]
     public DateTime ExpiresAt { get; set; }
 
@@ -240,6 +243,23 @@ public class EntraTokenRequest
     [JsonPropertyName("accessToken")]
     [Required]
     public string AccessToken { get; set; } = string.Empty;
+}
+
+public class RefreshRequest
+{
+    [JsonPropertyName("accessToken")]
+    [Required]
+    public string AccessToken { get; set; } = string.Empty;
+
+    [JsonPropertyName("refreshToken")]
+    [Required]
+    public string RefreshToken { get; set; } = string.Empty;
+}
+
+public class LogoutRequest
+{
+    [JsonPropertyName("refreshToken")]
+    public string? RefreshToken { get; set; }
 }
 
 public class EntraConfigResponse

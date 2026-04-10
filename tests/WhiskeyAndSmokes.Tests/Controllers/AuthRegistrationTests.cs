@@ -45,8 +45,8 @@ public class AuthRegistrationTests : IClassFixture<CustomWebApplicationFactory>
             .Returns(new List<User> { new() }); // not first user
         _factory.CosmosDb.CreateAsync("users", Arg.Any<User>(), Arg.Any<string>())
             .Returns(callInfo => callInfo.ArgAt<User>(1));
-        _factory.AuthService.GenerateToken(Arg.Any<User>())
-            .Returns(authResponse);
+        _factory.AuthService.GenerateTokenWithRefreshAsync(Arg.Any<User>())
+            .Returns(Task.FromResult(authResponse));
 
         var response = await _client.PostAsJsonAsync("/api/auth/register", new
         {

@@ -110,6 +110,9 @@ public class UsersController : ControllerBase
         user.UpdatedAt = DateTime.UtcNow;
         await _cosmosDb.UpsertAsync(ContainerName, user, user.PartitionKey);
 
+        // Revoke all refresh tokens so other sessions must re-authenticate
+        await _authService.RevokeAllRefreshTokensAsync(user.Id);
+
         _logger.LogInformation("Password changed successfully for user {UserId}", userId);
         return Ok(new { message = "Password changed successfully" });
     }

@@ -7,7 +7,8 @@ public class JwtOptions
     public string Secret { get; set; } = string.Empty;
     public string Issuer { get; set; } = "whiskey-and-smokes";
     public string Audience { get; set; } = "whiskey-and-smokes";
-    public int ExpirationDays { get; set; } = 7;
+    public int AccessTokenExpirationMinutes { get; set; } = 15;
+    public int RefreshTokenExpirationDays { get; set; } = 90;
 }
 
 public class EntraIdOptions

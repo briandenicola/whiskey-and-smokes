@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
+using System.Security.Cryptography;
 using System.Text;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
@@ -14,6 +15,11 @@ public interface IAuthService
     string HashPassword(string password);
     bool VerifyPassword(string password, string hash);
     AuthResponse GenerateToken(User user);
+    Task<AuthResponse> GenerateTokenWithRefreshAsync(User user);
+    Task<AuthResponse?> RefreshTokensAsync(string expiredAccessToken, string rawRefreshToken);
+    Task RevokeAllRefreshTokensAsync(string userId);
+    Task RevokeRefreshTokenAsync(string userId, string rawRefreshToken);
+    ClaimsPrincipal? GetPrincipalFromExpiredToken(string token);
     Task<User?> FindByEmailAsync(string email);
     Task<User?> FindByEntraObjectIdAsync(string objectId);
 }
@@ -24,6 +30,7 @@ public class AuthService : IAuthService
     private readonly JwtOptions _jwtOptions;
     private readonly ILogger<AuthService> _logger;
     private const string ContainerName = "users";
+    private const int MaxRefreshTokensPerUser = 10;
 
     public AuthService(ICosmosDbService cosmosDb, IOptions<JwtOptions> jwtOptions, ILogger<AuthService> logger)
     {
@@ -68,7 +75,7 @@ public class AuthService : IAuthService
                 ? _jwtOptions.Secret
                 : throw new InvalidOperationException("JWT secret not configured")));
 
-        var expiresAt = DateTime.UtcNow.AddDays(_jwtOptions.ExpirationDays);
+        var expiresAt = DateTime.UtcNow.AddMinutes(_jwtOptions.AccessTokenExpirationMinutes);
 
         var claims = new[]
         {
@@ -86,8 +93,8 @@ public class AuthService : IAuthService
             signingCredentials: new SigningCredentials(key, SecurityAlgorithms.HmacSha256));
 
         _logger.LogInformation(
-            "JWT token generated for user {UserId}: expiresAt={ExpiresAt}, expirationDays={ExpirationDays}, issuer={Issuer}",
-            user.Id, expiresAt, _jwtOptions.ExpirationDays, _jwtOptions.Issuer);
+            "JWT token generated for user {UserId}: expiresAt={ExpiresAt}, expirationMinutes={ExpirationMinutes}, issuer={Issuer}",
+            user.Id, expiresAt, _jwtOptions.AccessTokenExpirationMinutes, _jwtOptions.Issuer);
 
         return new AuthResponse
         {
@@ -95,6 +102,179 @@ public class AuthService : IAuthService
             ExpiresAt = expiresAt,
             User = user
         };
+    }
+
+    public async Task<AuthResponse> GenerateTokenWithRefreshAsync(User user)
+    {
+        using var activity = Diagnostics.Auth.StartActivity("GenerateTokenWithRefresh");
+        activity?.SetTag("auth.user_id", user.Id);
+
+        var response = GenerateToken(user);
+
+        var rawRefreshToken = GenerateRawRefreshToken();
+        var tokenHash = HashRefreshToken(rawRefreshToken);
+
+        var refreshToken = new Models.RefreshToken
+        {
+            TokenHash = tokenHash,
+            ExpiresAt = DateTime.UtcNow.AddDays(_jwtOptions.RefreshTokenExpirationDays),
+        };
+
+        // Prune oldest tokens if over limit
+        user.RefreshTokens.RemoveAll(t => t.ExpiresAt <= DateTime.UtcNow);
+        if (user.RefreshTokens.Count >= MaxRefreshTokensPerUser)
+        {
+            var oldest = user.RefreshTokens.OrderBy(t => t.CreatedAt).First();
+            user.RefreshTokens.Remove(oldest);
+        }
+
+        user.RefreshTokens.Add(refreshToken);
+        user.UpdatedAt = DateTime.UtcNow;
+        await _cosmosDb.UpsertAsync(ContainerName, user, user.PartitionKey);
+
+        response.RefreshToken = rawRefreshToken;
+
+        _logger.LogInformation("Refresh token generated for user {UserId}, active tokens: {Count}",
+            user.Id, user.RefreshTokens.Count);
+
+        return response;
+    }
+
+    public async Task<AuthResponse?> RefreshTokensAsync(string expiredAccessToken, string rawRefreshToken)
+    {
+        using var activity = Diagnostics.Auth.StartActivity("RefreshTokens");
+
+        var principal = GetPrincipalFromExpiredToken(expiredAccessToken);
+        if (principal == null)
+        {
+            _logger.LogWarning("Refresh failed: could not extract claims from expired token");
+            return null;
+        }
+
+        var userId = principal.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (string.IsNullOrEmpty(userId))
+        {
+            _logger.LogWarning("Refresh failed: no user ID in expired token");
+            return null;
+        }
+
+        activity?.SetTag("auth.user_id", userId);
+
+        var user = await _cosmosDb.GetAsync<User>(ContainerName, userId, userId);
+        if (user == null || user.IsDisabled)
+        {
+            _logger.LogWarning("Refresh failed: user {UserId} not found or disabled", userId);
+            return null;
+        }
+
+        var incomingHash = HashRefreshToken(rawRefreshToken);
+        var storedToken = user.RefreshTokens.FirstOrDefault(t => t.TokenHash == incomingHash);
+
+        if (storedToken == null)
+        {
+            _logger.LogWarning("Refresh failed for user {UserId}: token not found (possible reuse attack)", userId);
+            return null;
+        }
+
+        if (storedToken.ExpiresAt <= DateTime.UtcNow)
+        {
+            _logger.LogWarning("Refresh failed for user {UserId}: refresh token expired", userId);
+            user.RefreshTokens.Remove(storedToken);
+            await _cosmosDb.UpsertAsync(ContainerName, user, user.PartitionKey);
+            return null;
+        }
+
+        // Rotate: remove old token, issue new pair
+        user.RefreshTokens.Remove(storedToken);
+
+        var response = GenerateToken(user);
+        response.User = user.Sanitized();
+
+        var newRawRefreshToken = GenerateRawRefreshToken();
+        var newRefreshToken = new Models.RefreshToken
+        {
+            TokenHash = HashRefreshToken(newRawRefreshToken),
+            ExpiresAt = DateTime.UtcNow.AddDays(_jwtOptions.RefreshTokenExpirationDays),
+        };
+
+        user.RefreshTokens.Add(newRefreshToken);
+        user.UpdatedAt = DateTime.UtcNow;
+        await _cosmosDb.UpsertAsync(ContainerName, user, user.PartitionKey);
+
+        response.RefreshToken = newRawRefreshToken;
+
+        _logger.LogInformation("Tokens refreshed for user {UserId}", userId);
+        return response;
+    }
+
+    public async Task RevokeAllRefreshTokensAsync(string userId)
+    {
+        using var activity = Diagnostics.Auth.StartActivity("RevokeAllRefreshTokens");
+        activity?.SetTag("auth.user_id", userId);
+
+        var user = await _cosmosDb.GetAsync<User>(ContainerName, userId, userId);
+        if (user == null) return;
+
+        var count = user.RefreshTokens.Count;
+        user.RefreshTokens.Clear();
+        user.UpdatedAt = DateTime.UtcNow;
+        await _cosmosDb.UpsertAsync(ContainerName, user, user.PartitionKey);
+
+        _logger.LogInformation("Revoked {Count} refresh tokens for user {UserId}", count, userId);
+    }
+
+    public async Task RevokeRefreshTokenAsync(string userId, string rawRefreshToken)
+    {
+        using var activity = Diagnostics.Auth.StartActivity("RevokeRefreshToken");
+        activity?.SetTag("auth.user_id", userId);
+
+        var user = await _cosmosDb.GetAsync<User>(ContainerName, userId, userId);
+        if (user == null) return;
+
+        var hash = HashRefreshToken(rawRefreshToken);
+        var removed = user.RefreshTokens.RemoveAll(t => t.TokenHash == hash);
+
+        if (removed > 0)
+        {
+            user.UpdatedAt = DateTime.UtcNow;
+            await _cosmosDb.UpsertAsync(ContainerName, user, user.PartitionKey);
+            _logger.LogInformation("Revoked refresh token for user {UserId}", userId);
+        }
+    }
+
+    public ClaimsPrincipal? GetPrincipalFromExpiredToken(string token)
+    {
+        var key = new SymmetricSecurityKey(
+            Encoding.UTF8.GetBytes(_jwtOptions.Secret.Length > 0
+                ? _jwtOptions.Secret
+                : throw new InvalidOperationException("JWT secret not configured")));
+
+        var validationParameters = new TokenValidationParameters
+        {
+            ValidateIssuer = true,
+            ValidIssuer = _jwtOptions.Issuer,
+            ValidateAudience = true,
+            ValidAudience = _jwtOptions.Audience,
+            ValidateIssuerSigningKey = true,
+            IssuerSigningKey = key,
+            ValidateLifetime = false, // Allow expired tokens
+        };
+
+        try
+        {
+            var principal = new JwtSecurityTokenHandler().ValidateToken(token, validationParameters, out var securityToken);
+            if (securityToken is not JwtSecurityToken jwtToken ||
+                !jwtToken.Header.Alg.Equals(SecurityAlgorithms.HmacSha256, StringComparison.InvariantCultureIgnoreCase))
+            {
+                return null;
+            }
+            return principal;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Failed to validate expired token");
+            return null;
+        }
     }
 
     public async Task<User?> FindByEmailAsync(string email)
@@ -135,5 +315,20 @@ public class AuthService : IAuthService
             maxItems: 1);
 
         return users.FirstOrDefault();
+    }
+
+    private static string GenerateRawRefreshToken()
+    {
+        var randomBytes = new byte[64];
+        using var rng = RandomNumberGenerator.Create();
+        rng.GetBytes(randomBytes);
+        return Convert.ToBase64String(randomBytes);
+    }
+
+    private static string HashRefreshToken(string rawToken)
+    {
+        var bytes = Encoding.UTF8.GetBytes(rawToken);
+        var hash = SHA256.HashData(bytes);
+        return Convert.ToBase64String(hash);
     }
 }

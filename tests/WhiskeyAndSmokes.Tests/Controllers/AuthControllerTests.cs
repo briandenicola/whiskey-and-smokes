@@ -41,8 +41,8 @@ public class AuthControllerTests : IClassFixture<CustomWebApplicationFactory>
             .Returns(Task.FromResult<User?>(testUser));
         _factory.AuthService.VerifyPassword("ValidPass123", testUser.PasswordHash)
             .Returns(true);
-        _factory.AuthService.GenerateToken(testUser)
-            .Returns(expectedResponse);
+        _factory.AuthService.GenerateTokenWithRefreshAsync(testUser)
+            .Returns(Task.FromResult(expectedResponse));
 
         var response = await _client.PostAsJsonAsync("/api/auth/login", new
         {

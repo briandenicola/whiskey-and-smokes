@@ -1,9 +1,23 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
-import { authApi, storeAuth, clearAuth, getStoredToken, getStoredUser, type RegisterRequest, type LoginRequest } from '../services/auth'
+import axios from 'axios'
+import {
+  authApi,
+  storeAuth,
+  clearAuth,
+  getStoredToken,
+  getStoredRefreshToken,
+  getStoredExpiresAt,
+  getStoredUser,
+  type RegisterRequest,
+  type LoginRequest,
+  type AuthResponse,
+} from '../services/auth'
 import { usersApi, type User } from '../services/users'
 import { loginWithEntra, logoutEntra, isEntraConfigured } from '../services/msal'
 import router from '../router'
+
+const REFRESH_BUFFER_MS = 60_000 // refresh 1 minute before expiry
 
 export const useAuthStore = defineStore('auth', () => {
   const user = ref<User | null>(null)
@@ -11,16 +25,76 @@ export const useAuthStore = defineStore('auth', () => {
   const isLoading = ref(true)
   const error = ref<string | null>(null)
 
+  let refreshTimer: ReturnType<typeof setTimeout> | null = null
+
   const isAuthenticated = computed(() => !!token.value)
   const isAdmin = computed(() => user.value?.role === 'admin')
+
+  function scheduleRefresh() {
+    if (refreshTimer) {
+      clearTimeout(refreshTimer)
+      refreshTimer = null
+    }
+
+    const expiresAt = getStoredExpiresAt()
+    if (!expiresAt) return
+
+    const expiresMs = new Date(expiresAt).getTime()
+    const delay = expiresMs - Date.now() - REFRESH_BUFFER_MS
+
+    if (delay <= 0) {
+      performRefresh()
+      return
+    }
+
+    refreshTimer = setTimeout(() => performRefresh(), delay)
+  }
+
+  async function performRefresh() {
+    const accessToken = getStoredToken()
+    const refreshToken = getStoredRefreshToken()
+
+    if (!accessToken || !refreshToken) return
+
+    try {
+      const { data } = await axios.post<AuthResponse>('/api/auth/refresh', {
+        accessToken,
+        refreshToken,
+      })
+
+      storeAuth(data)
+      token.value = data.token
+      user.value = data.user
+      scheduleRefresh()
+    } catch {
+      // Refresh failed — the 401 interceptor will handle redirect on next API call
+    }
+  }
+
+  function handleVisibilityChange() {
+    if (document.visibilityState !== 'visible' || !token.value) return
+
+    const expiresAt = getStoredExpiresAt()
+    if (!expiresAt) return
+
+    const expiresMs = new Date(expiresAt).getTime()
+    if (Date.now() >= expiresMs - REFRESH_BUFFER_MS) {
+      performRefresh()
+    } else {
+      scheduleRefresh()
+    }
+  }
 
   function initialize() {
     const storedUser = getStoredUser()
     if (storedUser && token.value) {
       user.value = storedUser
       loadUser()
+      scheduleRefresh()
     }
     isLoading.value = false
+
+    document.addEventListener('visibilitychange', handleVisibilityChange)
   }
 
   async function register(data: RegisterRequest) {
@@ -30,6 +104,7 @@ export const useAuthStore = defineStore('auth', () => {
       storeAuth(response.data)
       token.value = response.data.token
       user.value = response.data.user
+      scheduleRefresh()
       router.push('/')
     } catch (e: any) {
       error.value = e.response?.data?.message ?? 'Registration failed'
@@ -44,6 +119,7 @@ export const useAuthStore = defineStore('auth', () => {
       storeAuth(response.data)
       token.value = response.data.token
       user.value = response.data.user
+      scheduleRefresh()
       router.push('/')
     } catch (e: any) {
       error.value = e.response?.data?.message ?? 'Login failed'
@@ -59,6 +135,7 @@ export const useAuthStore = defineStore('auth', () => {
       storeAuth(response.data)
       token.value = response.data.token
       user.value = response.data.user
+      scheduleRefresh()
       router.push('/')
     } catch (e: any) {
       error.value = e.response?.data?.message ?? e.message ?? 'Microsoft sign-in failed'
@@ -67,6 +144,21 @@ export const useAuthStore = defineStore('auth', () => {
   }
 
   async function logout() {
+    // Revoke refresh token on the server
+    const refreshToken = getStoredRefreshToken()
+    const accessToken = getStoredToken()
+    if (accessToken && refreshToken) {
+      try {
+        await axios.post(
+          '/api/auth/logout',
+          { refreshToken },
+          { headers: { Authorization: `Bearer ${accessToken}` } }
+        )
+      } catch {
+        // Best-effort server logout
+      }
+    }
+
     if (isEntraConfigured()) {
       try {
         await logoutEntra()
@@ -74,6 +166,12 @@ export const useAuthStore = defineStore('auth', () => {
         // Entra logout is best-effort
       }
     }
+
+    if (refreshTimer) {
+      clearTimeout(refreshTimer)
+      refreshTimer = null
+    }
+
     clearAuth()
     token.value = null
     user.value = null

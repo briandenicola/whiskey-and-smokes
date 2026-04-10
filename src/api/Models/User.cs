@@ -34,6 +34,9 @@ public class User
     [JsonPropertyName("apiKeys")]
     public List<ApiKey> ApiKeys { get; set; } = [];
 
+    [JsonPropertyName("refreshTokens")]
+    public List<RefreshToken> RefreshTokens { get; set; } = [];
+
     [JsonPropertyName("createdAt")]
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
@@ -56,6 +59,7 @@ public class User
             IsDisabled = IsDisabled,
             Preferences = Preferences,
             ApiKeys = [],
+            RefreshTokens = [],
             CreatedAt = CreatedAt,
             UpdatedAt = UpdatedAt
         };
@@ -138,4 +142,19 @@ public class CreateApiKeyResponse
 
     [JsonPropertyName("createdAt")]
     public DateTime CreatedAt { get; set; }
+}
+
+public class RefreshToken
+{
+    [JsonPropertyName("id")]
+    public string Id { get; set; } = Guid.NewGuid().ToString();
+
+    [JsonPropertyName("tokenHash")]
+    public string TokenHash { get; set; } = string.Empty;
+
+    [JsonPropertyName("expiresAt")]
+    public DateTime ExpiresAt { get; set; }
+
+    [JsonPropertyName("createdAt")]
+    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 }

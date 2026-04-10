@@ -5,6 +5,7 @@ using Microsoft.IdentityModel.Protocols;
 using Microsoft.IdentityModel.Protocols.OpenIdConnect;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
 using WhiskeyAndSmokes.Api;
 using WhiskeyAndSmokes.Api.Models;
 using WhiskeyAndSmokes.Api.Services;
@@ -83,7 +84,7 @@ public class AuthController : ControllerBase
         }
 
         user = await _cosmosDb.CreateAsync(ContainerName, user, user.PartitionKey);
-        var response = _authService.GenerateToken(user);
+        var response = await _authService.GenerateTokenWithRefreshAsync(user);
         response.User = user.Sanitized();
 
         _logger.LogInformation("User registered successfully: {UserId} ({Email}), role={Role}",
@@ -121,7 +122,7 @@ public class AuthController : ControllerBase
             return Unauthorized(new { message = "Account is disabled" });
         }
 
-        var response = _authService.GenerateToken(user);
+        var response = await _authService.GenerateTokenWithRefreshAsync(user);
         response.User = user.Sanitized();
 
         _logger.LogInformation("User logged in successfully: {UserId} ({Email})", user.Id, user.Email);
@@ -255,7 +256,7 @@ public class AuthController : ControllerBase
             await _cosmosDb.UpsertAsync(ContainerName, user, user.PartitionKey);
         }
 
-        var response = _authService.GenerateToken(user);
+        var response = await _authService.GenerateTokenWithRefreshAsync(user);
         response.User = user.Sanitized();
 
         _logger.LogInformation("Entra user logged in: {UserId} ({Email})", user.Id, user.Email);
@@ -278,5 +279,49 @@ public class AuthController : ControllerBase
             Authority = $"{_entraOptions.Instance}{_entraOptions.TenantId}",
             Scopes = [$"api://{_entraOptions.ClientId}/access_as_user"]
         });
+    }
+
+    /// <summary>
+    /// Exchange an expired access token + valid refresh token for a new token pair.
+    /// </summary>
+    [AllowAnonymous]
+    [HttpPost("refresh")]
+    public async Task<ActionResult<AuthResponse>> Refresh([FromBody] RefreshRequest request)
+    {
+        if (!ModelState.IsValid) return BadRequest(ModelState);
+
+        using var activity = Diagnostics.Auth.StartActivity("AuthRefresh");
+        _logger.LogDebug("Token refresh attempt");
+
+        var response = await _authService.RefreshTokensAsync(request.AccessToken, request.RefreshToken);
+        if (response == null)
+        {
+            _logger.LogWarning("Token refresh failed");
+            return Unauthorized(new { message = "Invalid or expired refresh token" });
+        }
+
+        _logger.LogInformation("Token refreshed for user {UserId}", response.User.Id);
+        return Ok(response);
+    }
+
+    /// <summary>
+    /// Revoke the current refresh token (logout from this device).
+    /// </summary>
+    [HttpPost("logout")]
+    public async Task<IActionResult> Logout([FromBody] LogoutRequest request)
+    {
+        using var activity = Diagnostics.Auth.StartActivity("AuthLogout");
+        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (string.IsNullOrEmpty(userId)) return Unauthorized();
+
+        activity?.SetTag("auth.user_id", userId);
+
+        if (!string.IsNullOrEmpty(request.RefreshToken))
+        {
+            await _authService.RevokeRefreshTokenAsync(userId, request.RefreshToken);
+        }
+
+        _logger.LogInformation("User {UserId} logged out", userId);
+        return Ok(new { message = "Logged out successfully" });
     }
 }
