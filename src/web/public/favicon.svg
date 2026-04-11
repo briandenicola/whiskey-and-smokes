@@ -86,7 +86,7 @@
   </g>
 
   <!-- ============ CHOCOLATE CAKE SLICE (right side) ============ -->
-  <g transform="translate(40, 10)">
+  <g transform="translate(40, 10) rotate(-10, 370, 420)">
     <!-- Plate -->
     <ellipse cx="370" cy="440" rx="100" ry="20" fill="#1a1a1a" stroke="#333" stroke-width="1.5"/>
     <ellipse cx="370" cy="436" rx="95" ry="17" fill="#222" stroke="#444" stroke-width="0.8"/>
