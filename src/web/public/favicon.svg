@@ -1,144 +1,90 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
   <defs>
-    <linearGradient id="whiskey" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0%" stop-color="#e8a020"/>
-      <stop offset="100%" stop-color="#b5651d"/>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#F7E7CE"/>
+      <stop offset="100%" stop-color="#E8D4B2"/>
     </linearGradient>
-    <linearGradient id="glass" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.25"/>
-      <stop offset="100%" stop-color="#ffffff" stop-opacity="0.05"/>
+    <linearGradient id="martiniLiquid" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#f2dc92"/>
+      <stop offset="100%" stop-color="#c89828"/>
     </linearGradient>
-    <linearGradient id="ice" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.7"/>
-      <stop offset="50%" stop-color="#d0e8f0" stop-opacity="0.5"/>
-      <stop offset="100%" stop-color="#a0c4d0" stop-opacity="0.3"/>
-    </linearGradient>
-    <linearGradient id="cake-body" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0%" stop-color="#5c3317"/>
-      <stop offset="100%" stop-color="#3b1f0e"/>
-    </linearGradient>
-    <linearGradient id="ganache" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0%" stop-color="#4a2810"/>
-      <stop offset="100%" stop-color="#2c1a08"/>
-    </linearGradient>
-    <linearGradient id="frosting" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0%" stop-color="#6b3a1f"/>
-      <stop offset="100%" stop-color="#4a2810"/>
-    </linearGradient>
-    <filter id="glow-sm">
-      <feGaussianBlur stdDeviation="6"/>
-    </filter>
-    <filter id="glow-lg">
-      <feGaussianBlur stdDeviation="14"/>
-    </filter>
+    <clipPath id="tiramisuClip">
+      <rect x="12" y="15" width="120" height="92" rx="6"/>
+    </clipPath>
   </defs>
 
   <!-- Background -->
-  <rect width="512" height="512" rx="96" fill="#000000"/>
+  <rect width="512" height="512" rx="80" fill="url(#bg)"/>
 
-  <!-- Ambient warm glow -->
-  <ellipse cx="256" cy="380" rx="200" ry="100" fill="#e8a020" opacity="0.08" filter="url(#glow-lg)"/>
+  <!-- Subtle decorative rings -->
+  <circle cx="210" cy="245" r="180" fill="none" stroke="#b8943c" stroke-width="0.8" opacity="0.12"/>
+  <circle cx="210" cy="245" r="140" fill="none" stroke="#b8943c" stroke-width="0.5" opacity="0.09"/>
 
-  <!-- ============ OLD FASHIONED (left side) ============ -->
-  <g transform="translate(-50, 20)">
-    <!-- Glass body -->
-    <path d="M108 190 L126 410 Q132 432 154 436 L264 436 Q286 432 292 410 L310 190 Z"
-          fill="url(#glass)" stroke="#ffffff" stroke-opacity="0.3" stroke-width="1.8"/>
+  <!-- ===== MARTINI GLASS ===== -->
 
-    <!-- Glass bottom -->
-    <path d="M132 424 Q136 444 158 446 L260 446 Q282 444 286 424"
-          fill="none" stroke="#ffffff" stroke-opacity="0.2" stroke-width="1.2"/>
+  <!-- Glass V-shape -->
+  <path d="M 90,112 L 320,112 L 205,285"
+        fill="none" stroke="#8c7a5a" stroke-width="5"
+        stroke-linejoin="round" stroke-linecap="round"/>
 
-    <!-- Whiskey fill -->
-    <path d="M118 280 Q122 286 136 290 Q209 306 282 290 Q296 286 300 280 L292 410 Q286 432 264 436 L154 436 Q132 432 126 410 Z"
-          fill="url(#whiskey)" opacity="0.85"/>
+  <!-- Liquid fill -->
+  <polygon points="114,136 296,136 205,278"
+           fill="url(#martiniLiquid)" opacity="0.55"/>
 
-    <!-- Whiskey surface shimmer -->
-    <ellipse cx="209" cy="283" rx="90" ry="14" fill="#daa520" opacity="0.5"/>
+  <!-- Subtle glass shine -->
+  <path d="M 105,125 L 115,125 L 207,278 L 203,278 Z"
+        fill="#ffffff" opacity="0.18"/>
 
-    <!-- Ice cube 1 -->
-    <g transform="rotate(-10 184 258)">
-      <rect x="158" y="240" width="46" height="40" rx="7" fill="url(#ice)" stroke="#ffffff" stroke-opacity="0.3" stroke-width="1.2"/>
-      <line x1="168" y1="246" x2="180" y2="258" stroke="#ffffff" stroke-opacity="0.2" stroke-width="1.5" stroke-linecap="round"/>
+  <!-- Stem -->
+  <line x1="205" y1="285" x2="205" y2="374"
+        stroke="#8c7a5a" stroke-width="5" stroke-linecap="round"/>
+
+  <!-- Base -->
+  <line x1="152" y1="377" x2="258" y2="377"
+        stroke="#8c7a5a" stroke-width="5" stroke-linecap="round"/>
+
+  <!-- Olive on cocktail pick -->
+  <line x1="172" y1="130" x2="238" y2="130"
+        stroke="#a08030" stroke-width="3" stroke-linecap="round"/>
+  <circle cx="205" cy="130" r="10" fill="#8a9e62"
+          stroke="#6e8248" stroke-width="1.8"/>
+  <circle cx="205" cy="130" r="3.5" fill="#c43828"/>
+
+  <!-- Sparkle on rim -->
+  <circle cx="118" cy="114" r="4" fill="#ffffff" opacity="0.6"/>
+  <circle cx="295" cy="114" r="2.5" fill="#ffffff" opacity="0.35"/>
+
+  <!-- ===== TIRAMISU SLICE ===== -->
+  <g transform="translate(298,285)">
+    <!-- Plate shadow -->
+    <ellipse cx="72" cy="115" rx="78" ry="11"
+             fill="#8a7a5a" opacity="0.15"/>
+
+    <!-- Outer border -->
+    <rect x="12" y="15" width="120" height="92" rx="6"
+          fill="#f5efe4" stroke="#9a8660" stroke-width="2.5"/>
+
+    <!-- Layers clipped to rounded rect -->
+    <g clip-path="url(#tiramisuClip)">
+      <!-- Bottom espresso-soaked ladyfinger -->
+      <rect x="0" y="82" width="144" height="30" fill="#9a6236"/>
+      <!-- Mascarpone cream -->
+      <rect x="0" y="63" width="144" height="19" fill="#f2eada"/>
+      <!-- Middle ladyfinger -->
+      <rect x="0" y="47" width="144" height="16" fill="#885430"/>
+      <!-- Top mascarpone cream -->
+      <rect x="0" y="31" width="144" height="16" fill="#eee4cc"/>
+      <!-- Cocoa powder dusting -->
+      <rect x="0" y="8" width="144" height="25" fill="#3c2010"/>
     </g>
 
-    <!-- Ice cube 2 -->
-    <g transform="rotate(12 246 254)">
-      <rect x="222" y="242" width="38" height="34" rx="6" fill="url(#ice)" stroke="#ffffff" stroke-opacity="0.25" stroke-width="1.2"/>
-      <line x1="230" y1="248" x2="240" y2="258" stroke="#ffffff" stroke-opacity="0.18" stroke-width="1.2" stroke-linecap="round"/>
-    </g>
-
-    <!-- Glass highlight -->
-    <path d="M114 200 Q118 300 128 406" stroke="#ffffff" stroke-opacity="0.14" stroke-width="3" fill="none" stroke-linecap="round"/>
-
-    <!-- Orange peel garnish -->
-    <path d="M252 230 Q274 214 296 224 Q306 230 300 242 Q290 246 274 238"
-          fill="#e87020" opacity="0.9" stroke="#c45e18" stroke-width="1.2"/>
-    <path d="M256 233 Q274 220 292 228" fill="none" stroke="#f0a050" stroke-opacity="0.5" stroke-width="1.2"/>
-
-    <!-- Steam wisps -->
-    <path d="M196 224 Q184 178 200 146 Q216 112 198 74"
-          fill="none" stroke="#c8b8a0" stroke-opacity="0.25" stroke-width="3.5"
-          stroke-linecap="round" filter="url(#glow-sm)"/>
-    <path d="M224 218 Q238 170 226 134 Q214 100 234 68"
-          fill="none" stroke="#b8a890" stroke-opacity="0.2" stroke-width="3"
-          stroke-linecap="round" filter="url(#glow-sm)"/>
+    <!-- Re-draw border on top of layers -->
+    <rect x="12" y="15" width="120" height="92" rx="6"
+          fill="none" stroke="#9a8660" stroke-width="2.5"/>
   </g>
 
-  <!-- ============ CHOCOLATE CAKE SLICE (right side) ============ -->
-  <g transform="translate(40, 10) rotate(-10, 370, 420)">
-    <!-- Plate -->
-    <ellipse cx="370" cy="440" rx="100" ry="20" fill="#1a1a1a" stroke="#333" stroke-width="1.5"/>
-    <ellipse cx="370" cy="436" rx="95" ry="17" fill="#222" stroke="#444" stroke-width="0.8"/>
-
-    <!-- Cake slice - triangular wedge from above -->
-    <!-- Back face (darker) -->
-    <path d="M310 280 L370 200 L370 420 L310 420 Z"
-          fill="url(#cake-body)" stroke="#2a1508" stroke-width="1"/>
-
-    <!-- Front/right face -->
-    <path d="M370 200 L440 300 L440 420 L370 420 Z"
-          fill="#6b3a1f" stroke="#2a1508" stroke-width="1"/>
-
-    <!-- Cake layers visible on the cut face (left) -->
-    <!-- Layer 1 - bottom sponge -->
-    <path d="M310 380 L370 330 L370 420 L310 420 Z" fill="#5c3317"/>
-    <!-- Frosting layer 1 -->
-    <path d="M310 370 L370 320 L370 330 L310 380 Z" fill="#7a4528" opacity="0.9"/>
-    <!-- Layer 2 - middle sponge -->
-    <path d="M310 330 L370 280 L370 320 L310 370 Z" fill="#5c3317"/>
-    <!-- Frosting layer 2 -->
-    <path d="M310 320 L370 270 L370 280 L310 330 Z" fill="#7a4528" opacity="0.9"/>
-    <!-- Layer 3 - top sponge -->
-    <path d="M310 280 L370 200 L370 270 L310 320 Z" fill="#5c3317"/>
-
-    <!-- Right face internal layers (subtle) -->
-    <path d="M370 330 L440 380 L440 420 L370 420 Z" fill="#6b3a1f"/>
-    <path d="M370 320 L440 370 L440 380 L370 330 Z" fill="#845530" opacity="0.7"/>
-    <path d="M370 280 L440 330 L440 370 L370 320 Z" fill="#6b3a1f"/>
-    <path d="M370 270 L440 320 L440 330 L370 280 Z" fill="#845530" opacity="0.7"/>
-    <path d="M370 200 L440 300 L440 320 L370 270 Z" fill="#6b3a1f"/>
-
-    <!-- Top surface - chocolate ganache -->
-    <path d="M310 280 L370 200 L440 300 Z"
-          fill="url(#ganache)" stroke="#1a0e05" stroke-width="1"/>
-
-    <!-- Ganache shine -->
-    <path d="M340 260 L370 218 L410 268" fill="none" stroke="#8b5e3c" stroke-opacity="0.3" stroke-width="2" stroke-linecap="round"/>
-
-    <!-- Ganache drip on front edge -->
-    <path d="M440 300 Q444 318 440 332 Q436 342 440 348"
-          fill="none" stroke="#3b200e" stroke-width="5" stroke-linecap="round"/>
-    <path d="M440 300 Q444 318 440 332 Q436 342 440 348"
-          fill="none" stroke="#5a3520" stroke-width="3" stroke-linecap="round"/>
-
-    <!-- Small ganache drip -->
-    <path d="M412 310 Q416 322 412 328"
-          fill="none" stroke="#3b200e" stroke-width="4" stroke-linecap="round"/>
-
-    <!-- Chocolate shavings on top -->
-    <rect x="348" y="230" width="14" height="5" rx="2" transform="rotate(-35 355 232)" fill="#7a4528" opacity="0.7"/>
-    <rect x="362" y="244" width="10" height="4" rx="2" transform="rotate(15 367 246)" fill="#6b3a1f" opacity="0.6"/>
-    <rect x="374" y="252" width="12" height="4" rx="2" transform="rotate(-20 380 254)" fill="#8b5e3c" opacity="0.5"/>
-  </g>
+  <!-- Subtle gold accent line -->
+  <line x1="90" y1="450" x2="422" y2="450"
+        stroke="#a08838" stroke-width="1" opacity="0.2"
+        stroke-linecap="round"/>
 </svg>
