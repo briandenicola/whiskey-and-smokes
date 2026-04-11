@@ -11,7 +11,7 @@ const props = withDefaults(defineProps<{
 })
 
 const emit = defineEmits<{
-  (e: 'update', value: number): void
+  (e: 'update:rating', value: number): void
 }>()
 
 const sizeClass = computed(() => ({
@@ -44,17 +44,24 @@ const stars = computed(() => {
   return result
 })
 
-function handleClick(starIndex: number, event: MouseEvent) {
+function handleClick(starIndex: number, event: MouseEvent | TouchEvent) {
   if (!props.interactive) return
   const target = event.currentTarget as HTMLElement
   const rect = target.getBoundingClientRect()
-  const x = event.clientX - rect.left
+  let clientX: number
+  if ('touches' in event && event.touches.length) {
+    clientX = event.touches[0].clientX
+  } else if ('changedTouches' in event && event.changedTouches.length) {
+    clientX = event.changedTouches[0].clientX
+  } else {
+    clientX = (event as MouseEvent).clientX
+  }
+  const x = clientX - rect.left
   const fraction = x / rect.width
-  // Snap to quarter increments
   let quarter = Math.ceil(fraction * 4) / 4
   if (quarter < 0.25) quarter = 0.25
   const value = starIndex + quarter
-  emit('update', value)
+  emit('update:rating', value)
 }
 
 // Unique clip IDs per star fill level
@@ -71,6 +78,7 @@ function clipId(starIdx: number) {
       :class="sizeClass"
       viewBox="0 0 20 20"
       @click="handleClick(i, $event)"
+      @touchend.prevent="handleClick(i, $event)"
     >
       <defs>
         <clipPath :id="clipId(i)">

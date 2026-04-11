@@ -21,6 +21,10 @@ const editAddress = ref('')
 const editWebsite = ref('')
 const editType = ref('other')
 const editRating = ref(0)
+const pendingPhotoDeletes = ref(new Set<string>())
+const pendingPhotoAdds = ref<{ file: File; previewUrl: string }[]>([])
+const photoFileInput = ref<HTMLInputElement | null>(null)
+const isUploadingPhoto = ref(false)
 
 const venueTypeOptions = [
   { label: 'Bar', value: 'bar' },
@@ -57,13 +61,76 @@ function resetEditFields(data: Venue) {
 
 function startEditing() {
   if (venue.value) resetEditFields(venue.value)
+  pendingPhotoDeletes.value = new Set()
+  pendingPhotoAdds.value = []
   isEditing.value = true
+}
+
+function markPhotoForDelete(url: string) {
+  pendingPhotoDeletes.value.add(url)
+}
+
+function unmarkPhotoForDelete(url: string) {
+  pendingPhotoDeletes.value.delete(url)
+}
+
+function triggerPhotoUpload() {
+  photoFileInput.value?.click()
+}
+
+function onPhotoFilesSelected(event: Event) {
+  const input = event.target as HTMLInputElement
+  if (!input.files) return
+  for (const file of Array.from(input.files)) {
+    if (!file.type.startsWith('image/')) continue
+    const previewUrl = URL.createObjectURL(file)
+    pendingPhotoAdds.value.push({ file, previewUrl })
+  }
+  input.value = ''
+}
+
+function removePendingPhoto(index: number) {
+  const removed = pendingPhotoAdds.value.splice(index, 1)
+  if (removed[0]) URL.revokeObjectURL(removed[0].previewUrl)
+}
+
+async function uploadNewPhoto(file: File): Promise<string> {
+  if (!venue.value) throw new Error('No venue')
+  const { data } = await venuesApi.getPhotoUploadUrl(venue.value.id, file.name)
+  const headers: Record<string, string> = { 'Content-Type': file.type }
+  if (data.uploadUrl.includes('blob.core.windows.net') || data.uploadUrl.includes('devstoreaccount')) {
+    headers['x-ms-blob-type'] = 'BlockBlob'
+  } else {
+    const token = localStorage.getItem('whiskey_and_smokes_token')
+    if (token) headers['Authorization'] = `Bearer ${token}`
+  }
+  await fetch(data.uploadUrl, { method: 'PUT', headers, body: file })
+  return data.blobUrl
 }
 
 async function saveEdits() {
   if (!venue.value) return
   isSaving.value = true
   try {
+    // Delete marked photos
+    for (const url of pendingPhotoDeletes.value) {
+      try {
+        const { data } = await venuesApi.removePhoto(venue.value.id, url)
+        venue.value = data
+      } catch { /* continue with other ops */ }
+    }
+
+    // Upload and add new photos
+    for (const pending of pendingPhotoAdds.value) {
+      try {
+        const blobUrl = await uploadNewPhoto(pending.file)
+        const { data } = await venuesApi.addPhoto(venue.value.id, blobUrl)
+        venue.value = data
+        URL.revokeObjectURL(pending.previewUrl)
+      } catch { /* continue with other ops */ }
+    }
+
+    // Save other fields
     const { data } = await venuesApi.update(venue.value.id, {
       name: editName.value.trim(),
       address: editAddress.value.trim() || undefined,
@@ -102,8 +169,8 @@ const photoUrls = computed(() => venue.value?.photoUrls ?? [])
       Back
     </button>
 
-    <!-- Photos -->
-    <div v-if="photoUrls.length" class="mb-4 -mx-4">
+    <!-- Photos (view mode) -->
+    <div v-if="!isEditing && photoUrls.length" class="mb-4 -mx-4">
       <div class="flex gap-2 px-4 overflow-x-auto">
         <img
           v-for="url in photoUrls"
@@ -177,6 +244,74 @@ const photoUrls = computed(() => venue.value?.photoUrls ?? [])
 
     <!-- Edit mode -->
     <template v-else>
+      <!-- Photos (edit mode) -->
+      <div class="mb-4">
+        <label class="block text-sm text-stone-400 mb-2">Photos</label>
+        <div class="flex gap-2 overflow-x-auto pb-2">
+          <!-- Existing photos with delete toggle -->
+          <div
+            v-for="(url, i) in photoUrls"
+            :key="'existing-' + i"
+            class="relative flex-shrink-0"
+          >
+            <img
+              :src="url"
+              class="h-32 w-32 object-cover rounded-xl transition-opacity"
+              :class="{ 'opacity-30': pendingPhotoDeletes.has(url) }"
+            />
+            <button
+              v-if="!pendingPhotoDeletes.has(url)"
+              @click="markPhotoForDelete(url)"
+              class="absolute top-1 right-1 bg-black/70 text-red-400 hover:text-red-300 rounded-full w-11 h-11 flex items-center justify-center text-xs"
+              title="Remove photo"
+            >&times;</button>
+            <button
+              v-else
+              @click="unmarkPhotoForDelete(url)"
+              class="absolute inset-0 flex items-center justify-center text-xs text-stone-300 bg-black/40 rounded-xl"
+            >Undo</button>
+          </div>
+
+          <!-- Pending new photos -->
+          <div
+            v-for="(pending, i) in pendingPhotoAdds"
+            :key="'pending-' + i"
+            class="relative flex-shrink-0"
+          >
+            <img
+              :src="pending.previewUrl"
+              class="h-32 w-32 object-cover rounded-xl border-2 border-amber-600"
+            />
+            <button
+              @click="removePendingPhoto(i)"
+              class="absolute top-1 right-1 bg-black/70 text-red-400 hover:text-red-300 rounded-full w-11 h-11 flex items-center justify-center text-xs"
+              title="Remove"
+            >&times;</button>
+            <span class="absolute bottom-1 left-1 text-[10px] bg-amber-700/80 text-white px-1.5 py-0.5 rounded">New</span>
+          </div>
+
+          <!-- Add photo button -->
+          <button
+            @click="triggerPhotoUpload"
+            :disabled="isUploadingPhoto"
+            class="h-32 w-32 flex-shrink-0 flex flex-col items-center justify-center border-2 border-dashed border-stone-700 rounded-xl text-stone-500 hover:text-amber-500 hover:border-amber-700 transition-colors"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-8 h-8 mb-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+            </svg>
+            <span class="text-xs">Add</span>
+          </button>
+        </div>
+        <input
+          ref="photoFileInput"
+          type="file"
+          accept="image/*"
+          multiple
+          class="hidden"
+          @change="onPhotoFilesSelected"
+        />
+      </div>
+
       <div class="space-y-4">
         <div>
           <label class="block text-sm text-stone-400 mb-1">Name</label>
