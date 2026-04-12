@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
 import { useRouter } from 'vue-router'
-import Fuse from 'fuse.js'
+import Fuse, { type IFuseOptions } from 'fuse.js'
 import { itemsApi, type Item } from '../services/items'
 import { venuesApi, type Venue } from '../services/venues'
 import StarRating from '../components/common/StarRating.vue'
@@ -19,7 +19,7 @@ const activeTab = ref<'all' | 'items' | 'venues'>('all')
 let itemsFuse: Fuse<Item> | null = null
 let venuesFuse: Fuse<Venue> | null = null
 
-const itemFuseOptions: Fuse.IFuseOptions<Item> = {
+const itemFuseOptions: IFuseOptions<Item> = {
   keys: [
     { name: 'name', weight: 0.3 },
     { name: 'brand', weight: 0.15 },
@@ -35,7 +35,7 @@ const itemFuseOptions: Fuse.IFuseOptions<Item> = {
   includeScore: true,
 }
 
-const venueFuseOptions: Fuse.IFuseOptions<Venue> = {
+const venueFuseOptions: IFuseOptions<Venue> = {
   keys: [
     { name: 'name', weight: 0.3 },
     { name: 'type', weight: 0.1 },
