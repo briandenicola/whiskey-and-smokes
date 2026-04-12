@@ -34,6 +34,9 @@ public class Venue
     [JsonPropertyName("placeId")]
     public string? PlaceId { get; set; }
 
+    [JsonPropertyName("labels")]
+    public List<string> Labels { get; set; } = [];
+
     [JsonPropertyName("createdAt")]
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 

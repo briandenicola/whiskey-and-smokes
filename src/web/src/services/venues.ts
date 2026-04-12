@@ -9,6 +9,7 @@ export interface Venue {
   type: string
   rating?: number
   photoUrls: string[]
+  labels: string[]
   location?: { latitude: number; longitude: number }
   placeId?: string
   createdAt: string
@@ -22,6 +23,7 @@ export interface CreateVenueRequest {
   type: string
   rating?: number
   location?: { latitude: number; longitude: number }
+  labels?: string[]
 }
 
 export interface UpdateVenueRequest {
@@ -31,6 +33,7 @@ export interface UpdateVenueRequest {
   type?: string
   rating?: number
   location?: { latitude: number; longitude: number }
+  labels?: string[]
 }
 
 export const venuesApi = {

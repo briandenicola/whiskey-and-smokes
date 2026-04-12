@@ -342,6 +342,10 @@ public class CreateVenueRequest
 
     [JsonPropertyName("location")]
     public GeoLocation? Location { get; set; }
+
+    [JsonPropertyName("labels")]
+    [MaxLength(20)]
+    public List<string>? Labels { get; set; }
 }
 
 public class UpdateVenueRequest
@@ -368,6 +372,10 @@ public class UpdateVenueRequest
 
     [JsonPropertyName("location")]
     public GeoLocation? Location { get; set; }
+
+    [JsonPropertyName("labels")]
+    [MaxLength(20)]
+    public List<string>? Labels { get; set; }
 }
 
 public class CreateVenueFromUrlRequest

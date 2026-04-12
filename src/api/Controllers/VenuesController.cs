@@ -84,6 +84,7 @@ public class VenuesController : ControllerBase
             Type = request.Type,
             Rating = request.Rating,
             Location = request.Location,
+            Labels = request.Labels?.Select(l => l.Trim().ToLowerInvariant()).Where(l => l.Length > 0).Distinct().ToList() ?? [],
         };
 
         venue = await _cosmosDb.CreateAsync(ContainerName, venue, venue.PartitionKey);
@@ -140,6 +141,7 @@ public class VenuesController : ControllerBase
         }
         if (request.Rating.HasValue) venue.Rating = request.Rating;
         if (request.Location != null) venue.Location = request.Location;
+        if (request.Labels != null) venue.Labels = request.Labels.Select(l => l.Trim().ToLowerInvariant()).Where(l => l.Length > 0).Distinct().ToList();
         venue.UpdatedAt = DateTime.UtcNow;
 
         venue = await _cosmosDb.UpsertAsync(ContainerName, venue, venue.PartitionKey);

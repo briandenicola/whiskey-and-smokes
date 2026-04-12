@@ -247,6 +247,18 @@ function resetForm() {
             <div v-if="venue.rating" class="mt-1">
               <StarRating :rating="venue.rating" size="sm" />
             </div>
+            <div v-if="venue.labels?.length" class="flex flex-wrap gap-1 mt-1.5">
+              <span
+                v-for="label in venue.labels.slice(0, 3)"
+                :key="label"
+                class="text-[10px] px-1.5 py-0.5 rounded-full bg-amber-900/30 text-amber-500/80"
+              >
+                {{ label }}
+              </span>
+              <span v-if="venue.labels.length > 3" class="text-[10px] text-stone-600">
+                +{{ venue.labels.length - 3 }}
+              </span>
+            </div>
           </div>
         </div>
       </router-link>

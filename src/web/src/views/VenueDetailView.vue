@@ -31,6 +31,16 @@ const allItems = ref<Item[]>([])
 const selectedItemIds = ref<Set<string>>(new Set())
 const itemSearchQuery = ref('')
 
+// Labels
+const editLabels = ref<string[]>([])
+const newLabelInput = ref('')
+const suggestedLabels = [
+  'date night', 'craft cocktails', 'outdoor seating', 'live music',
+  'happy hour', 'brunch', 'fine dining', 'casual', 'rooftop',
+  'speakeasy', 'sports bar', 'wine bar', 'tiki', 'gastropub',
+  'late night', 'family friendly', 'dog friendly', 'waterfront',
+]
+
 const venueTypeOptions = [
   { label: 'Bar', value: 'bar' },
   { label: 'Lounge', value: 'lounge' },
@@ -62,6 +72,8 @@ function resetEditFields(data: Venue) {
   editWebsite.value = data.website ?? ''
   editType.value = data.type
   editRating.value = data.rating ?? 0
+  editLabels.value = [...(data.labels ?? [])]
+  newLabelInput.value = ''
 }
 
 function startEditing() {
@@ -104,6 +116,22 @@ function toggleItemLink(itemId: string) {
     selectedItemIds.value.add(itemId)
   }
 }
+
+function addLabel(label: string) {
+  const normalized = label.trim().toLowerCase()
+  if (normalized && !editLabels.value.includes(normalized)) {
+    editLabels.value.push(normalized)
+  }
+  newLabelInput.value = ''
+}
+
+function removeLabel(label: string) {
+  editLabels.value = editLabels.value.filter(l => l !== label)
+}
+
+const availableSuggestions = computed(() =>
+  suggestedLabels.filter(l => !editLabels.value.includes(l))
+)
 
 function markPhotoForDelete(url: string) {
   pendingPhotoDeletes.value.add(url)
@@ -176,6 +204,7 @@ async function saveEdits() {
       website: editWebsite.value.trim() || undefined,
       type: editType.value,
       rating: editRating.value || undefined,
+      labels: editLabels.value,
     })
     venue.value = data
 
@@ -272,6 +301,16 @@ const photoUrls = computed(() => venue.value?.photoUrls ?? [])
         <a v-if="venue.website" :href="venue.website" target="_blank" class="text-amber-500 text-sm hover:text-amber-400 block truncate">
           {{ venue.website }}
         </a>
+
+        <div v-if="venue.labels?.length" class="flex flex-wrap gap-1.5">
+          <span
+            v-for="label in venue.labels"
+            :key="label"
+            class="text-xs px-2.5 py-1 rounded-full bg-amber-900/30 text-amber-400 border border-amber-800/50"
+          >
+            {{ label }}
+          </span>
+        </div>
 
         <div class="flex gap-2">
           <button
@@ -426,6 +465,52 @@ const photoUrls = computed(() => venue.value?.photoUrls ?? [])
         <div>
           <label class="block text-sm text-stone-400 mb-1">Rating</label>
           <StarRating :rating="editRating" size="lg" interactive @update:rating="editRating = $event" />
+        </div>
+
+        <!-- Labels -->
+        <div>
+          <label class="block text-sm text-stone-400 mb-2">Labels</label>
+
+          <!-- Current labels -->
+          <div v-if="editLabels.length" class="flex flex-wrap gap-1.5 mb-2">
+            <span
+              v-for="label in editLabels"
+              :key="label"
+              class="inline-flex items-center gap-1 text-xs px-2.5 py-1 rounded-full bg-amber-900/30 text-amber-400 border border-amber-800/50"
+            >
+              {{ label }}
+              <button @click="removeLabel(label)" class="hover:text-red-400 ml-0.5 text-base leading-none">&times;</button>
+            </span>
+          </div>
+
+          <!-- Custom label input -->
+          <div class="flex gap-2 mb-2">
+            <input
+              v-model="newLabelInput"
+              placeholder="Add custom label..."
+              class="flex-1 bg-stone-800 border border-stone-700 rounded-xl px-3 py-2 text-stone-100 text-sm placeholder-stone-600 focus:outline-none focus:border-amber-700"
+              @keydown.enter.prevent="addLabel(newLabelInput)"
+            />
+            <button
+              @click="addLabel(newLabelInput)"
+              :disabled="!newLabelInput.trim()"
+              class="px-3 py-2 bg-stone-800 border border-stone-700 rounded-xl text-stone-300 text-sm hover:border-amber-700 disabled:opacity-40"
+            >
+              Add
+            </button>
+          </div>
+
+          <!-- Suggested labels -->
+          <div v-if="availableSuggestions.length" class="flex flex-wrap gap-1.5">
+            <button
+              v-for="label in availableSuggestions"
+              :key="label"
+              @click="addLabel(label)"
+              class="text-xs px-2.5 py-1 rounded-full border border-dashed border-stone-700 text-stone-500 hover:border-amber-700 hover:text-amber-500 transition-colors"
+            >
+              + {{ label }}
+            </button>
+          </div>
         </div>
 
         <!-- Linked Items Picker -->
