@@ -97,26 +97,26 @@ function resetForm() {
 
 <template>
   <div class="p-4 max-w-lg mx-auto">
-    <h2 class="text-xl font-bold text-stone-100 mb-4">Venues</h2>
+    <h2 class="text-xl font-bold text-white mb-4">Venues</h2>
 
     <!-- Add button + form -->
     <div class="mb-4">
       <button
         v-if="!showAddForm"
         @click="showAddForm = true"
-        class="w-full bg-stone-900 border border-dashed border-stone-700 rounded-xl p-3 text-stone-400 hover:border-stone-500 hover:text-stone-300 transition-colors text-sm"
+        class="w-full bg-[#041e3e] border border-dashed border-[#1e407c]/50 rounded-xl p-3 text-[#96BEE6] hover:border-[#96BEE6]/50 hover:text-white/80 transition-colors text-sm"
       >
         + Add venue
       </button>
 
-      <div v-else class="bg-stone-900 border border-stone-800 rounded-xl p-4 space-y-3">
+      <div v-else class="bg-[#041e3e] border border-[#0a2a52] rounded-xl p-4 space-y-3">
         <!-- Mode toggle -->
-        <div class="flex rounded-lg bg-stone-800 p-0.5">
+        <div class="flex rounded-lg bg-[#0a2a52] p-0.5">
           <button
             @click="addMode = 'manual'"
             :class="[
               'flex-1 py-1.5 text-xs font-medium rounded-md transition-colors',
-              addMode === 'manual' ? 'bg-amber-700 text-white' : 'text-stone-400 hover:text-stone-300'
+              addMode === 'manual' ? 'bg-[#1e407c] text-white' : 'text-[#96BEE6] hover:text-white/80'
             ]"
           >
             Manual
@@ -125,7 +125,7 @@ function resetForm() {
             @click="addMode = 'url'"
             :class="[
               'flex-1 py-1.5 text-xs font-medium rounded-md transition-colors',
-              addMode === 'url' ? 'bg-amber-700 text-white' : 'text-stone-400 hover:text-stone-300'
+              addMode === 'url' ? 'bg-[#1e407c] text-white' : 'text-[#96BEE6] hover:text-white/80'
             ]"
           >
             From URL
@@ -137,12 +137,12 @@ function resetForm() {
           <input
             v-model="newName"
             placeholder="Name (required)"
-            class="w-full bg-stone-800 border border-stone-700 rounded-xl px-4 py-2.5 text-stone-100 text-sm placeholder-stone-600 focus:outline-none focus:border-amber-700"
+            class="w-full bg-[#0a2a52] border border-[#1e407c]/50 rounded-xl px-4 py-2.5 text-white text-sm placeholder-[#4a7aa5] focus:outline-none focus:border-[#1e407c]"
           />
 
           <select
             v-model="newType"
-            class="w-full bg-stone-800 border border-stone-700 rounded-xl px-4 py-2.5 text-stone-100 text-sm focus:outline-none focus:border-amber-700 appearance-none"
+            class="w-full bg-[#0a2a52] border border-[#1e407c]/50 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-[#1e407c] appearance-none"
           >
             <option v-for="opt in venueTypeOptions" :key="opt.value" :value="opt.value">
               {{ opt.label }}
@@ -152,26 +152,26 @@ function resetForm() {
           <input
             v-model="newAddress"
             placeholder="Address (optional)"
-            class="w-full bg-stone-800 border border-stone-700 rounded-xl px-4 py-2.5 text-stone-100 text-sm placeholder-stone-600 focus:outline-none focus:border-amber-700"
+            class="w-full bg-[#0a2a52] border border-[#1e407c]/50 rounded-xl px-4 py-2.5 text-white text-sm placeholder-[#4a7aa5] focus:outline-none focus:border-[#1e407c]"
           />
 
           <input
             v-model="newWebsite"
             placeholder="Website (optional)"
-            class="w-full bg-stone-800 border border-stone-700 rounded-xl px-4 py-2.5 text-stone-100 text-sm placeholder-stone-600 focus:outline-none focus:border-amber-700"
+            class="w-full bg-[#0a2a52] border border-[#1e407c]/50 rounded-xl px-4 py-2.5 text-white text-sm placeholder-[#4a7aa5] focus:outline-none focus:border-[#1e407c]"
           />
 
           <div class="flex gap-2">
             <button
               @click="addVenue"
               :disabled="isAdding || !newName.trim()"
-              class="flex-1 bg-amber-700 hover:bg-amber-600 disabled:bg-stone-700 disabled:text-stone-500 text-white py-2.5 rounded-xl text-sm font-medium"
+              class="flex-1 bg-[#1e407c] hover:bg-[#2a5299] disabled:bg-[#1e407c] disabled:text-[#96BEE6]/70 text-white py-2.5 rounded-xl text-sm font-medium"
             >
               {{ isAdding ? 'Adding...' : 'Add' }}
             </button>
             <button
               @click="resetForm()"
-              class="px-4 py-2.5 bg-stone-800 text-stone-400 rounded-xl text-sm hover:bg-stone-700"
+              class="px-4 py-2.5 bg-[#0a2a52] text-[#96BEE6] rounded-xl text-sm hover:bg-[#1e407c]"
             >
               Cancel
             </button>
@@ -180,11 +180,11 @@ function resetForm() {
 
         <!-- URL form -->
         <template v-else>
-          <p class="text-xs text-stone-500">Paste an Apple Maps, Google Maps, or venue website URL</p>
+          <p class="text-xs text-[#96BEE6]/70">Paste an Apple Maps, Google Maps, or venue website URL</p>
           <input
             v-model="newUrl"
             placeholder="https://maps.apple.com/..."
-            class="w-full bg-stone-800 border border-stone-700 rounded-xl px-4 py-2.5 text-stone-100 text-sm placeholder-stone-600 focus:outline-none focus:border-amber-700"
+            class="w-full bg-[#0a2a52] border border-[#1e407c]/50 rounded-xl px-4 py-2.5 text-white text-sm placeholder-[#4a7aa5] focus:outline-none focus:border-[#1e407c]"
           />
           <p v-if="urlError" class="text-xs text-red-400">{{ urlError }}</p>
 
@@ -192,13 +192,13 @@ function resetForm() {
             <button
               @click="addVenueFromUrl"
               :disabled="isAdding || !newUrl.trim()"
-              class="flex-1 bg-amber-700 hover:bg-amber-600 disabled:bg-stone-700 disabled:text-stone-500 text-white py-2.5 rounded-xl text-sm font-medium"
+              class="flex-1 bg-[#1e407c] hover:bg-[#2a5299] disabled:bg-[#1e407c] disabled:text-[#96BEE6]/70 text-white py-2.5 rounded-xl text-sm font-medium"
             >
               {{ isAdding ? 'Extracting...' : 'Extract Venue' }}
             </button>
             <button
               @click="resetForm()"
-              class="px-4 py-2.5 bg-stone-800 text-stone-400 rounded-xl text-sm hover:bg-stone-700"
+              class="px-4 py-2.5 bg-[#0a2a52] text-[#96BEE6] rounded-xl text-sm hover:bg-[#1e407c]"
             >
               Cancel
             </button>
@@ -208,12 +208,12 @@ function resetForm() {
     </div>
 
     <!-- Loading -->
-    <div v-if="venuesStore.isLoading && !sortedVenues.length" class="text-stone-500 text-center py-12">
+    <div v-if="venuesStore.isLoading && !sortedVenues.length" class="text-[#96BEE6]/70 text-center py-12">
       Loading...
     </div>
 
     <!-- Empty -->
-    <div v-else-if="!sortedVenues.length" class="text-stone-500 text-center py-12">
+    <div v-else-if="!sortedVenues.length" class="text-[#96BEE6]/70 text-center py-12">
       <p>No venues yet. Add your favorite spots.</p>
     </div>
 
@@ -223,7 +223,7 @@ function resetForm() {
         v-for="venue in sortedVenues"
         :key="venue.id"
         :to="`/venues/${venue.id}`"
-        class="block bg-stone-900 border border-stone-800 rounded-xl p-4 hover:border-stone-700 transition-colors"
+        class="block bg-[#041e3e] border border-[#0a2a52] rounded-xl p-4 hover:border-[#1e407c]/50 transition-colors"
       >
         <div class="flex items-start gap-3">
           <img
@@ -231,8 +231,8 @@ function resetForm() {
             :src="venue.photoUrls[0]"
             class="w-16 h-16 object-cover rounded-lg shrink-0"
           />
-          <div v-else class="w-16 h-16 bg-stone-800 rounded-lg shrink-0 flex items-center justify-center">
-            <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6 text-stone-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <div v-else class="w-16 h-16 bg-[#0a2a52] rounded-lg shrink-0 flex items-center justify-center">
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6 text-[#4a7aa5]/60" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
               <path stroke-linecap="round" stroke-linejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
               <path stroke-linecap="round" stroke-linejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
             </svg>
@@ -240,10 +240,10 @@ function resetForm() {
 
           <div class="flex-1 min-w-0">
             <div class="flex items-center gap-2 mb-1">
-              <span class="text-xs px-2 py-0.5 rounded-full bg-stone-800 text-stone-400 capitalize">{{ venue.type }}</span>
+              <span class="text-xs px-2 py-0.5 rounded-full bg-[#0a2a52] text-[#96BEE6] capitalize">{{ venue.type }}</span>
             </div>
-            <h3 class="font-medium text-stone-100 truncate">{{ venue.name }}</h3>
-            <p v-if="venue.address" class="text-sm text-stone-500 truncate">{{ venue.address }}</p>
+            <h3 class="font-medium text-white truncate">{{ venue.name }}</h3>
+            <p v-if="venue.address" class="text-sm text-[#96BEE6]/70 truncate">{{ venue.address }}</p>
             <div v-if="venue.rating" class="mt-1">
               <StarRating :rating="venue.rating" size="sm" />
             </div>
@@ -251,11 +251,11 @@ function resetForm() {
               <span
                 v-for="label in venue.labels.slice(0, 3)"
                 :key="label"
-                class="text-[10px] px-1.5 py-0.5 rounded-full bg-amber-900/30 text-amber-500/80"
+                class="text-[10px] px-1.5 py-0.5 rounded-full bg-[#1e407c]/30 text-[#96BEE6]/80"
               >
                 {{ label }}
               </span>
-              <span v-if="venue.labels.length > 3" class="text-[10px] text-stone-600">
+              <span v-if="venue.labels.length > 3" class="text-[10px] text-[#4a7aa5]/60">
                 +{{ venue.labels.length - 3 }}
               </span>
             </div>

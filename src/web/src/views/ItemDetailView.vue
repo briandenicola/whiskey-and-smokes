@@ -307,18 +307,18 @@ function isAiGenerated(data: Item): boolean {
 </script>
 
 <template>
-  <div v-if="!item" class="p-4 text-stone-500 text-center py-12">Loading...</div>
+  <div v-if="!item" class="p-4 text-[#96BEE6]/70 text-center py-12">Loading...</div>
 
   <div v-else class="p-4 max-w-lg mx-auto">
     <!-- Top bar: Back + actions -->
     <div class="flex items-center justify-between mb-4">
-      <button @click="router.back()" class="text-stone-400 hover:text-stone-200 hover:opacity-80 text-sm min-h-[44px] min-w-[44px] px-2 py-2 transition-opacity">
+      <button @click="router.back()" class="text-[#96BEE6] hover:text-white hover:opacity-80 text-sm min-h-[44px] min-w-[44px] px-2 py-2 transition-opacity">
         ← Back
       </button>
       <div class="flex items-center gap-3">
         <!-- View mode: Edit + Delete icons -->
         <template v-if="!isEditing">
-          <button @click="startEditing" class="text-amber-500 hover:text-amber-400 p-2.5 min-h-[44px] min-w-[44px]" title="Edit">
+          <button @click="startEditing" class="text-[#96BEE6] hover:text-[#96BEE6] p-2.5 min-h-[44px] min-w-[44px]" title="Edit">
             <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
               <path stroke-linecap="round" stroke-linejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
             </svg>
@@ -331,12 +331,12 @@ function isAiGenerated(data: Item): boolean {
         </template>
         <!-- Edit mode: Save + Cancel icons -->
         <template v-else>
-          <button @click="save" :disabled="isSaving" class="text-green-400 hover:text-green-300 disabled:text-stone-600 p-2.5 min-h-[44px] min-w-[44px]" title="Save">
+          <button @click="save" :disabled="isSaving" class="text-green-400 hover:text-green-300 disabled:text-[#4a7aa5]/60 p-2.5 min-h-[44px] min-w-[44px]" title="Save">
             <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
               <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
             </svg>
           </button>
-          <button @click="isEditing = false" class="text-stone-400 hover:text-stone-200 p-2.5 min-h-[44px] min-w-[44px]" title="Cancel">
+          <button @click="isEditing = false" class="text-[#96BEE6] hover:text-white p-2.5 min-h-[44px] min-w-[44px]" title="Cancel">
             <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
               <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
             </svg>
@@ -352,7 +352,7 @@ function isAiGenerated(data: Item): boolean {
           v-for="(url, i) in item.photoUrls"
           :key="i"
           :src="url"
-          class="h-48 object-cover rounded-xl cursor-pointer hover:ring-2 hover:ring-amber-600 transition-all"
+          class="h-48 object-cover rounded-xl cursor-pointer hover:ring-2 hover:ring-[#1e407c] transition-all"
           @click="openLightbox(url)"
         />
       </div>
@@ -360,7 +360,7 @@ function isAiGenerated(data: Item): boolean {
 
     <!-- Photos (edit mode) -->
     <div v-if="isEditing" class="mb-4">
-      <label class="block text-sm text-stone-400 mb-2">Photos</label>
+      <label class="block text-sm text-[#96BEE6] mb-2">Photos</label>
       <div class="flex gap-2 overflow-x-auto pb-2">
         <!-- Existing photos with delete toggle -->
         <div
@@ -382,7 +382,7 @@ function isAiGenerated(data: Item): boolean {
           <button
             v-else
             @click="unmarkPhotoForDelete(url)"
-            class="absolute inset-0 flex items-center justify-center text-xs text-stone-300 bg-black/40 rounded-xl"
+            class="absolute inset-0 flex items-center justify-center text-xs text-white/80 bg-black/40 rounded-xl"
           >Undo</button>
         </div>
 
@@ -394,21 +394,21 @@ function isAiGenerated(data: Item): boolean {
         >
           <img
             :src="pending.previewUrl"
-            class="h-32 w-32 object-cover rounded-xl border-2 border-amber-600"
+            class="h-32 w-32 object-cover rounded-xl border-2 border-[#1e407c]"
           />
           <button
             @click="removePendingPhoto(i)"
             class="absolute top-1 right-1 bg-black/70 text-red-400 hover:text-red-300 rounded-full w-11 h-11 flex items-center justify-center text-xs"
             title="Remove"
           >×</button>
-          <span class="absolute bottom-1 left-1 text-[10px] bg-amber-700/80 text-white px-1.5 py-0.5 rounded">New</span>
+          <span class="absolute bottom-1 left-1 text-[10px] bg-[#1e407c]/80 text-white px-1.5 py-0.5 rounded">New</span>
         </div>
 
         <!-- Add photo button -->
         <button
           @click="triggerPhotoUpload"
           :disabled="isUploadingPhoto"
-          class="h-32 w-32 flex-shrink-0 flex flex-col items-center justify-center border-2 border-dashed border-stone-700 rounded-xl text-stone-500 hover:text-amber-500 hover:border-amber-700 transition-colors"
+          class="h-32 w-32 flex-shrink-0 flex flex-col items-center justify-center border-2 border-dashed border-[#1e407c]/50 rounded-xl text-[#96BEE6]/70 hover:text-[#96BEE6] hover:border-[#1e407c] transition-colors"
         >
           <svg xmlns="http://www.w3.org/2000/svg" class="w-8 h-8 mb-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
             <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
@@ -428,48 +428,48 @@ function isAiGenerated(data: Item): boolean {
 
     <!-- Header -->
     <div class="mb-4">
-      <span class="text-xs px-2 py-0.5 rounded-full bg-stone-800 text-stone-400">{{ item.type }}</span>
-      <span v-if="item.status === 'ai-draft'" class="text-xs text-amber-500 ml-2">AI Draft — tap edit to review</span>
+      <span class="text-xs px-2 py-0.5 rounded-full bg-[#0a2a52] text-[#96BEE6]">{{ item.type }}</span>
+      <span v-if="item.status === 'ai-draft'" class="text-xs text-[#96BEE6] ml-2">AI Draft — tap edit to review</span>
       <h2 class="text-2xl font-bold mt-2">{{ item.name }}</h2>
-      <p v-if="item.brand" class="text-stone-400">{{ item.brand }}</p>
+      <p v-if="item.brand" class="text-[#96BEE6]">{{ item.brand }}</p>
     </div>
 
     <!-- Notes (view mode) — merged from AI summary and user notes -->
-    <div v-if="!isEditing && (item.userNotes || item.aiSummary)" class="bg-stone-900 border border-stone-800 rounded-xl p-4 mb-4">
+    <div v-if="!isEditing && (item.userNotes || item.aiSummary)" class="bg-[#041e3e] border border-[#0a2a52] rounded-xl p-4 mb-4">
       <div class="flex items-center gap-2 mb-1">
-        <p class="text-xs text-stone-500 uppercase tracking-wide">Notes</p>
-        <span v-if="isAiGenerated(item) && !item.userNotes && item.aiSummary" class="text-xs text-amber-500">AI Generated</span>
+        <p class="text-xs text-[#96BEE6]/70 uppercase tracking-wide">Notes</p>
+        <span v-if="isAiGenerated(item) && !item.userNotes && item.aiSummary" class="text-xs text-[#96BEE6]">AI Generated</span>
       </div>
-      <p class="text-sm text-stone-300 whitespace-pre-line">{{ item.userNotes || item.aiSummary }}</p>
-      <p v-if="item.aiConfidence" class="text-xs text-stone-600 mt-2">
+      <p class="text-sm text-white/80 whitespace-pre-line">{{ item.userNotes || item.aiSummary }}</p>
+      <p v-if="item.aiConfidence" class="text-xs text-[#4a7aa5]/60 mt-2">
         Confidence: {{ Math.round(item.aiConfidence * 100) }}%
       </p>
     </div>
 
     <!-- Details Bar (venue, rating, history) -->
-    <div class="bg-stone-900 border border-stone-800 rounded-xl p-4 mb-4 space-y-3">
+    <div class="bg-[#041e3e] border border-[#0a2a52] rounded-xl p-4 mb-4 space-y-3">
       <!-- Rating -->
       <div v-if="!isEditing && item.userRating" class="flex items-center gap-2">
-        <span class="text-xs text-stone-500 uppercase tracking-wide w-16">Rating</span>
+        <span class="text-xs text-[#96BEE6]/70 uppercase tracking-wide w-16">Rating</span>
         <StarRating :rating="item.userRating" size="md" />
-        <span class="text-xs text-stone-500">{{ item.userRating }}</span>
+        <span class="text-xs text-[#96BEE6]/70">{{ item.userRating }}</span>
       </div>
 
       <!-- Venue -->
       <div v-if="item.venue" class="flex items-start gap-2">
-        <span class="text-xs text-stone-500 uppercase tracking-wide w-16 pt-0.5">Location</span>
+        <span class="text-xs text-[#96BEE6]/70 uppercase tracking-wide w-16 pt-0.5">Location</span>
         <div>
-          <p class="text-sm text-stone-300">{{ item.venue.name }}</p>
-          <p v-if="item.venue.address" class="text-xs text-stone-500">{{ item.venue.address }}</p>
+          <p class="text-sm text-white/80">{{ item.venue.name }}</p>
+          <p v-if="item.venue.address" class="text-xs text-[#96BEE6]/70">{{ item.venue.address }}</p>
         </div>
       </div>
 
       <!-- History Link -->
       <div v-if="item.captureId" class="flex items-center gap-2">
-        <span class="text-xs text-stone-500 uppercase tracking-wide w-16">Source</span>
+        <span class="text-xs text-[#96BEE6]/70 uppercase tracking-wide w-16">Source</span>
         <router-link
           :to="`/history/${item.captureId}`"
-          class="text-sm text-stone-400 hover:text-amber-500 transition-colors"
+          class="text-sm text-[#96BEE6] hover:text-[#96BEE6] transition-colors"
         >
           View processing history →
         </router-link>
@@ -478,23 +478,23 @@ function isAiGenerated(data: Item): boolean {
 
     <!-- Journal -->
     <div v-if="!isEditing" class="mt-6">
-      <h3 class="text-sm font-medium text-stone-400 mb-3">Journal</h3>
+      <h3 class="text-sm font-medium text-[#96BEE6] mb-3">Journal</h3>
 
       <!-- Existing entries -->
       <div v-if="item.journal?.length" class="space-y-3 mb-4">
         <div
           v-for="(entry, i) in item.journal"
           :key="i"
-          class="border-l-2 border-stone-700 pl-3"
+          class="border-l-2 border-[#1e407c]/50 pl-3"
         >
-          <p class="text-sm text-stone-300">{{ entry.text }}</p>
-          <p class="text-xs text-stone-600 mt-1">
+          <p class="text-sm text-white/80">{{ entry.text }}</p>
+          <p class="text-xs text-[#4a7aa5]/60 mt-1">
             {{ formatDate(entry.date) }}
-            <span v-if="entry.source === 'capture'" class="text-stone-700 ml-1">· Quick note</span>
+            <span v-if="entry.source === 'capture'" class="text-[#4a7aa5]/40 ml-1">· Quick note</span>
           </p>
         </div>
       </div>
-      <p v-else class="text-xs text-stone-600 mb-4">No journal entries yet.</p>
+      <p v-else class="text-xs text-[#4a7aa5]/60 mb-4">No journal entries yet.</p>
 
       <!-- Add new entry -->
       <div class="flex gap-2">
@@ -502,14 +502,14 @@ function isAiGenerated(data: Item): boolean {
           v-model="newJournalEntry"
           rows="2"
           placeholder="Add a thought..."
-          class="flex-1 bg-stone-800 border border-stone-700 rounded-xl px-4 py-2 text-sm text-stone-100 placeholder-stone-600 focus:outline-none focus:border-amber-700 resize-none"
+          class="flex-1 bg-[#0a2a52] border border-[#1e407c]/50 rounded-xl px-4 py-2 text-sm text-white placeholder-[#4a7aa5] focus:outline-none focus:border-[#1e407c] resize-none"
           @keydown.meta.enter.prevent="addJournalEntry"
           @keydown.ctrl.enter.prevent="addJournalEntry"
         />
         <button
           @click="addJournalEntry"
           :disabled="!newJournalEntry.trim() || isAddingNote"
-          class="self-end px-4 py-2 bg-stone-800 hover:bg-stone-700 disabled:opacity-30 text-amber-500 rounded-xl text-sm font-medium"
+          class="self-end px-4 py-2 bg-[#0a2a52] hover:bg-[#1e407c] disabled:opacity-30 text-[#96BEE6] rounded-xl text-sm font-medium"
         >{{ isAddingNote ? '...' : 'Add' }}</button>
       </div>
     </div>
@@ -518,7 +518,7 @@ function isAiGenerated(data: Item): boolean {
     <div v-else class="space-y-4">
       <!-- Name -->
       <div>
-        <label class="block text-sm text-stone-400 mb-1">Name</label>
+        <label class="block text-sm text-[#96BEE6] mb-1">Name</label>
         <AutocompleteInput
           v-model="editName"
           :suggestions="nameSuggestions"
@@ -528,7 +528,7 @@ function isAiGenerated(data: Item): boolean {
 
       <!-- Type -->
       <div>
-        <label class="block text-sm text-stone-400 mb-2">Type</label>
+        <label class="block text-sm text-[#96BEE6] mb-2">Type</label>
         <div class="flex flex-wrap gap-2">
           <button
             v-for="opt in typeOptions"
@@ -536,8 +536,8 @@ function isAiGenerated(data: Item): boolean {
             @click="editType = opt.value"
             class="px-3 py-1.5 rounded-full text-xs border transition-colors"
             :class="editType === opt.value
-              ? 'bg-amber-700 border-amber-600 text-white'
-              : 'bg-stone-800 border-stone-700 text-stone-400'"
+              ? 'bg-[#1e407c] border-[#1e407c] text-white'
+              : 'bg-[#0a2a52] border-[#1e407c]/50 text-[#96BEE6]'"
           >
             {{ opt.label }}
           </button>
@@ -546,7 +546,7 @@ function isAiGenerated(data: Item): boolean {
 
       <!-- Brand -->
       <div>
-        <label class="block text-sm text-stone-400 mb-1">Brand</label>
+        <label class="block text-sm text-[#96BEE6] mb-1">Brand</label>
         <AutocompleteInput
           v-model="editBrand"
           :suggestions="brandSuggestions"
@@ -556,18 +556,18 @@ function isAiGenerated(data: Item): boolean {
 
       <!-- Notes -->
       <div>
-        <label class="block text-sm text-stone-400 mb-1">Notes</label>
+        <label class="block text-sm text-[#96BEE6] mb-1">Notes</label>
         <textarea
           v-model="editNotes"
           rows="3"
           placeholder="Tasting notes, impressions, details..."
-          class="w-full bg-stone-800 border border-stone-700 rounded-xl px-4 py-3 text-stone-100 text-sm placeholder-stone-600 focus:outline-none focus:border-amber-700 resize-none"
+          class="w-full bg-[#0a2a52] border border-[#1e407c]/50 rounded-xl px-4 py-3 text-white text-sm placeholder-[#4a7aa5] focus:outline-none focus:border-[#1e407c] resize-none"
         />
       </div>
 
       <!-- Location -->
       <div>
-        <label class="block text-sm text-stone-400 mb-1">Location</label>
+        <label class="block text-sm text-[#96BEE6] mb-1">Location</label>
         <AutocompleteInput
           :modelValue="editVenueName"
           @update:modelValue="editVenueName = $event"
@@ -579,30 +579,30 @@ function isAiGenerated(data: Item): boolean {
           v-model="editVenueAddress"
           type="text"
           placeholder="Address (optional)"
-          class="w-full bg-stone-800 border border-stone-700 rounded-xl px-4 py-3 text-stone-100 placeholder-stone-600 focus:outline-none focus:border-amber-700 mt-2"
+          class="w-full bg-[#0a2a52] border border-[#1e407c]/50 rounded-xl px-4 py-3 text-white placeholder-[#4a7aa5] focus:outline-none focus:border-[#1e407c] mt-2"
         />
       </div>
 
       <!-- Star rating -->
       <div>
-        <label class="block text-sm text-stone-400 mb-2">Rating</label>
+        <label class="block text-sm text-[#96BEE6] mb-2">Rating</label>
         <div class="flex items-center gap-3">
           <StarRating :rating="editRating" size="lg" interactive @update:rating="editRating = $event" />
-          <span class="text-sm text-stone-500">{{ editRating > 0 ? editRating : '' }}</span>
+          <span class="text-sm text-[#96BEE6]/70">{{ editRating > 0 ? editRating : '' }}</span>
         </div>
       </div>
 
       <!-- Tags -->
       <div>
-        <label class="block text-sm text-stone-400 mb-2">Tags</label>
+        <label class="block text-sm text-[#96BEE6] mb-2">Tags</label>
         <div class="flex flex-wrap gap-2 mb-2">
           <span
             v-for="tag in editTags"
             :key="tag"
-            class="inline-flex items-center gap-1 text-sm bg-stone-800 text-stone-300 px-3 py-1 rounded-full"
+            class="inline-flex items-center gap-1 text-sm bg-[#0a2a52] text-white/80 px-3 py-1 rounded-full"
           >
             {{ tag }}
-            <button @click="removeTag(tag)" class="text-stone-500 hover:text-red-400 ml-1">×</button>
+            <button @click="removeTag(tag)" class="text-[#96BEE6]/70 hover:text-red-400 ml-1">×</button>
           </span>
         </div>
         <div class="flex gap-2">
@@ -610,13 +610,13 @@ function isAiGenerated(data: Item): boolean {
             v-model="newTag"
             :suggestions="tagSuggestions.filter(t => !editTags.includes(t))"
             placeholder="Add a tag..."
-            input-class="flex-1 bg-stone-800 border border-stone-700 rounded-xl px-4 py-2 text-sm text-stone-100 placeholder-stone-600 focus:outline-none focus:border-amber-700"
+            input-class="flex-1 bg-[#0a2a52] border border-[#1e407c]/50 rounded-xl px-4 py-2 text-sm text-white placeholder-[#4a7aa5] focus:outline-none focus:border-[#1e407c]"
             @keydown.enter.prevent="addTag"
           />
           <button
             @click="addTag"
             :disabled="!newTag.trim()"
-            class="px-4 bg-stone-800 hover:bg-stone-700 disabled:opacity-30 text-amber-500 rounded-xl text-sm font-medium"
+            class="px-4 bg-[#0a2a52] hover:bg-[#1e407c] disabled:opacity-30 text-[#96BEE6] rounded-xl text-sm font-medium"
           >+ Add</button>
         </div>
       </div>
@@ -624,7 +624,7 @@ function isAiGenerated(data: Item): boolean {
 
     <!-- Tags (read-only, outside edit mode) -->
     <div v-if="!isEditing && item.tags.length" class="mt-4 flex gap-2 flex-wrap">
-      <span v-for="tag in item.tags" :key="tag" class="text-xs bg-stone-800 text-stone-400 px-2 py-1 rounded-full">
+      <span v-for="tag in item.tags" :key="tag" class="text-xs bg-[#0a2a52] text-[#96BEE6] px-2 py-1 rounded-full">
         {{ tag }}
       </span>
     </div>
@@ -632,13 +632,13 @@ function isAiGenerated(data: Item): boolean {
     <!-- Delete Confirmation Modal -->
     <Teleport to="body">
       <div v-if="showDeleteConfirm" class="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4" @click.self="showDeleteConfirm = false">
-        <div class="bg-stone-900 border border-stone-700 rounded-2xl p-6 w-full max-w-sm">
+        <div class="bg-[#041e3e] border border-[#1e407c]/50 rounded-2xl p-6 w-full max-w-sm">
           <h3 class="text-lg font-semibold text-red-400 mb-4">Delete Item</h3>
-          <p class="text-sm text-stone-300 mb-4">
+          <p class="text-sm text-white/80 mb-4">
             Are you sure you want to delete <strong>{{ item.name }}</strong>? This action cannot be undone.
           </p>
           <div class="flex gap-2 justify-end">
-            <button @click="showDeleteConfirm = false" class="px-4 py-2 text-sm rounded-xl bg-stone-800 text-stone-400 hover:bg-stone-700">Cancel</button>
+            <button @click="showDeleteConfirm = false" class="px-4 py-2 text-sm rounded-xl bg-[#0a2a52] text-[#96BEE6] hover:bg-[#1e407c]">Cancel</button>
             <button @click="deleteItem" class="px-4 py-2 text-sm rounded-xl bg-red-700 text-white hover:bg-red-600">Delete</button>
           </div>
         </div>

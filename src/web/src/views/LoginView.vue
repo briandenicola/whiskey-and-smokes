@@ -65,8 +65,8 @@ function toggleMode() {
 <template>
   <div class="flex flex-col items-center justify-center min-h-screen px-6">
     <div class="text-center mb-10">
-      <h1 class="text-5xl font-bold text-amber-500 mb-2">Drinks &amp; Desserts</h1>
-      <p class="text-stone-400 text-lg">Track your drinks, desserts & cigars</p>
+      <h1 class="text-5xl font-bold text-[#96BEE6] mb-2">Drinks &amp; Desserts</h1>
+      <p class="text-[#96BEE6] text-lg">Track your drinks, desserts & cigars</p>
     </div>
 
     <!-- Microsoft sign-in -->
@@ -86,9 +86,9 @@ function toggleMode() {
       </button>
 
       <div class="flex items-center gap-4 my-6">
-        <div class="flex-1 border-t border-stone-700"></div>
-        <span class="text-stone-500 text-sm">or use a local account</span>
-        <div class="flex-1 border-t border-stone-700"></div>
+        <div class="flex-1 border-t border-[#1e407c]/50"></div>
+        <span class="text-[#96BEE6]/70 text-sm">or use a local account</span>
+        <div class="flex-1 border-t border-[#1e407c]/50"></div>
       </div>
     </div>
 
@@ -104,33 +104,33 @@ function toggleMode() {
 
       <!-- Display name (register only) -->
       <div v-if="isRegister">
-        <label class="block text-sm text-stone-400 mb-1">Display Name</label>
+        <label class="block text-sm text-[#96BEE6] mb-1">Display Name</label>
         <input
           v-model="displayName"
           type="text"
           required
           autocomplete="name"
           placeholder="Your name"
-          class="w-full bg-stone-800 border border-stone-700 rounded-xl px-4 py-3 text-stone-100 placeholder-stone-600 focus:outline-none focus:border-amber-700"
+          class="w-full bg-[#0a2a52] border border-[#1e407c]/50 rounded-xl px-4 py-3 text-white placeholder-[#4a7aa5] focus:outline-none focus:border-[#1e407c]"
         />
       </div>
 
       <!-- Email -->
       <div>
-        <label class="block text-sm text-stone-400 mb-1">Email</label>
+        <label class="block text-sm text-[#96BEE6] mb-1">Email</label>
         <input
           v-model="email"
           type="email"
           required
           autocomplete="email"
           placeholder="you@example.com"
-          class="w-full bg-stone-800 border border-stone-700 rounded-xl px-4 py-3 text-stone-100 placeholder-stone-600 focus:outline-none focus:border-amber-700"
+          class="w-full bg-[#0a2a52] border border-[#1e407c]/50 rounded-xl px-4 py-3 text-white placeholder-[#4a7aa5] focus:outline-none focus:border-[#1e407c]"
         />
       </div>
 
       <!-- Password -->
       <div>
-        <label class="block text-sm text-stone-400 mb-1">Password</label>
+        <label class="block text-sm text-[#96BEE6] mb-1">Password</label>
         <input
           v-model="password"
           type="password"
@@ -138,7 +138,7 @@ function toggleMode() {
           minlength="8"
           autocomplete="current-password"
           placeholder="Min 8 characters"
-          class="w-full bg-stone-800 border border-stone-700 rounded-xl px-4 py-3 text-stone-100 placeholder-stone-600 focus:outline-none focus:border-amber-700"
+          class="w-full bg-[#0a2a52] border border-[#1e407c]/50 rounded-xl px-4 py-3 text-white placeholder-[#4a7aa5] focus:outline-none focus:border-[#1e407c]"
         />
       </div>
 
@@ -146,21 +146,21 @@ function toggleMode() {
       <button
         type="submit"
         :disabled="isSubmitting"
-        class="w-full bg-amber-700 hover:bg-amber-600 disabled:bg-stone-700 disabled:text-stone-500 text-white font-semibold py-4 rounded-xl transition-colors text-lg"
+        class="w-full bg-[#1e407c] hover:bg-[#2a5299] disabled:bg-[#1e407c] disabled:text-[#96BEE6]/70 text-white font-semibold py-4 rounded-xl transition-colors text-lg"
       >
         {{ isSubmitting ? 'Please wait...' : (isRegister ? 'Create Account' : 'Sign In') }}
       </button>
 
       <!-- Toggle register/login -->
-      <p class="text-center text-sm text-stone-500">
+      <p class="text-center text-sm text-[#96BEE6]/70">
         {{ isRegister ? 'Already have an account?' : "Don't have an account?" }}
-        <button type="button" @click="toggleMode" class="text-amber-500 hover:text-amber-400 ml-1">
+        <button type="button" @click="toggleMode" class="text-[#96BEE6] hover:text-[#96BEE6] ml-1">
           {{ isRegister ? 'Sign In' : 'Create Account' }}
         </button>
       </p>
     </form>
 
-    <p class="text-stone-600 text-sm mt-8 text-center max-w-xs">
+    <p class="text-[#4a7aa5]/60 text-sm mt-8 text-center max-w-xs">
       Snap a photo at the bar. Let AI do the rest. Refine later.
     </p>
   </div>

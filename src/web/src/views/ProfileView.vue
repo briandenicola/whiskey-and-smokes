@@ -195,32 +195,32 @@ async function changePassword() {
 
     <div v-if="auth.user" class="space-y-6">
       <!-- Profile Info -->
-      <section class="bg-stone-900 border border-stone-800 rounded-xl p-4 space-y-4">
-        <h3 class="text-sm font-medium text-stone-400 uppercase tracking-wide">Account</h3>
+      <section class="bg-[#041e3e] border border-[#0a2a52] rounded-xl p-4 space-y-4">
+        <h3 class="text-sm font-medium text-[#96BEE6] uppercase tracking-wide">Account</h3>
 
         <div>
-          <label class="block text-sm text-stone-400 mb-1">Email</label>
-          <p class="text-stone-300">{{ auth.user.email }}</p>
+          <label class="block text-sm text-[#96BEE6] mb-1">Email</label>
+          <p class="text-white/80">{{ auth.user.email }}</p>
         </div>
 
         <div>
-          <label class="block text-sm text-stone-400 mb-1">Display Name</label>
+          <label class="block text-sm text-[#96BEE6] mb-1">Display Name</label>
           <input
             v-model="displayName"
-            class="w-full bg-stone-800 border border-stone-700 rounded-xl px-4 py-3 text-stone-100 focus:outline-none focus:border-amber-700"
+            class="w-full bg-[#0a2a52] border border-[#1e407c]/50 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-[#1e407c]"
           />
         </div>
 
         <div>
-          <label class="block text-sm text-stone-400 mb-1">Role</label>
+          <label class="block text-sm text-[#96BEE6] mb-1">Role</label>
           <span class="inline-block px-2 py-0.5 rounded-full text-xs border"
-            :class="auth.user.role === 'admin' ? 'border-amber-600 text-amber-500' : 'border-stone-700 text-stone-400'">
+            :class="auth.user.role === 'admin' ? 'border-[#1e407c] text-[#96BEE6]' : 'border-[#1e407c]/50 text-[#96BEE6]'">
             {{ auth.user.role }}
           </span>
         </div>
 
         <div>
-          <label class="block text-sm text-stone-400 mb-2">Default Collection Sort</label>
+          <label class="block text-sm text-[#96BEE6] mb-2">Default Collection Sort</label>
           <div class="flex gap-2">
             <button
               v-for="opt in sortOptions"
@@ -228,8 +228,8 @@ async function changePassword() {
               @click="collectionSort = opt.value"
               class="px-4 py-2.5 min-h-[44px] rounded-full text-sm border transition-colors"
               :class="collectionSort === opt.value
-                ? 'bg-amber-700 border-amber-600 text-white'
-                : 'bg-stone-800 border-stone-700 text-stone-400 hover:border-stone-600'"
+                ? 'bg-[#1e407c] border-[#1e407c] text-white'
+                : 'bg-[#0a2a52] border-[#1e407c]/50 text-[#96BEE6] hover:border-[#1e407c]'"
             >
               {{ opt.label }}
             </button>
@@ -237,7 +237,7 @@ async function changePassword() {
         </div>
 
         <div>
-          <label class="block text-sm text-stone-400 mb-2">Default Collection Filter</label>
+          <label class="block text-sm text-[#96BEE6] mb-2">Default Collection Filter</label>
           <div class="flex flex-wrap gap-2">
             <button
               v-for="opt in filterOptions"
@@ -245,8 +245,8 @@ async function changePassword() {
               @click="collectionFilter = opt.value"
               class="px-4 py-2.5 min-h-[44px] rounded-full text-sm border transition-colors"
               :class="collectionFilter === opt.value
-                ? 'bg-amber-700 border-amber-600 text-white'
-                : 'bg-stone-800 border-stone-700 text-stone-400 hover:border-stone-600'"
+                ? 'bg-[#1e407c] border-[#1e407c] text-white'
+                : 'bg-[#0a2a52] border-[#1e407c]/50 text-[#96BEE6] hover:border-[#1e407c]'"
             >
               {{ opt.label }}
             </button>
@@ -260,32 +260,32 @@ async function changePassword() {
         <button
           @click="saveProfile"
           :disabled="isSaving"
-          class="w-full bg-amber-700 hover:bg-amber-600 disabled:bg-stone-700 text-white py-3 rounded-xl font-medium"
+          class="w-full bg-[#1e407c] hover:bg-[#2a5299] disabled:bg-[#1e407c] text-white py-3 rounded-xl font-medium"
         >
           {{ isSaving ? 'Saving...' : 'Save Profile' }}
         </button>
       </section>
 
       <!-- Password Change -->
-      <section class="bg-stone-900 border border-stone-800 rounded-xl p-4 space-y-4">
-        <h3 class="text-sm font-medium text-stone-400 uppercase tracking-wide">Change Password</h3>
+      <section class="bg-[#041e3e] border border-[#0a2a52] rounded-xl p-4 space-y-4">
+        <h3 class="text-sm font-medium text-[#96BEE6] uppercase tracking-wide">Change Password</h3>
 
         <div>
-          <label class="block text-sm text-stone-400 mb-1">Current Password</label>
+          <label class="block text-sm text-[#96BEE6] mb-1">Current Password</label>
           <input v-model="currentPassword" type="password" autocomplete="current-password"
-            class="w-full bg-stone-800 border border-stone-700 rounded-xl px-4 py-3 text-stone-100 focus:outline-none focus:border-amber-700" />
+            class="w-full bg-[#0a2a52] border border-[#1e407c]/50 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-[#1e407c]" />
         </div>
 
         <div>
-          <label class="block text-sm text-stone-400 mb-1">New Password</label>
+          <label class="block text-sm text-[#96BEE6] mb-1">New Password</label>
           <input v-model="newPassword" type="password" autocomplete="new-password" placeholder="Min 8 characters"
-            class="w-full bg-stone-800 border border-stone-700 rounded-xl px-4 py-3 text-stone-100 placeholder-stone-600 focus:outline-none focus:border-amber-700" />
+            class="w-full bg-[#0a2a52] border border-[#1e407c]/50 rounded-xl px-4 py-3 text-white placeholder-[#4a7aa5] focus:outline-none focus:border-[#1e407c]" />
         </div>
 
         <div>
-          <label class="block text-sm text-stone-400 mb-1">Confirm New Password</label>
+          <label class="block text-sm text-[#96BEE6] mb-1">Confirm New Password</label>
           <input v-model="confirmPassword" type="password" autocomplete="new-password"
-            class="w-full bg-stone-800 border border-stone-700 rounded-xl px-4 py-3 text-stone-100 focus:outline-none focus:border-amber-700" />
+            class="w-full bg-[#0a2a52] border border-[#1e407c]/50 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-[#1e407c]" />
         </div>
 
         <div v-if="passwordMessage" class="text-sm" :class="passwordError ? 'text-red-400' : 'text-green-400'">
@@ -295,34 +295,34 @@ async function changePassword() {
         <button
           @click="changePassword"
           :disabled="isChangingPassword || !currentPassword || !newPassword"
-          class="w-full bg-stone-700 hover:bg-stone-600 disabled:bg-stone-800 disabled:text-stone-600 text-white py-3 rounded-xl font-medium"
+          class="w-full bg-[#1e407c] hover:bg-[#1e407c] disabled:bg-[#0a2a52] disabled:text-[#4a7aa5]/60 text-white py-3 rounded-xl font-medium"
         >
           {{ isChangingPassword ? 'Changing...' : 'Change Password' }}
         </button>
       </section>
 
       <!-- API Keys -->
-      <section class="bg-stone-900 border border-stone-800 rounded-xl p-4 space-y-4">
-        <h3 class="text-sm font-medium text-stone-400 uppercase tracking-wide">API Keys</h3>
-        <p class="text-sm text-stone-400">
+      <section class="bg-[#041e3e] border border-[#0a2a52] rounded-xl p-4 space-y-4">
+        <h3 class="text-sm font-medium text-[#96BEE6] uppercase tracking-wide">API Keys</h3>
+        <p class="text-sm text-[#96BEE6]">
           Create API keys to integrate with iOS Shortcuts or other tools.
         </p>
 
         <!-- Newly created key banner -->
-        <div v-if="newlyCreatedKey" class="bg-amber-900/30 border border-amber-700 rounded-lg p-3 space-y-2">
-          <p class="text-sm text-amber-400 font-medium">Key created - copy it now, it will not be shown again</p>
+        <div v-if="newlyCreatedKey" class="bg-[#1e407c]/30 border border-[#1e407c] rounded-lg p-3 space-y-2">
+          <p class="text-sm text-[#96BEE6] font-medium">Key created - copy it now, it will not be shown again</p>
           <div class="flex items-center gap-2">
-            <code class="flex-1 bg-stone-800 px-3 py-2 rounded text-xs text-stone-200 break-all font-mono">
+            <code class="flex-1 bg-[#0a2a52] px-3 py-2 rounded text-xs text-white break-all font-mono">
               {{ newlyCreatedKey.key }}
             </code>
             <button
               @click="copyKey"
-              class="shrink-0 px-3 py-2 rounded bg-amber-700 hover:bg-amber-600 text-white text-xs font-medium"
+              class="shrink-0 px-3 py-2 rounded bg-[#1e407c] hover:bg-[#2a5299] text-white text-xs font-medium"
             >
               {{ keyCopied ? 'Copied' : 'Copy' }}
             </button>
           </div>
-          <button @click="newlyCreatedKey = null" class="text-xs text-stone-500 hover:text-stone-400">
+          <button @click="newlyCreatedKey = null" class="text-xs text-[#96BEE6]/70 hover:text-[#96BEE6]">
             Dismiss
           </button>
         </div>
@@ -332,13 +332,13 @@ async function changePassword() {
           <input
             v-model="newKeyName"
             placeholder="Key name (e.g. iPhone Shortcut)"
-            class="flex-1 bg-stone-800 border border-stone-700 rounded-xl px-4 py-2.5 text-sm text-stone-100 placeholder-stone-600 focus:outline-none focus:border-amber-700"
+            class="flex-1 bg-[#0a2a52] border border-[#1e407c]/50 rounded-xl px-4 py-2.5 text-sm text-white placeholder-[#4a7aa5] focus:outline-none focus:border-[#1e407c]"
             @keyup.enter="createApiKey"
           />
           <button
             @click="createApiKey"
             :disabled="isCreatingKey || !newKeyName.trim()"
-            class="shrink-0 px-4 py-2.5 bg-amber-700 hover:bg-amber-600 disabled:bg-stone-700 disabled:text-stone-500 text-white rounded-xl text-sm font-medium"
+            class="shrink-0 px-4 py-2.5 bg-[#1e407c] hover:bg-[#2a5299] disabled:bg-[#1e407c] disabled:text-[#96BEE6]/70 text-white rounded-xl text-sm font-medium"
           >
             {{ isCreatingKey ? '...' : 'Create' }}
           </button>
@@ -351,17 +351,17 @@ async function changePassword() {
           <div
             v-for="key in apiKeys"
             :key="key.id"
-            class="flex items-center justify-between bg-stone-800 border border-stone-700 rounded-lg px-3 py-2.5"
+            class="flex items-center justify-between bg-[#0a2a52] border border-[#1e407c]/50 rounded-lg px-3 py-2.5"
             :class="key.isRevoked ? 'opacity-50' : ''"
           >
             <div class="min-w-0 flex-1">
               <div class="flex items-center gap-2">
-                <span class="text-sm text-stone-200 truncate">{{ key.name }}</span>
+                <span class="text-sm text-white truncate">{{ key.name }}</span>
                 <span v-if="key.isRevoked" class="text-[10px] px-1.5 py-0.5 rounded bg-red-900/50 text-red-400 border border-red-800">
                   Revoked
                 </span>
               </div>
-              <div class="text-xs text-stone-500 mt-0.5">
+              <div class="text-xs text-[#96BEE6]/70 mt-0.5">
                 <span class="font-mono">{{ key.prefix }}</span>
                 <span v-if="key.lastUsedAt" class="ml-2">
                   Last used {{ new Date(key.lastUsedAt).toLocaleDateString() }}
@@ -381,9 +381,9 @@ async function changePassword() {
       </section>
 
       <!-- Export Data -->
-      <section class="bg-stone-900 border border-stone-800 rounded-xl p-4 space-y-4">
-        <h3 class="text-sm font-medium text-stone-400 uppercase tracking-wide">Data Export</h3>
-        <p class="text-sm text-stone-400">
+      <section class="bg-[#041e3e] border border-[#0a2a52] rounded-xl p-4 space-y-4">
+        <h3 class="text-sm font-medium text-[#96BEE6] uppercase tracking-wide">Data Export</h3>
+        <p class="text-sm text-[#96BEE6]">
           Download all your data including items, captures, and images as a ZIP file.
         </p>
 
@@ -394,7 +394,7 @@ async function changePassword() {
         <button
           @click="exportData"
           :disabled="isExporting"
-          class="w-full bg-stone-700 hover:bg-stone-600 disabled:bg-stone-800 disabled:text-stone-600 text-white py-3 rounded-xl font-medium"
+          class="w-full bg-[#1e407c] hover:bg-[#1e407c] disabled:bg-[#0a2a52] disabled:text-[#4a7aa5]/60 text-white py-3 rounded-xl font-medium"
         >
           {{ isExporting ? 'Exporting...' : 'Export All Data' }}
         </button>
@@ -404,7 +404,7 @@ async function changePassword() {
       <router-link
         v-if="auth.isAdmin"
         to="/admin"
-        class="block bg-stone-900 border border-stone-800 rounded-xl p-4 text-center text-amber-500 hover:text-amber-400 hover:border-stone-700 transition-colors"
+        class="block bg-[#041e3e] border border-[#0a2a52] rounded-xl p-4 text-center text-[#96BEE6] hover:text-[#96BEE6] hover:border-[#1e407c]/50 transition-colors"
       >
         Admin Panel
       </router-link>
@@ -412,7 +412,7 @@ async function changePassword() {
       <!-- Logout -->
       <button
         @click="auth.logout()"
-        class="w-full bg-stone-900 border border-red-900/50 hover:border-red-700 text-red-400 py-3 rounded-xl font-medium transition-colors"
+        class="w-full bg-[#041e3e] border border-red-900/50 hover:border-red-700 text-red-400 py-3 rounded-xl font-medium transition-colors"
       >
         Sign Out
       </button>

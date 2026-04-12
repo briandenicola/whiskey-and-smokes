@@ -1,16 +1,16 @@
 @import "tailwindcss";
 
 :root {
-  --color-primary: #92400e;
-  --color-primary-light: #b45309;
-  --color-surface: #1c1917;
-  --color-surface-light: #292524;
-  --color-text: #fafaf9;
-  --color-text-muted: #a8a29e;
+  --color-primary: #1e407c;
+  --color-primary-light: #96BEE6;
+  --color-surface: #001E44;
+  --color-surface-light: #0a2a52;
+  --color-text: #ffffff;
+  --color-text-muted: #96BEE6;
 }
 
 body {
-  @apply bg-stone-950 text-stone-50 min-h-screen;
+  @apply bg-[#001E44] text-white min-h-screen;
   font-family: 'Inter', system-ui, -apple-system, sans-serif;
   -webkit-font-smoothing: antialiased;
   touch-action: manipulation;
