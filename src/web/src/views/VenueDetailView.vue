@@ -153,10 +153,6 @@ function onLabelInputBlur() {
   setTimeout(() => { showLabelDropdown.value = false }, 200)
 }
 
-const availableSuggestions = computed(() =>
-  suggestedLabels.filter(l => !editLabels.value.includes(l))
-)
-
 function markPhotoForDelete(url: string) {
   pendingPhotoDeletes.value.add(url)
 }
