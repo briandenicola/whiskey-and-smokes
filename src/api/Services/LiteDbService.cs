@@ -17,7 +17,7 @@ public class LiteDbService : ICosmosDbService, IDisposable
             "whiskey-and-smokes", "whiskey-and-smokes.db");
 
         Directory.CreateDirectory(Path.GetDirectoryName(dbPath)!);
-        _db = new LiteDatabase(dbPath);
+        _db = new LiteDatabase($"Filename={dbPath};Connection=shared");
         _logger = logger;
         _logger.LogInformation("LiteDB initialized at {Path}", dbPath);
     }
