@@ -1,30 +1,27 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
 import { usersApi, type User, type Prompt, type LoggingSettings, type LoggingSettingsResponse, type FoundryStatus } from '../services/users'
-import { capturesApi, type CaptureResponse } from '../services/captures'
-import { venuesApi, type Venue } from '../services/venues'
+import { useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
 
 const auth = useAuthStore()
+const router = useRouter()
 const users = ref<User[]>([])
 const prompts = ref<Prompt[]>([])
 const isLoading = ref(true)
 const searchQuery = ref('')
-const activeTab = ref<'users' | 'prompts' | 'logging' | 'foundry' | 'activity'>('users')
+const activeTab = ref<'users' | 'prompts' | 'logging' | 'foundry'>('users')
 const showMenu = ref(false)
 
 function selectTab(tab: typeof activeTab.value) {
   activeTab.value = tab
   showMenu.value = false
-  if (tab === 'activity' && !captures.value.length && !venues.value.length) {
-    loadActivity()
-  }
 }
 
-// Activity state
-const captures = ref<CaptureResponse[]>([])
-const venues = ref<Venue[]>([])
-const activityLoading = ref(false)
+function goToActivity() {
+  showMenu.value = false
+  router.push('/history')
+}
 
 // Reset password state
 const resetPasswordUserId = ref<string | null>(null)
@@ -186,20 +183,6 @@ async function testFoundryConnectivity() {
     foundryTesting.value = false
   }
 }
-
-async function loadActivity() {
-  activityLoading.value = true
-  try {
-    const [capturesRes, venuesRes] = await Promise.all([
-      capturesApi.list(),
-      venuesApi.list(),
-    ])
-    captures.value = capturesRes.data.items
-    venues.value = venuesRes.data.items
-  } finally {
-    activityLoading.value = false
-  }
-}
 </script>
 
 <template>
@@ -221,7 +204,6 @@ async function loadActivity() {
                 { key: 'prompts', label: 'AI Prompts' },
                 { key: 'foundry', label: 'Foundry' },
                 { key: 'logging', label: 'Logging' },
-                { key: 'activity', label: 'Activity' },
               ] as const)"
               :key="item.key"
               @click="selectTab(item.key)"
@@ -231,6 +213,12 @@ async function loadActivity() {
                 : 'text-[#96BEE6] hover:bg-[#0a2a52]'"
             >
               {{ item.label }}
+            </button>
+            <button
+              @click="goToActivity"
+              class="w-full text-left px-4 py-3 text-sm text-[#96BEE6] hover:bg-[#0a2a52] transition-colors border-t border-[#0a2a52]"
+            >
+              Activity
             </button>
           </div>
         </Transition>
@@ -506,41 +494,6 @@ async function loadActivity() {
       <p v-else class="text-[#96BEE6]/70 text-center py-8">
         Could not load logging settings.
       </p>
-    </template>
-
-    <!-- ── Activity Tab ───────────────────────────── -->
-    <template v-else-if="activeTab === 'activity'">
-      <div v-if="activityLoading" class="text-[#96BEE6]/70 text-center py-12">Loading activity...</div>
-
-      <div v-else class="space-y-3">
-        <!-- Quick stats -->
-        <div class="bg-[#041e3e] border border-[#0a2a52] rounded-xl p-4 flex justify-around text-center mb-2">
-          <div>
-            <p class="text-2xl font-bold text-[#96BEE6]">{{ captures.length }}</p>
-            <p class="text-xs text-[#96BEE6]/70">Captures</p>
-          </div>
-          <div>
-            <p class="text-2xl font-bold text-green-400">{{ captures.filter(c => c.status === 'completed').length }}</p>
-            <p class="text-xs text-[#96BEE6]/70">Completed</p>
-          </div>
-          <div>
-            <p class="text-2xl font-bold text-red-400">{{ captures.filter(c => c.status === 'failed').length }}</p>
-            <p class="text-xs text-[#96BEE6]/70">Failed</p>
-          </div>
-          <div>
-            <p class="text-2xl font-bold text-[#96BEE6]">{{ venues.length }}</p>
-            <p class="text-xs text-[#96BEE6]/70">Venues</p>
-          </div>
-        </div>
-
-        <!-- View full history link -->
-        <router-link
-          to="/history"
-          class="block text-center text-sm text-[#96BEE6] hover:text-white py-3 bg-[#041e3e] border border-[#0a2a52] rounded-xl hover:border-[#1e407c]/50 transition-colors"
-        >
-          View full activity history →
-        </router-link>
-      </div>
     </template>
 
     <!-- ── Reset Password Modal ──────────────────── -->
