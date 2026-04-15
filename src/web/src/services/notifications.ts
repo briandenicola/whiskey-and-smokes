@@ -20,7 +20,7 @@ export interface NotificationsResponse {
 }
 
 export const notificationsApi = {
-  list: (limit = 50) => api.get<NotificationsResponse>('/api/notifications', { params: { limit } }),
-  markRead: (id: string) => api.put(`/api/notifications/${id}/read`),
-  markAllRead: () => api.put('/api/notifications/read-all'),
+  list: (limit = 50) => api.get<NotificationsResponse>('/notifications', { params: { limit } }),
+  markRead: (id: string) => api.put(`/notifications/${id}/read`),
+  markAllRead: () => api.put('/notifications/read-all'),
 }

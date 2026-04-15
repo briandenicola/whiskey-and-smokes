@@ -29,10 +29,10 @@ export interface UpdateThoughtRequest {
 
 export const thoughtsApi = {
   getForTarget: (targetType: string, targetId: string, targetUserId: string) =>
-    api.get<Thought[]>(`/api/thoughts/${targetType}/${targetId}`, { params: { targetUserId } }),
-  create: (data: CreateThoughtRequest) => api.post<Thought>('/api/thoughts', data),
-  update: (id: string, data: UpdateThoughtRequest) => api.put<Thought>(`/api/thoughts/${id}`, data),
-  remove: (id: string) => api.delete(`/api/thoughts/${id}`),
-  mine: () => api.get<Thought[]>('/api/thoughts/mine'),
-  onMyItems: () => api.get<Thought[]>('/api/thoughts/on-my-items'),
+    api.get<Thought[]>(`/thoughts/${targetType}/${targetId}`, { params: { targetUserId } }),
+  create: (data: CreateThoughtRequest) => api.post<Thought>('/thoughts', data),
+  update: (id: string, data: UpdateThoughtRequest) => api.put<Thought>(`/thoughts/${id}`, data),
+  remove: (id: string) => api.delete(`/thoughts/${id}`),
+  mine: () => api.get<Thought[]>('/thoughts/mine'),
+  onMyItems: () => api.get<Thought[]>('/thoughts/on-my-items'),
 }
