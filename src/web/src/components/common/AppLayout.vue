@@ -10,6 +10,9 @@ import PwaInstallPrompt from './PwaInstallPrompt.vue'
 const auth = useAuthStore()
 const route = useRoute()
 
+const isPwa = ('standalone' in window.navigator && (window.navigator as any).standalone) ||
+  window.matchMedia('(display-mode: standalone)').matches
+
 const {
   isRefreshing,
   pullDistance,
@@ -47,9 +50,13 @@ const navItems = [
         <button
           v-if="auth.isAuthenticated"
           @click="auth.logout()"
-          class="text-sm text-[#96BEE6] hover:text-white"
+          class="text-[#96BEE6] hover:text-white"
+          :class="isPwa ? 'p-1' : 'text-sm'"
         >
-          Sign Out
+          <svg v-if="isPwa" xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+          </svg>
+          <span v-else>Sign Out</span>
         </button>
       </div>
     </header>
