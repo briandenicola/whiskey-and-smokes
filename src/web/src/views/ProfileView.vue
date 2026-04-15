@@ -191,7 +191,16 @@ async function changePassword() {
 
 <template>
   <div class="p-4 max-w-lg mx-auto">
-    <h2 class="text-xl font-semibold mb-6">Profile</h2>
+    <div class="flex items-center justify-between mb-6">
+      <h2 class="text-xl font-semibold">Profile</h2>
+      <router-link
+        v-if="auth.isAdmin"
+        to="/admin"
+        class="text-[#96BEE6] hover:text-white text-sm transition-colors"
+      >
+        Admin
+      </router-link>
+    </div>
 
     <div v-if="auth.user" class="space-y-6">
       <!-- Profile Info -->
@@ -399,15 +408,6 @@ async function changePassword() {
           {{ isExporting ? 'Exporting...' : 'Export All Data' }}
         </button>
       </section>
-
-      <!-- Admin link -->
-      <router-link
-        v-if="auth.isAdmin"
-        to="/admin"
-        class="block bg-[#041e3e] border border-[#0a2a52] rounded-xl p-4 text-center text-[#96BEE6] hover:text-[#96BEE6] hover:border-[#1e407c]/50 transition-colors"
-      >
-        Admin Panel
-      </router-link>
 
       <!-- Logout -->
       <button
