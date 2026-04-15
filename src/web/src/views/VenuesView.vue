@@ -109,106 +109,6 @@ function resetForm() {
       </button>
     </div>
 
-    <!-- Add form -->
-    <div v-if="showAddForm" class="mb-4">
-      <div class="bg-[#041e3e] border border-[#0a2a52] rounded-xl p-4 space-y-3">
-        <!-- Mode toggle -->
-        <div class="flex rounded-lg bg-[#0a2a52] p-0.5">
-          <button
-            @click="addMode = 'manual'"
-            :class="[
-              'flex-1 py-1.5 text-xs font-medium rounded-md transition-colors',
-              addMode === 'manual' ? 'bg-[#1e407c] text-white' : 'text-[#96BEE6] hover:text-white/80'
-            ]"
-          >
-            Manual
-          </button>
-          <button
-            @click="addMode = 'url'"
-            :class="[
-              'flex-1 py-1.5 text-xs font-medium rounded-md transition-colors',
-              addMode === 'url' ? 'bg-[#1e407c] text-white' : 'text-[#96BEE6] hover:text-white/80'
-            ]"
-          >
-            From URL
-          </button>
-        </div>
-
-        <!-- Manual form -->
-        <template v-if="addMode === 'manual'">
-          <input
-            v-model="newName"
-            placeholder="Name (required)"
-            class="w-full bg-[#0a2a52] border border-[#1e407c]/50 rounded-xl px-4 py-2.5 text-white text-sm placeholder-[#4a7aa5] focus:outline-none focus:border-[#1e407c]"
-          />
-
-          <select
-            v-model="newType"
-            class="w-full bg-[#0a2a52] border border-[#1e407c]/50 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-[#1e407c] appearance-none"
-          >
-            <option v-for="opt in venueTypeOptions" :key="opt.value" :value="opt.value">
-              {{ opt.label }}
-            </option>
-          </select>
-
-          <input
-            v-model="newAddress"
-            placeholder="Address (optional)"
-            class="w-full bg-[#0a2a52] border border-[#1e407c]/50 rounded-xl px-4 py-2.5 text-white text-sm placeholder-[#4a7aa5] focus:outline-none focus:border-[#1e407c]"
-          />
-
-          <input
-            v-model="newWebsite"
-            placeholder="Website (optional)"
-            class="w-full bg-[#0a2a52] border border-[#1e407c]/50 rounded-xl px-4 py-2.5 text-white text-sm placeholder-[#4a7aa5] focus:outline-none focus:border-[#1e407c]"
-          />
-
-          <div class="flex gap-2">
-            <button
-              @click="addVenue"
-              :disabled="isAdding || !newName.trim()"
-              class="flex-1 bg-[#1e407c] hover:bg-[#2a5299] disabled:bg-[#1e407c] disabled:text-[#96BEE6]/70 text-white py-2.5 rounded-xl text-sm font-medium"
-            >
-              {{ isAdding ? 'Adding...' : 'Add' }}
-            </button>
-            <button
-              @click="resetForm()"
-              class="px-4 py-2.5 bg-[#0a2a52] text-[#96BEE6] rounded-xl text-sm hover:bg-[#1e407c]"
-            >
-              Cancel
-            </button>
-          </div>
-        </template>
-
-        <!-- URL form -->
-        <template v-else>
-          <p class="text-xs text-[#96BEE6]/70">Paste an Apple Maps, Google Maps, or venue website URL</p>
-          <input
-            v-model="newUrl"
-            placeholder="https://maps.apple.com/..."
-            class="w-full bg-[#0a2a52] border border-[#1e407c]/50 rounded-xl px-4 py-2.5 text-white text-sm placeholder-[#4a7aa5] focus:outline-none focus:border-[#1e407c]"
-          />
-          <p v-if="urlError" class="text-xs text-red-400">{{ urlError }}</p>
-
-          <div class="flex gap-2">
-            <button
-              @click="addVenueFromUrl"
-              :disabled="isAdding || !newUrl.trim()"
-              class="flex-1 bg-[#1e407c] hover:bg-[#2a5299] disabled:bg-[#1e407c] disabled:text-[#96BEE6]/70 text-white py-2.5 rounded-xl text-sm font-medium"
-            >
-              {{ isAdding ? 'Extracting...' : 'Extract Venue' }}
-            </button>
-            <button
-              @click="resetForm()"
-              class="px-4 py-2.5 bg-[#0a2a52] text-[#96BEE6] rounded-xl text-sm hover:bg-[#1e407c]"
-            >
-              Cancel
-            </button>
-          </div>
-        </template>
-      </div>
-    </div>
-
     <!-- Loading -->
     <div v-if="venuesStore.isLoading && !sortedVenues.length" class="text-[#96BEE6]/70 text-center py-12">
       Loading...
@@ -265,5 +165,113 @@ function resetForm() {
         </div>
       </router-link>
     </div>
+
+    <!-- Add Venue Modal -->
+    <Teleport to="body">
+      <Transition name="fade">
+        <div v-if="showAddForm" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60" @click.self="resetForm()">
+          <div class="bg-[#041e3e] border border-[#1e407c] rounded-2xl p-6 w-full max-w-sm shadow-xl space-y-4">
+            <div class="flex items-center justify-between">
+              <h3 class="text-lg font-semibold text-white">Add Venue</h3>
+              <button @click="resetForm()" class="text-[#4a7aa5] hover:text-white p-1">
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            <!-- Mode toggle -->
+            <div class="flex rounded-lg bg-[#0a2a52] p-0.5">
+              <button
+                @click="addMode = 'manual'"
+                :class="[
+                  'flex-1 py-1.5 text-xs font-medium rounded-md transition-colors',
+                  addMode === 'manual' ? 'bg-[#1e407c] text-white' : 'text-[#96BEE6] hover:text-white/80'
+                ]"
+              >
+                Manual
+              </button>
+              <button
+                @click="addMode = 'url'"
+                :class="[
+                  'flex-1 py-1.5 text-xs font-medium rounded-md transition-colors',
+                  addMode === 'url' ? 'bg-[#1e407c] text-white' : 'text-[#96BEE6] hover:text-white/80'
+                ]"
+              >
+                From URL
+              </button>
+            </div>
+
+            <!-- Manual form -->
+            <template v-if="addMode === 'manual'">
+              <input
+                v-model="newName"
+                placeholder="Name (required)"
+                class="w-full bg-[#0a2a52] border border-[#1e407c]/50 rounded-xl px-4 py-2.5 text-white text-sm placeholder-[#4a7aa5] focus:outline-none focus:border-[#1e407c]"
+              />
+
+              <select
+                v-model="newType"
+                class="w-full bg-[#0a2a52] border border-[#1e407c]/50 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-[#1e407c] appearance-none"
+              >
+                <option v-for="opt in venueTypeOptions" :key="opt.value" :value="opt.value">
+                  {{ opt.label }}
+                </option>
+              </select>
+
+              <input
+                v-model="newAddress"
+                placeholder="Address (optional)"
+                class="w-full bg-[#0a2a52] border border-[#1e407c]/50 rounded-xl px-4 py-2.5 text-white text-sm placeholder-[#4a7aa5] focus:outline-none focus:border-[#1e407c]"
+              />
+
+              <input
+                v-model="newWebsite"
+                placeholder="Website (optional)"
+                class="w-full bg-[#0a2a52] border border-[#1e407c]/50 rounded-xl px-4 py-2.5 text-white text-sm placeholder-[#4a7aa5] focus:outline-none focus:border-[#1e407c]"
+              />
+
+              <button
+                @click="addVenue"
+                :disabled="isAdding || !newName.trim()"
+                class="w-full bg-[#1e407c] hover:bg-[#2a5299] disabled:bg-[#0a2a52] disabled:text-[#4a7aa5]/60 text-white py-3 rounded-xl font-medium transition-colors"
+              >
+                {{ isAdding ? 'Adding...' : 'Add Venue' }}
+              </button>
+            </template>
+
+            <!-- URL form -->
+            <template v-else>
+              <p class="text-xs text-[#5a8ab5]">Paste an Apple Maps, Google Maps, or venue website URL</p>
+              <input
+                v-model="newUrl"
+                placeholder="https://maps.apple.com/..."
+                class="w-full bg-[#0a2a52] border border-[#1e407c]/50 rounded-xl px-4 py-2.5 text-white text-sm placeholder-[#4a7aa5] focus:outline-none focus:border-[#1e407c]"
+              />
+              <p v-if="urlError" class="text-xs text-red-400">{{ urlError }}</p>
+
+              <button
+                @click="addVenueFromUrl"
+                :disabled="isAdding || !newUrl.trim()"
+                class="w-full bg-[#1e407c] hover:bg-[#2a5299] disabled:bg-[#0a2a52] disabled:text-[#4a7aa5]/60 text-white py-3 rounded-xl font-medium transition-colors"
+              >
+                {{ isAdding ? 'Extracting...' : 'Extract Venue' }}
+              </button>
+            </template>
+          </div>
+        </div>
+      </Transition>
+    </Teleport>
   </div>
 </template>
+
+<style scoped>
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.2s ease;
+}
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+}
+</style>
