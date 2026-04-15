@@ -11,6 +11,15 @@ const prompts = ref<Prompt[]>([])
 const isLoading = ref(true)
 const searchQuery = ref('')
 const activeTab = ref<'users' | 'prompts' | 'logging' | 'foundry' | 'activity'>('users')
+const showMenu = ref(false)
+
+function selectTab(tab: typeof activeTab.value) {
+  activeTab.value = tab
+  showMenu.value = false
+  if (tab === 'activity' && !captures.value.length && !venues.value.length) {
+    loadActivity()
+  }
+}
 
 // Activity state
 const captures = ref<CaptureResponse[]>([])
@@ -196,9 +205,40 @@ async function loadActivity() {
 <template>
   <div class="p-4 max-w-lg mx-auto">
     <div class="flex items-center justify-between mb-6">
+      <router-link to="/profile" class="text-sm text-[#96BEE6] hover:text-white">Back</router-link>
       <h2 class="text-xl font-semibold">Admin Panel</h2>
-      <router-link to="/profile" class="text-sm text-[#96BEE6] hover:text-white">← Back</router-link>
+      <div class="relative">
+        <button @click="showMenu = !showMenu" class="text-[#96BEE6] hover:text-white p-1">
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16" />
+          </svg>
+        </button>
+        <Transition name="dropdown">
+          <div v-if="showMenu" class="absolute right-0 top-8 z-50 w-44 bg-[#041e3e] border border-[#1e407c] rounded-xl shadow-xl overflow-hidden">
+            <button
+              v-for="item in ([
+                { key: 'users', label: 'Users' },
+                { key: 'prompts', label: 'AI Prompts' },
+                { key: 'foundry', label: 'Foundry' },
+                { key: 'logging', label: 'Logging' },
+                { key: 'activity', label: 'Activity' },
+              ] as const)"
+              :key="item.key"
+              @click="selectTab(item.key)"
+              class="w-full text-left px-4 py-3 text-sm transition-colors"
+              :class="activeTab === item.key
+                ? 'bg-[#1e407c]/30 text-white'
+                : 'text-[#96BEE6] hover:bg-[#0a2a52]'"
+            >
+              {{ item.label }}
+            </button>
+          </div>
+        </Transition>
+      </div>
     </div>
+
+    <!-- Click-away overlay for menu -->
+    <div v-if="showMenu" class="fixed inset-0 z-40" @click="showMenu = false" />
 
     <!-- Stats -->
     <div class="bg-[#041e3e] border border-[#0a2a52] rounded-xl p-4 mb-4 flex justify-around text-center">
@@ -214,55 +254,6 @@ async function loadActivity() {
         <p class="text-2xl font-bold text-[#96BEE6]">{{ prompts.length }}</p>
         <p class="text-xs text-[#96BEE6]/70">Prompts</p>
       </div>
-    </div>
-
-    <!-- Tabs -->
-    <div class="flex gap-2 mb-4">
-      <button
-        @click="activeTab = 'users'"
-        class="flex-1 py-2 min-h-[44px] rounded-xl text-sm font-medium transition-colors"
-        :class="activeTab === 'users'
-          ? 'bg-[#1e407c]/30 text-[#96BEE6] border border-[#1e407c]'
-          : 'bg-[#0a2a52] text-[#96BEE6] border border-[#1e407c]/50 hover:bg-[#0a2a52]'"
-      >
-        Users
-      </button>
-      <button
-        @click="activeTab = 'prompts'"
-        class="flex-1 py-2 min-h-[44px] rounded-xl text-sm font-medium transition-colors"
-        :class="activeTab === 'prompts'
-          ? 'bg-[#1e407c]/30 text-[#96BEE6] border border-[#1e407c]'
-          : 'bg-[#0a2a52] text-[#96BEE6] border border-[#1e407c]/50 hover:bg-[#0a2a52]'"
-      >
-        AI Prompts
-      </button>
-      <button
-        @click="activeTab = 'foundry'"
-        class="flex-1 py-2 min-h-[44px] rounded-xl text-sm font-medium transition-colors"
-        :class="activeTab === 'foundry'
-          ? 'bg-[#1e407c]/30 text-[#96BEE6] border border-[#1e407c]'
-          : 'bg-[#0a2a52] text-[#96BEE6] border border-[#1e407c]/50 hover:bg-[#0a2a52]'"
-      >
-        Foundry
-      </button>
-      <button
-        @click="activeTab = 'logging'"
-        class="flex-1 py-2 min-h-[44px] rounded-xl text-sm font-medium transition-colors"
-        :class="activeTab === 'logging'
-          ? 'bg-[#1e407c]/30 text-[#96BEE6] border border-[#1e407c]'
-          : 'bg-[#0a2a52] text-[#96BEE6] border border-[#1e407c]/50 hover:bg-[#0a2a52]'"
-      >
-        Logging
-      </button>
-      <button
-        @click="activeTab = 'activity'; if (!captures.length && !venues.length) loadActivity()"
-        class="flex-1 py-2 min-h-[44px] rounded-xl text-sm font-medium transition-colors"
-        :class="activeTab === 'activity'
-          ? 'bg-[#1e407c]/30 text-[#96BEE6] border border-[#1e407c]'
-          : 'bg-[#0a2a52] text-[#96BEE6] border border-[#1e407c]/50 hover:bg-[#0a2a52]'"
-      >
-        Activity
-      </button>
     </div>
 
     <div v-if="isLoading" class="text-[#96BEE6]/70 text-center py-12">Loading...</div>
@@ -611,3 +602,15 @@ async function loadActivity() {
     </Teleport>
   </div>
 </template>
+
+<style scoped>
+.dropdown-enter-active,
+.dropdown-leave-active {
+  transition: opacity 0.15s ease, transform 0.15s ease;
+}
+.dropdown-enter-from,
+.dropdown-leave-to {
+  opacity: 0;
+  transform: translateY(-4px);
+}
+</style>
