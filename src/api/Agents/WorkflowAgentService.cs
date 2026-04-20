@@ -116,20 +116,8 @@ public class WorkflowAgentService : IAgentService
             capture.UpdatedAt = DateTime.UtcNow;
             await _cosmosDb.UpsertAsync("captures", capture, capture.PartitionKey);
 
-            // Create notification for workflow completion
-            var itemTypes = items.Select(i => i.Type).Distinct().ToList();
-            var itemTypesStr = itemTypes.Count > 0 ? string.Join(", ", itemTypes) : "items";
-            await _notificationService.CreateAsync(new Notification
-            {
-                UserId = capture.UserId,
-                Type = NotificationType.WorkflowCompleted,
-                Title = $"Workflow completed: {items.Count} {(items.Count == 1 ? "item" : "items")} processed",
-                Detail = $"Created {items.Count} {itemTypesStr} from your capture",
-                SourceUserId = capture.UserId,
-                SourceDisplayName = "System",
-                ReferenceType = "capture",
-                ReferenceId = capture.Id
-            });
+            // Notify user that the workflow completed
+            await NotifyCaptureWorkflowCompleted(capture, items);
 
             _logger.LogInformation(
                 "Capture {CaptureId} completed: {ItemCount} items, types=[{Types}]",
@@ -159,20 +147,8 @@ public class WorkflowAgentService : IAgentService
                 capture.UpdatedAt = DateTime.UtcNow;
                 await _cosmosDb.UpsertAsync("captures", capture, capture.PartitionKey);
 
-                // Create notification for fallback completion
-                var fallbackItemTypes = fallbackItems.Select(i => i.Type).Distinct().ToList();
-                var fallbackItemTypesStr = fallbackItemTypes.Count > 0 ? string.Join(", ", fallbackItemTypes) : "items";
-                await _notificationService.CreateAsync(new Notification
-                {
-                    UserId = capture.UserId,
-                    Type = NotificationType.WorkflowCompleted,
-                    Title = $"Workflow completed: {fallbackItems.Count} {(fallbackItems.Count == 1 ? "item" : "items")} processed",
-                    Detail = $"Created {fallbackItems.Count} {fallbackItemTypesStr} using fallback extraction",
-                    SourceUserId = capture.UserId,
-                    SourceDisplayName = "System",
-                    ReferenceType = "capture",
-                    ReferenceId = capture.Id
-                });
+                // Notify user that the fallback workflow completed
+                await NotifyCaptureWorkflowCompleted(capture, fallbackItems);
             }
             catch (Exception fallbackEx)
             {
@@ -183,6 +159,23 @@ public class WorkflowAgentService : IAgentService
                 await _cosmosDb.UpsertAsync("captures", capture, capture.PartitionKey);
             }
         }
+    }
+
+    private async Task NotifyCaptureWorkflowCompleted(Capture capture, List<Item> items)
+    {
+        var itemTypes = items.Select(i => i.Type).Distinct().ToList();
+        var itemTypesStr = itemTypes.Count > 0 ? string.Join(", ", itemTypes) : "items";
+        await _notificationService.CreateAsync(new Notification
+        {
+            UserId = capture.UserId,
+            Type = NotificationType.WorkflowCompleted,
+            Title = $"Workflow completed: {items.Count} {(items.Count == 1 ? "item" : "items")} processed",
+            Detail = $"Created {items.Count} {itemTypesStr} from your capture",
+            SourceUserId = capture.UserId,
+            SourceDisplayName = "System",
+            ReferenceType = "capture",
+            ReferenceId = capture.Id
+        });
     }
 
     private async Task<List<Item>> RunWorkflowAsync(Capture capture)
