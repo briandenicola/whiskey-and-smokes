@@ -27,7 +27,6 @@ public class WorkflowAgentService : IAgentService
     private readonly ILogger<WorkflowAgentService> _logger;
     private readonly AiFoundryOptions _foundryOptions;
     private readonly ILoggerFactory _loggerFactory;
-    private readonly INotificationService _notificationService;
     private readonly bool _isFoundryConfigured;
 
     private const int MaxRefinements = 2;
@@ -45,8 +44,7 @@ public class WorkflowAgentService : IAgentService
         INotificationService notificationService,
         ILogger<WorkflowAgentService> logger,
         IOptions<AiFoundryOptions> foundryOptions,
-        ILoggerFactory loggerFactory,
-        INotificationService notificationService)
+        ILoggerFactory loggerFactory)
     {
         _cosmosDb = cosmosDb;
         _promptService = promptService;
@@ -56,7 +54,6 @@ public class WorkflowAgentService : IAgentService
         _logger = logger;
         _foundryOptions = foundryOptions.Value;
         _loggerFactory = loggerFactory;
-        _notificationService = notificationService;
         _isFoundryConfigured = !string.IsNullOrEmpty(_foundryOptions.ProjectEndpoint);
     }
 
