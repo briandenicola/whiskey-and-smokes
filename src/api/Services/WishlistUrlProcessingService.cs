@@ -160,7 +160,7 @@ public class WishlistUrlProcessingService : BackgroundService
                         UserId = workItem.UserId,
                         Type = NotificationType.WorkflowCompleted,
                         Title = $"Wishlist item analysis complete: {item.Name}",
-                        Detail = $"Added {item.Type ?? "item"} from {new Uri(workItem.Url).Host}",
+                        Detail = $"Added {item.Type ?? "item"} from {(Uri.TryCreate(workItem.Url, UriKind.Absolute, out var uri) ? uri.Host : "URL")}",
                         SourceUserId = workItem.UserId,
                         SourceDisplayName = "System",
                         ReferenceType = "item",

@@ -56,13 +56,15 @@ async function handleNotificationClick(n: AppNotification) {
       router.push(`/${n.referenceType}s/${n.referenceId}`)
     }
   } else if (n.type === 'workflow-completed') {
-    // Navigate to the relevant resource or collection
+    // Navigate to the relevant resource
     if (n.referenceType === 'venue' && n.referenceId) {
       router.push(`/venues/${n.referenceId}`)
     } else if (n.referenceType === 'item' && n.referenceId) {
       router.push(`/items/${n.referenceId}`)
+    } else if (n.referenceType === 'capture' && n.referenceId) {
+      router.push(`/history/${n.referenceId}`)
     } else {
-      router.push('/collection')
+      router.push('/items')
     }
   }
 }
