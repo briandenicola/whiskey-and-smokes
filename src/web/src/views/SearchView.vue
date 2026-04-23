@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue'
+import { ref, computed, watch, onBeforeUnmount } from 'vue'
 import { useRouter } from 'vue-router'
 import Fuse, { type IFuseOptions } from 'fuse.js'
 import { itemsApi, type Item } from '../services/items'
@@ -109,6 +109,10 @@ watch(query, () => {
   searchTimeout = setTimeout(() => {
     hasSearched.value = query.value.trim().length > 0
   }, 150)
+})
+
+onBeforeUnmount(() => {
+  clearTimeout(searchTimeout)
 })
 
 function navigateToItem(item: Item) {

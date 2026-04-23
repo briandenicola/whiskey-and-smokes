@@ -13,7 +13,9 @@ async function loadCount() {
   try {
     const res = await notificationsApi.list(1)
     unreadCount.value = res.data.unreadCount
-  } catch { /* silent */ }
+  } catch (e) {
+    console.warn('Failed to load notification count', e)
+  }
 }
 
 async function toggleDropdown() {
@@ -24,7 +26,9 @@ async function toggleDropdown() {
       const res = await notificationsApi.list(20)
       notifications.value = res.data.notifications
       unreadCount.value = res.data.unreadCount
-    } catch { /* silent */ }
+    } catch (e) {
+      console.warn('Failed to load notifications', e)
+    }
     isLoading.value = false
   }
 }
@@ -34,7 +38,9 @@ async function markAllRead() {
     await notificationsApi.markAllRead()
     notifications.value.forEach(n => n.isRead = true)
     unreadCount.value = 0
-  } catch { /* silent */ }
+  } catch (e) {
+    console.warn('Failed to mark notifications read', e)
+  }
 }
 
 async function handleNotificationClick(n: AppNotification) {
@@ -43,7 +49,9 @@ async function handleNotificationClick(n: AppNotification) {
       await notificationsApi.markRead(n.id)
       n.isRead = true
       unreadCount.value = Math.max(0, unreadCount.value - 1)
-    } catch { /* silent */ }
+    } catch (e) {
+      console.warn('Failed to mark notification read', e)
+    }
   }
 
   showDropdown.value = false

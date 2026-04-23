@@ -1,10 +1,11 @@
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted, onBeforeUnmount, computed } from 'vue'
 import { friendsApi, type Friendship, type FriendInvite } from '../services/friends'
 import { notificationsApi } from '../services/notifications'
 import { useRouter } from 'vue-router'
 
 const router = useRouter()
+let copyTimer: ReturnType<typeof setTimeout> | undefined
 const friends = ref<Friendship[]>([])
 const sentRequests = ref<Friendship[]>([])
 const receivedRequests = ref<Friendship[]>([])
@@ -63,7 +64,8 @@ async function copyLink() {
   if (!inviteLink.value) return
   await navigator.clipboard.writeText(inviteLink.value)
   linkCopied.value = true
-  setTimeout(() => { linkCopied.value = false }, 2000)
+  clearTimeout(copyTimer)
+  copyTimer = setTimeout(() => { linkCopied.value = false }, 2000)
 }
 
 async function acceptRequest(friendship: Friendship) {
@@ -96,6 +98,10 @@ async function removeFriend(friendship: Friendship) {
 }
 
 onMounted(load)
+
+onBeforeUnmount(() => {
+  clearTimeout(copyTimer)
+})
 </script>
 
 <template>

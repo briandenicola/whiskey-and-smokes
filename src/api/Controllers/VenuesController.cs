@@ -100,10 +100,14 @@ public class VenuesController : ControllerBase
 
         var userId = GetUserId();
 
+        var hostLabel = Uri.TryCreate(request.Url, UriKind.Absolute, out var parsedUri)
+            ? parsedUri.Host
+            : "URL";
+
         var venue = new Venue
         {
             UserId = userId,
-            Name = $"Extracting from {new Uri(request.Url).Host}...",
+            Name = $"Extracting from {hostLabel}...",
             Type = VenueType.Restaurant,
             Status = VenueStatus.Processing,
         };

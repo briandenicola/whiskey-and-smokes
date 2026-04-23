@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, inject, onMounted } from 'vue'
+import { ref, inject, onMounted, onBeforeUnmount } from 'vue'
 import { useAuthStore } from '../stores/auth'
 import { usersApi } from '../services/users'
 import type { ApiKeyResponse, CreateApiKeyResponse } from '../services/users'
@@ -7,6 +7,7 @@ import { RefreshKey } from '../composables/refreshKey'
 import { getErrorMessage } from '../services/errors'
 
 const auth = useAuthStore()
+const feedbackTimers: ReturnType<typeof setTimeout>[] = []
 const displayName = ref('')
 const collectionSort = ref('rating')
 const collectionFilter = ref<string | undefined>(undefined)
@@ -115,7 +116,7 @@ async function exportData() {
     document.body.removeChild(link)
     URL.revokeObjectURL(url)
     exportMessage.value = 'Export downloaded'
-    setTimeout(() => { exportMessage.value = '' }, 3000)
+    feedbackTimers.push(setTimeout(() => { exportMessage.value = '' }, 3000))
   } catch {
     exportMessage.value = 'Export failed'
   } finally {
@@ -132,6 +133,10 @@ onMounted(() => {
   loadApiKeys()
 })
 
+onBeforeUnmount(() => {
+  feedbackTimers.forEach(clearTimeout)
+})
+
 async function saveProfile() {
   isSaving.value = true
   saveMessage.value = ''
@@ -146,7 +151,7 @@ async function saveProfile() {
     })
     await auth.loadUser()
     saveMessage.value = 'Profile updated!'
-    setTimeout(() => { saveMessage.value = '' }, 3000)
+    feedbackTimers.push(setTimeout(() => { saveMessage.value = '' }, 3000))
   } catch {
     saveMessage.value = 'Failed to save'
   } finally {
@@ -180,7 +185,7 @@ async function changePassword() {
     currentPassword.value = ''
     newPassword.value = ''
     confirmPassword.value = ''
-    setTimeout(() => { passwordMessage.value = '' }, 3000)
+    feedbackTimers.push(setTimeout(() => { passwordMessage.value = '' }, 3000))
   } catch (e: unknown) {
     passwordMessage.value = getErrorMessage(e, 'Failed to change password')
     passwordError.value = true

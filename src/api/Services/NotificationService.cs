@@ -29,7 +29,8 @@ public class NotificationService : INotificationService
         }
         catch (Exception ex)
         {
-            _logger.LogWarning(ex, "Failed to create notification for user {UserId}", notification.UserId);
+            _logger.LogError(ex, "Failed to create {Type} notification for user {UserId} (ref: {RefType}/{RefId})",
+                notification.Type, notification.UserId, notification.ReferenceType, notification.ReferenceId);
         }
     }
 }
