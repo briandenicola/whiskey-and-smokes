@@ -394,7 +394,9 @@ public class UsersController : ControllerBase
         }
 
         // Azure blob URL — take last two segments (date/file)
-        var uri = new Uri(url);
+        if (!Uri.TryCreate(url, UriKind.Absolute, out var uri))
+            return url;
+
         var segments = uri.AbsolutePath.Split('/', StringSplitOptions.RemoveEmptyEntries);
         return segments.Length >= 2
             ? string.Join("/", segments[^2..])

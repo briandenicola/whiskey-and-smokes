@@ -1,11 +1,12 @@
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted, onBeforeUnmount, computed } from 'vue'
 import { usersApi, type User, type Prompt, type LoggingSettings, type LoggingSettingsResponse, type FoundryStatus } from '../services/users'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
 
 const auth = useAuthStore()
 const router = useRouter()
+const feedbackTimers: ReturnType<typeof setTimeout>[] = []
 const users = ref<User[]>([])
 const prompts = ref<Prompt[]>([])
 const isLoading = ref(true)
@@ -72,6 +73,10 @@ onMounted(async () => {
   }
 })
 
+onBeforeUnmount(() => {
+  feedbackTimers.forEach(clearTimeout)
+})
+
 async function toggleRole(user: User) {
   const newRole = user.role === 'admin' ? 'user' : 'admin'
   const { data } = await usersApi.updateRole(user.id, newRole)
@@ -93,7 +98,7 @@ async function confirmResetPassword() {
   try {
     await usersApi.resetPassword(resetPasswordUserId.value, newPassword.value)
     resetMessage.value = 'Password reset successfully'
-    setTimeout(() => { resetPasswordUserId.value = null }, 1500)
+    feedbackTimers.push(setTimeout(() => { resetPasswordUserId.value = null }, 1500))
   } catch {
     resetMessage.value = 'Failed to reset password'
   }
@@ -164,7 +169,7 @@ async function saveLoggingSettings() {
       loggingData.value.settings = data
     }
     loggingMessage.value = 'Log levels updated — changes take effect immediately'
-    setTimeout(() => { loggingMessage.value = '' }, 3000)
+    feedbackTimers.push(setTimeout(() => { loggingMessage.value = '' }, 3000))
   } catch {
     loggingMessage.value = 'Failed to save logging settings'
   } finally {

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, onBeforeUnmount } from 'vue'
 import { useAuthStore } from '../stores/auth'
 import { isEntraConfigured } from '../services/msal'
 import { getErrorMessage } from '../services/errors'
@@ -14,11 +14,16 @@ const isSubmitting = ref(false)
 const errorMessage = ref('')
 const entraAvailable = ref(false)
 
+let entraTimer: ReturnType<typeof setTimeout> | undefined
+
 onMounted(() => {
-  // Check after a short delay to allow MSAL init to complete
-  setTimeout(() => {
+  entraTimer = setTimeout(() => {
     entraAvailable.value = isEntraConfigured()
   }, 500)
+})
+
+onBeforeUnmount(() => {
+  clearTimeout(entraTimer)
 })
 
 async function submit() {

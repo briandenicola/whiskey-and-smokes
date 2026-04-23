@@ -45,8 +45,9 @@ public class VenueUrlService : IVenueUrlService
         try
         {
             using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(30));
-            _httpClient.DefaultRequestHeaders.UserAgent.ParseAdd("Mozilla/5.0 (compatible; DrinksAndDesserts/1.0)");
-            var response = await _httpClient.GetAsync(url, cts.Token);
+            using var request = new HttpRequestMessage(HttpMethod.Get, url);
+            request.Headers.UserAgent.ParseAdd("Mozilla/5.0 (compatible; DrinksAndDesserts/1.0)");
+            var response = await _httpClient.SendAsync(request, cts.Token);
             response.EnsureSuccessStatusCode();
             var html = await response.Content.ReadAsStringAsync(cts.Token);
 
