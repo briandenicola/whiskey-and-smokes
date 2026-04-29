@@ -1,5 +1,5 @@
 import axios from 'axios'
-import { getStoredToken, getStoredRefreshToken, storeAuth, clearAuth, type AuthResponse } from './auth'
+import { getStoredToken, clearAuth, refreshAccessToken } from './auth'
 
 const api = axios.create({
   baseURL: '/api',
@@ -17,25 +17,8 @@ api.interceptors.request.use((config) => {
   return config
 })
 
-// Silent refresh state
-let isRefreshing = false
-let failedQueue: Array<{
-  resolve: (token: string) => void
-  reject: (error: unknown) => void
-}> = []
-
-function processQueue(error: unknown, token: string | null) {
-  failedQueue.forEach((pending) => {
-    if (error) {
-      pending.reject(error)
-    } else {
-      pending.resolve(token!)
-    }
-  })
-  failedQueue = []
-}
-
-// Handle 401 responses — attempt silent refresh before redirecting to login
+// Handle 401 responses — attempt silent refresh before redirecting to login.
+// All concurrent 401s share the same refresh call via refreshAccessToken().
 api.interceptors.response.use(
   (response) => response,
   async (error) => {
@@ -47,48 +30,20 @@ api.interceptors.response.use(
       return Promise.reject(error)
     }
 
-    // If a refresh is already in progress, queue this request
-    if (isRefreshing) {
-      return new Promise((resolve, reject) => {
-        failedQueue.push({ resolve, reject })
-      }).then((token) => {
-        originalRequest.headers.Authorization = `Bearer ${token}`
-        return api(originalRequest)
-      })
-    }
-
     originalRequest._retry = true
-    isRefreshing = true
 
-    const accessToken = getStoredToken()
-    const refreshToken = getStoredRefreshToken()
+    const result = await refreshAccessToken()
 
-    if (!accessToken || !refreshToken) {
-      isRefreshing = false
-      clearAuth()
-      window.location.href = '/login'
-      return Promise.reject(error)
-    }
-
-    try {
-      const { data } = await axios.post<AuthResponse>('/api/auth/refresh', {
-        accessToken,
-        refreshToken,
-      })
-
-      storeAuth(data)
-      processQueue(null, data.token)
-
-      originalRequest.headers.Authorization = `Bearer ${data.token}`
+    if (result) {
+      originalRequest.headers.Authorization = `Bearer ${result.token}`
       return api(originalRequest)
-    } catch (refreshError) {
-      processQueue(refreshError, null)
-      clearAuth()
-      window.location.href = '/login'
-      return Promise.reject(refreshError)
-    } finally {
-      isRefreshing = false
     }
+
+    // Refresh failed — check if auth was definitively cleared (401/400 from server)
+    if (!getStoredToken()) {
+      window.location.href = '/login'
+    }
+    return Promise.reject(error)
   }
 )
 

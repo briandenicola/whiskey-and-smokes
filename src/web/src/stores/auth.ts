@@ -9,16 +9,16 @@ import {
   getStoredRefreshToken,
   getStoredExpiresAt,
   getStoredUser,
+  refreshAccessToken,
   type RegisterRequest,
   type LoginRequest,
-  type AuthResponse,
 } from '../services/auth'
 import { usersApi, type User } from '../services/users'
 import { loginWithEntra, logoutEntra, isEntraConfigured } from '../services/msal'
 import { getErrorMessage } from '../services/errors'
 import router from '../router'
 
-const REFRESH_BUFFER_MS = 60_000 // refresh 1 minute before expiry
+const REFRESH_BUFFER_MS = 5 * 60_000 // refresh 5 minutes before expiry
 
 export const useAuthStore = defineStore('auth', () => {
   const user = ref<User | null>(null)
@@ -51,29 +51,32 @@ export const useAuthStore = defineStore('auth', () => {
     refreshTimer = setTimeout(() => performRefresh(), delay)
   }
 
+  // Best-effort proactive refresh — never forces logout on failure.
+  // If it fails, the 401 interceptor will handle it on the next API call.
   async function performRefresh() {
-    const accessToken = getStoredToken()
-    const refreshToken = getStoredRefreshToken()
+    const result = await refreshAccessToken()
 
-    if (!accessToken || !refreshToken) return
-
-    try {
-      const { data } = await axios.post<AuthResponse>('/api/auth/refresh', {
-        accessToken,
-        refreshToken,
-      })
-
-      storeAuth(data)
-      token.value = data.token
-      user.value = data.user
+    if (result) {
+      token.value = result.token
+      user.value = result.user
       scheduleRefresh()
-    } catch {
-      // Refresh failed — the 401 interceptor will handle redirect on next API call
+    } else if (getStoredToken()) {
+      // Transient failure but auth wasn't cleared — retry in 30s
+      refreshTimer = setTimeout(() => performRefresh(), 30_000)
     }
+    // If auth was cleared (definitive 401), do nothing — interceptor handles redirect
   }
 
   function handleVisibilityChange() {
     if (document.visibilityState !== 'visible' || !token.value) return
+
+    // Sync reactive state with localStorage (another tab may have refreshed)
+    const storedToken = getStoredToken()
+    if (storedToken && storedToken !== token.value) {
+      token.value = storedToken
+      const storedUser = getStoredUser()
+      if (storedUser) user.value = storedUser
+    }
 
     const expiresAt = getStoredExpiresAt()
     if (!expiresAt) return
@@ -83,6 +86,23 @@ export const useAuthStore = defineStore('auth', () => {
       performRefresh()
     } else {
       scheduleRefresh()
+    }
+  }
+
+  // Sync token changes from other tabs via storage events
+  function handleStorageChange(e: StorageEvent) {
+    if (e.key === 'whiskey_and_smokes_token') {
+      if (e.newValue) {
+        token.value = e.newValue
+        const storedUser = getStoredUser()
+        if (storedUser) user.value = storedUser
+        scheduleRefresh()
+      } else {
+        // Another tab logged out
+        token.value = null
+        user.value = null
+        router.push('/login')
+      }
     }
   }
 
@@ -96,10 +116,12 @@ export const useAuthStore = defineStore('auth', () => {
     isLoading.value = false
 
     document.addEventListener('visibilitychange', handleVisibilityChange)
+    window.addEventListener('storage', handleStorageChange)
   }
 
   function dispose() {
     document.removeEventListener('visibilitychange', handleVisibilityChange)
+    window.removeEventListener('storage', handleStorageChange)
     if (refreshTimer) {
       clearTimeout(refreshTimer)
       refreshTimer = null
