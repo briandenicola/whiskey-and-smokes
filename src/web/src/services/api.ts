@@ -1,5 +1,5 @@
 import axios from 'axios'
-import { getStoredToken, clearAuth, refreshAccessToken } from './auth'
+import { getStoredToken, refreshAccessToken } from './auth'
 
 const api = axios.create({
   baseURL: '/api',
