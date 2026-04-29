@@ -97,6 +97,7 @@ When AI Foundry is not configured, the system falls back to keyword-based local 
 | [Local Development](docs/local-development.md) | Prerequisites, setup, running, building, testing, troubleshooting |
 | [Local Docker Deployment](docs/local-docker-deployment.md) | Self-hosted deployment with Docker Compose and Portainer |
 | [Azure Deployment](docs/azure-deployment.md) | Terraform stacks, GitHub Actions, OIDC setup, secrets & variables |
+| [Screenshot Guide](docs/screenshot-guide.md) | Auto-capture app screenshots for documentation with Playwright |
 
 ## Friends API
 
