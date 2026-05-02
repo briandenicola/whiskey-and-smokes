@@ -124,6 +124,26 @@ public class VenuesControllerTests : IClassFixture<CustomWebApplicationFactory>
     }
 
     [Fact]
+    public async Task CreateVenue_CafeType_ReturnsCreated()
+    {
+        _factory.CosmosDb.ClearSubstitute();
+
+        _factory.CosmosDb.CreateAsync("venues", Arg.Any<Venue>(), Arg.Any<string>())
+            .Returns(callInfo => callInfo.ArgAt<Venue>(1));
+
+        var request = new CreateVenueRequest
+        {
+            Name = "Blue Bottle Coffee",
+            Type = VenueType.Cafe,
+        };
+
+        var response = await _client.PostAsJsonAsync("/api/venues", request);
+        response.StatusCode.Should().Be(HttpStatusCode.Created);
+
+        await _factory.CosmosDb.Received(1).CreateAsync("venues", Arg.Any<Venue>(), Arg.Any<string>());
+    }
+
+    [Fact]
     public async Task CreateVenue_InvalidType_Returns400()
     {
         _factory.CosmosDb.ClearSubstitute();

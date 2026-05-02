@@ -1,12 +1,12 @@
 # Drinks & Desserts
 
-Track your drinks, desserts, and venues. Snap a photo, let AI do the rest, refine later. Share your collection with friends.
+Track your drinks, coffee, desserts, and venues. Snap a photo, let AI do the rest, refine later. Share your collection with friends.
 
 ## Features
 
 - **Photo Capture** with AI-powered item identification (1-3 items per capture)
-- **Seven item types**: Whiskey, Wine, Cocktail, Cigar, Dessert, Venue, and Custom
-- **Venues** — capture bars, restaurants, and lounges with name, address, website, type, rating, and linked items. Create from photos or extract from URLs (including Google Maps links)
+- **14 item types**: Whiskey, Wine, Cocktail, Vodka, Gin, Espresso, Latte, Cappuccino, Cold Brew, Pour Over, Coffee, Cigar, Dessert, and Custom
+- **Venues** — capture bars, restaurants, cafes, and lounges with name, address, website, type, rating, and linked items. Create from photos or extract from URLs (including Google Maps links)
 - **Friends** — invite friends via shareable links, browse each other's collections and venues, leave thoughts (comments + ratings) on items
 - **Notifications** — in-app notification bell for friend requests, new thoughts, and social activity
 - **Star ratings** with half/quarter star precision
@@ -41,7 +41,7 @@ Track your drinks, desserts, and venues. Snap a photo, let AI do the rest, refin
 |-----------|--------------|-------------|
 | `users` | `/partitionKey` (userId) | User accounts and preferences |
 | `captures` | `/partitionKey` (userId) | Photo captures and AI workflow results |
-| `items` | `/partitionKey` (userId) | Collection items (drinks, desserts, cigars) |
+| `items` | `/partitionKey` (userId) | Collection items (drinks, coffee, desserts, cigars) |
 | `venues` | `/partitionKey` (userId) | Venues (bars, restaurants, lounges) |
 | `friendships` | `/partitionKey` (userId) | Dual-document friendship records |
 | `friend-invites` | `/partitionKey` (invite code) | Invite codes for friend discovery |

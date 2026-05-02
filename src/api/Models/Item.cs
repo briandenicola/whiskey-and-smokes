@@ -105,9 +105,15 @@ public static class ItemType
     public const string Gin = "gin";
     public const string Cigar = "cigar";
     public const string Dessert = "dessert";
+    public const string Espresso = "espresso";
+    public const string Latte = "latte";
+    public const string Cappuccino = "cappuccino";
+    public const string ColdBrew = "cold-brew";
+    public const string PourOver = "pour-over";
+    public const string Coffee = "coffee";
     public const string Custom = "custom";
 
-    public static readonly string[] All = [Whiskey, Wine, Cocktail, Vodka, Gin, Cigar, Dessert, Custom];
+    public static readonly string[] All = [Whiskey, Wine, Cocktail, Vodka, Gin, Cigar, Dessert, Espresso, Latte, Cappuccino, ColdBrew, PourOver, Coffee, Custom];
 }
 
 public static class ItemStatus

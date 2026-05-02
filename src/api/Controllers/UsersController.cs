@@ -316,7 +316,8 @@ public class UsersController : ControllerBase
 
     private static readonly HashSet<string> DrinkTypes = new(StringComparer.OrdinalIgnoreCase)
     {
-        ItemType.Whiskey, ItemType.Wine, ItemType.Cocktail, ItemType.Vodka, ItemType.Gin
+        ItemType.Whiskey, ItemType.Wine, ItemType.Cocktail, ItemType.Vodka, ItemType.Gin,
+        ItemType.Espresso, ItemType.Latte, ItemType.Cappuccino, ItemType.ColdBrew, ItemType.PourOver, ItemType.Coffee
     };
 
     private static string ClassifyItem(Item item) =>

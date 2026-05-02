@@ -68,9 +68,10 @@ public static class VenueType
     public const string Bar = "bar";
     public const string Lounge = "lounge";
     public const string Restaurant = "restaurant";
+    public const string Cafe = "cafe";
     public const string Other = "other";
 
-    public static readonly string[] All = [Bar, Lounge, Restaurant, Other];
+    public static readonly string[] All = [Bar, Lounge, Restaurant, Cafe, Other];
 }
 
 public class VenueUrlWorkItem

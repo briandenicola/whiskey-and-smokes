@@ -88,7 +88,16 @@ internal static class LocalExtraction
             ["cigar"] = ("cigar", ["cigar", "cohiba", "montecristo", "partagas", "romeo y julieta", "padron",
                 "arturo fuente", "davidoff", "oliva", "my father", "liga privada", "opus x",
                 "ashton", "rocky patel", "perdomo", "macanudo", "punch", "hoyo de monterrey",
-                "robusto", "torpedo", "churchill", "corona", "toro", "maduro", "connecticut"])
+                "robusto", "torpedo", "churchill", "corona", "toro", "maduro", "connecticut"]),
+            ["espresso"] = ("espresso", ["espresso", "ristretto", "doppio", "lungo", "macchiato"]),
+            ["latte"] = ("latte", ["latte", "flat white", "oat milk latte", "vanilla latte", "matcha latte",
+                "chai latte", "pumpkin spice latte", "caramel latte"]),
+            ["cappuccino"] = ("cappuccino", ["cappuccino"]),
+            ["cold-brew"] = ("cold-brew", ["cold brew", "cold-brew", "nitro", "nitro coffee", "iced coffee"]),
+            ["pour-over"] = ("pour-over", ["pour over", "pour-over", "chemex", "v60", "hario", "aeropress",
+                "french press", "siphon", "kalita"]),
+            ["coffee"] = ("coffee", ["coffee", "drip coffee", "americano", "mocha", "cortado", "affogato",
+                "irish coffee", "turkish coffee", "vietnamese coffee", "cafe", "roast", "barista"])
         };
 
         var matchedTypes = new HashSet<string>();
@@ -185,6 +194,12 @@ internal static class LocalExtraction
         if (lower.Contains("gin") || lower.Contains("hendrick") || lower.Contains("tanqueray") || lower.Contains("bombay")) return ItemType.Gin;
         if (lower.Contains("whiskey") || lower.Contains("whisky") || lower.Contains("bourbon") || lower.Contains("scotch")) return ItemType.Whiskey;
         if (lower.Contains("dessert") || lower.Contains("cake") || lower.Contains("pie") || lower.Contains("pastry") || lower.Contains("ice cream") || lower.Contains("cookie") || lower.Contains("brownie") || lower.Contains("cheesecake") || lower.Contains("tiramisu")) return ItemType.Dessert;
+        if (lower.Contains("espresso") || lower.Contains("ristretto") || lower.Contains("doppio") || lower.Contains("macchiato")) return ItemType.Espresso;
+        if (lower.Contains("latte") || lower.Contains("flat white")) return ItemType.Latte;
+        if (lower.Contains("cappuccino")) return ItemType.Cappuccino;
+        if (lower.Contains("cold brew") || lower.Contains("cold-brew") || lower.Contains("nitro coffee")) return ItemType.ColdBrew;
+        if (lower.Contains("pour over") || lower.Contains("pour-over") || lower.Contains("chemex") || lower.Contains("v60") || lower.Contains("aeropress") || lower.Contains("french press")) return ItemType.PourOver;
+        if (lower.Contains("coffee") || lower.Contains("americano") || lower.Contains("mocha") || lower.Contains("cortado")) return ItemType.Coffee;
         return ItemType.Custom;
     }
 

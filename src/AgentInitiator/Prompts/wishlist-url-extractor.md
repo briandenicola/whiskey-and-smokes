@@ -7,7 +7,7 @@ You will receive the text content scraped from a product webpage URL. Your job i
 Extract the following fields:
 - **name**: The specific product name (e.g., "Lagavulin 16 Year Old", "Opus X Robusto")
 - **brand**: The brand or producer (e.g., "Lagavulin", "Arturo Fuente")
-- **type**: Must be exactly one of: whiskey, wine, cocktail, vodka, gin, cigar, dessert, custom
+- **type**: Must be exactly one of: whiskey, wine, cocktail, vodka, gin, cigar, dessert, espresso, latte, cappuccino, cold-brew, pour-over, coffee, custom
 - **category**: Sub-category (e.g., "Single Malt Scotch", "Napa Valley Cabernet", "Robusto", "London Dry Gin", "Cheesecake")
 - **notes**: A concise 1-3 sentence description of the product including key characteristics, tasting notes, or notable features found on the page
 

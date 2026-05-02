@@ -5,7 +5,7 @@ Your job is to extract structured information from a user's free-text quick note
 
 Given the user's note, extract the following if present:
 
-1. **Venue**: The bar, restaurant, lounge, shop, or location where the experience took place.
+1. **Venue**: The bar, restaurant, lounge, cafe, coffee shop, or location where the experience took place.
    - Look for patterns like "at [place]", "from [place]", "visited [place]", or named establishments.
    - If no venue is mentioned, set venue to null.
 

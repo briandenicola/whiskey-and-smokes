@@ -51,6 +51,7 @@ const venueTypeOptions = [
   { label: 'Bar', value: 'bar' },
   { label: 'Lounge', value: 'lounge' },
   { label: 'Restaurant', value: 'restaurant' },
+  { label: 'Cafe', value: 'cafe' },
   { label: 'Other', value: 'other' },
 ]
 

@@ -93,6 +93,29 @@ public class ItemsControllerTests : IClassFixture<CustomWebApplicationFactory>
     }
 
     [Fact]
+    public async Task GetItem_CoffeeType_ReturnsOk()
+    {
+        var item = new Item
+        {
+            Id = "item-coffee-1",
+            UserId = TestUserId,
+            Name = "Ethiopian Yirgacheffe Pour Over",
+            Type = ItemType.PourOver,
+            Status = ItemStatus.Reviewed
+        };
+
+        _factory.CosmosDb.GetAsync<Item>("items", "item-coffee-1", TestUserId)
+            .Returns(item);
+
+        var response = await _client.GetAsync("/api/items/item-coffee-1");
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+
+        var body = await response.Content.ReadFromJsonAsync<Item>();
+        body.Should().NotBeNull();
+        body!.Type.Should().Be(ItemType.PourOver);
+    }
+
+    [Fact]
     public async Task GetItem_NotFound_Returns404()
     {
         _factory.CosmosDb.GetAsync<Item>("items", "nonexistent", TestUserId)

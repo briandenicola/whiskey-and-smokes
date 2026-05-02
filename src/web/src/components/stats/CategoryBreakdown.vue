@@ -15,7 +15,7 @@ const props = defineProps<{
   typeBreakdown: { type: string; count: number }[]
 }>()
 
-const drinkTypes = new Set(['whiskey', 'wine', 'cocktail', 'vodka', 'gin'])
+const drinkTypes = new Set(['whiskey', 'wine', 'cocktail', 'vodka', 'gin', 'espresso', 'latte', 'cappuccino', 'cold-brew', 'pour-over', 'coffee'])
 
 const chartOption = computed(() => {
   const drinks = props.typeBreakdown.filter(t => drinkTypes.has(t.type))

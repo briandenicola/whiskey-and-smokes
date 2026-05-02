@@ -209,6 +209,24 @@ public class ValidationTests : IClassFixture<CustomWebApplicationFactory>
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
     }
 
+    [Theory]
+    [InlineData("espresso")]
+    [InlineData("latte")]
+    [InlineData("cappuccino")]
+    [InlineData("cold-brew")]
+    [InlineData("pour-over")]
+    [InlineData("coffee")]
+    public async Task AllCoffeeTypes_AreValidItemTypes(string coffeeType)
+    {
+        ItemType.All.Should().Contain(coffeeType);
+    }
+
+    [Fact]
+    public async Task CafeIsValidVenueType()
+    {
+        VenueType.All.Should().Contain(VenueType.Cafe);
+    }
+
     // --- Auth Endpoint Validation (cross-controller) ---
 
     [Fact]
