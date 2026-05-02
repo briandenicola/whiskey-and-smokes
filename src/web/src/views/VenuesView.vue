@@ -89,9 +89,15 @@ const groupedVenues = computed<VenueGroup[]>(() => {
     })
   }
 
-  // Add "to-try" groups first
+  // Add all "to-try" venues as a single group, sorted by rating then date
   if (toTryVenues.length > 0) {
-    createTypeGroups(toTryVenues, 'To Try')
+    const sorted = [...toTryVenues].sort((a, b) => {
+      const ra = a.rating ?? 0
+      const rb = b.rating ?? 0
+      if (rb !== ra) return rb - ra
+      return new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
+    })
+    groups.push({ title: 'To Try', venues: sorted })
   }
 
   // Add regular venue groups
