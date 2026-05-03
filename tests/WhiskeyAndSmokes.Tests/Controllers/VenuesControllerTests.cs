@@ -159,6 +159,116 @@ public class VenuesControllerTests : IClassFixture<CustomWebApplicationFactory>
     }
 
     [Fact]
+    public async Task CreateVenue_WithoutLabels_DefaultsToToTry()
+    {
+        _factory.CosmosDb.ClearSubstitute();
+
+        Venue? capturedVenue = null;
+        _factory.CosmosDb.CreateAsync("venues", Arg.Any<Venue>(), Arg.Any<string>())
+            .Returns(callInfo =>
+            {
+                capturedVenue = callInfo.ArgAt<Venue>(1);
+                return capturedVenue;
+            });
+
+        var request = new CreateVenueRequest
+        {
+            Name = "New Bar",
+            Type = VenueType.Bar,
+        };
+
+        var response = await _client.PostAsJsonAsync("/api/venues", request);
+        response.StatusCode.Should().Be(HttpStatusCode.Created);
+
+        capturedVenue.Should().NotBeNull();
+        capturedVenue!.Labels.Should().ContainSingle().Which.Should().Be("to-try");
+    }
+
+    [Fact]
+    public async Task CreateVenue_WithCustomLabels_UsesProvidedLabels()
+    {
+        _factory.CosmosDb.ClearSubstitute();
+
+        Venue? capturedVenue = null;
+        _factory.CosmosDb.CreateAsync("venues", Arg.Any<Venue>(), Arg.Any<string>())
+            .Returns(callInfo =>
+            {
+                capturedVenue = callInfo.ArgAt<Venue>(1);
+                return capturedVenue;
+            });
+
+        var request = new CreateVenueRequest
+        {
+            Name = "Fancy Restaurant",
+            Type = VenueType.Restaurant,
+            Labels = ["fine dining", "date night"],
+        };
+
+        var response = await _client.PostAsJsonAsync("/api/venues", request);
+        response.StatusCode.Should().Be(HttpStatusCode.Created);
+
+        capturedVenue.Should().NotBeNull();
+        capturedVenue!.Labels.Should().HaveCount(2);
+        capturedVenue.Labels.Should().Contain("fine dining");
+        capturedVenue.Labels.Should().Contain("date night");
+        capturedVenue.Labels.Should().NotContain("to-try");
+    }
+
+    [Fact]
+    public async Task CreateVenue_WithEmptyLabels_DefaultsToToTry()
+    {
+        _factory.CosmosDb.ClearSubstitute();
+
+        Venue? capturedVenue = null;
+        _factory.CosmosDb.CreateAsync("venues", Arg.Any<Venue>(), Arg.Any<string>())
+            .Returns(callInfo =>
+            {
+                capturedVenue = callInfo.ArgAt<Venue>(1);
+                return capturedVenue;
+            });
+
+        var request = new CreateVenueRequest
+        {
+            Name = "Empty Labels Bar",
+            Type = VenueType.Bar,
+            Labels = [],
+        };
+
+        var response = await _client.PostAsJsonAsync("/api/venues", request);
+        response.StatusCode.Should().Be(HttpStatusCode.Created);
+
+        capturedVenue.Should().NotBeNull();
+        capturedVenue!.Labels.Should().ContainSingle().Which.Should().Be("to-try");
+    }
+
+    [Fact]
+    public async Task CreateVenue_WithWhitespaceOnlyLabels_DefaultsToToTry()
+    {
+        _factory.CosmosDb.ClearSubstitute();
+
+        Venue? capturedVenue = null;
+        _factory.CosmosDb.CreateAsync("venues", Arg.Any<Venue>(), Arg.Any<string>())
+            .Returns(callInfo =>
+            {
+                capturedVenue = callInfo.ArgAt<Venue>(1);
+                return capturedVenue;
+            });
+
+        var request = new CreateVenueRequest
+        {
+            Name = "Whitespace Labels Bar",
+            Type = VenueType.Bar,
+            Labels = ["  ", "\t", ""],
+        };
+
+        var response = await _client.PostAsJsonAsync("/api/venues", request);
+        response.StatusCode.Should().Be(HttpStatusCode.Created);
+
+        capturedVenue.Should().NotBeNull();
+        capturedVenue!.Labels.Should().ContainSingle().Which.Should().Be("to-try");
+    }
+
+    [Fact]
     public async Task UpdateVenue_ReturnsOk()
     {
         _factory.CosmosDb.ClearSubstitute();
