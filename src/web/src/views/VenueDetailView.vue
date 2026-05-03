@@ -539,7 +539,16 @@ const photoUrls = computed(() => venue.value?.photoUrls ?? [])
 
         <div>
           <label class="block text-sm text-[#96BEE6] mb-1">Rating</label>
-          <StarRating :rating="editRating" size="lg" interactive @update:rating="editRating = $event" />
+          <div class="flex items-center gap-3">
+            <StarRating :rating="editRating" size="lg" interactive @update:rating="editRating = $event" />
+            <span class="text-sm text-[#96BEE6]/70">{{ editRating > 0 ? editRating : '' }}</span>
+            <button
+              v-if="editRating > 0"
+              @click="editRating = 0"
+              class="text-xs text-[#96BEE6]/70 hover:text-red-400 px-2 py-1 rounded-lg hover:bg-[#0a2a52]/50 transition-colors"
+              title="Clear rating"
+            >Clear</button>
+          </div>
         </div>
 
         <!-- Labels -->
