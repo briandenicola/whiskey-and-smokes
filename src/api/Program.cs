@@ -208,6 +208,8 @@ builder.Services.AddSingleton<IPromptService, PromptService>();
 builder.Services.AddSingleton<ExifLocationService>();
 builder.Services.AddSingleton<IAgentService, WorkflowAgentService>();
 builder.Services.AddSingleton<INotificationService, NotificationService>();
+builder.Services.AddSingleton<IPushoverService, PushoverService>();
+builder.Services.AddHttpClient();  // Register IHttpClientFactory
 builder.Services.AddHttpClient<IWishlistUrlService, WishlistUrlService>();
 builder.Services.AddHttpClient<IVenueUrlService, VenueUrlService>();
 builder.Services.AddHostedService<AgentValidationService>();

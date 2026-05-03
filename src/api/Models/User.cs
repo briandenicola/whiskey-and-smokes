@@ -57,6 +57,34 @@ public class User
             Role = Role,
             AuthProvider = AuthProvider,
             IsDisabled = IsDisabled,
+            Preferences = new UserPreferences
+            {
+                FavoriteTypes = Preferences.FavoriteTypes,
+                DefaultView = Preferences.DefaultView,
+                CollectionSort = Preferences.CollectionSort,
+                CollectionFilter = Preferences.CollectionFilter,
+                PushoverUserKey = !string.IsNullOrEmpty(Preferences.PushoverUserKey) ? "****" : null,
+                PushoverEnabled = Preferences.PushoverEnabled,
+                PushoverSound = Preferences.PushoverSound,
+            },
+            ApiKeys = [],
+            RefreshTokens = [],
+            CreatedAt = CreatedAt,
+            UpdatedAt = UpdatedAt
+        };
+    }
+
+    public User SanitizedForOwner()
+    {
+        return new User
+        {
+            Id = Id,
+            DisplayName = DisplayName,
+            Email = Email,
+            PasswordHash = "",
+            Role = Role,
+            AuthProvider = AuthProvider,
+            IsDisabled = IsDisabled,
             Preferences = Preferences,
             ApiKeys = [],
             RefreshTokens = [],
@@ -79,6 +107,15 @@ public class UserPreferences
 
     [JsonPropertyName("collectionFilter")]
     public string? CollectionFilter { get; set; }
+
+    [JsonPropertyName("pushoverUserKey")]
+    public string? PushoverUserKey { get; set; }
+
+    [JsonPropertyName("pushoverEnabled")]
+    public bool PushoverEnabled { get; set; }
+
+    [JsonPropertyName("pushoverSound")]
+    public bool PushoverSound { get; set; } = true;
 }
 
 public class ApiKey

@@ -27,6 +27,12 @@ const filterOptions = [
   { label: 'Cocktail', value: 'cocktail' as string | undefined },
   { label: 'Vodka', value: 'vodka' as string | undefined },
   { label: 'Gin', value: 'gin' as string | undefined },
+  { label: 'Espresso', value: 'espresso' as string | undefined },
+  { label: 'Latte', value: 'latte' as string | undefined },
+  { label: 'Cappuccino', value: 'cappuccino' as string | undefined },
+  { label: 'Cold Brew', value: 'cold-brew' as string | undefined },
+  { label: 'Pour Over', value: 'pour-over' as string | undefined },
+  { label: 'Coffee', value: 'coffee' as string | undefined },
   { label: 'Cigar', value: 'cigar' as string | undefined },
   { label: 'Dessert', value: 'dessert' as string | undefined },
   { label: 'Custom', value: 'custom' as string | undefined },
@@ -57,6 +63,13 @@ registerRefresh?.(async () => {
 
 const isExporting = ref(false)
 const exportMessage = ref('')
+
+// Pushover
+const pushoverEnabled = ref(false)
+const pushoverUserKey = ref('')
+const pushoverSound = ref(true)
+const pushoverMessage = ref('')
+const isSavingPushover = ref(false)
 
 async function loadApiKeys() {
   try {
@@ -129,6 +142,9 @@ onMounted(() => {
     displayName.value = auth.user.displayName
     collectionSort.value = auth.user.preferences?.collectionSort || 'rating'
     collectionFilter.value = auth.user.preferences?.collectionFilter || undefined
+    pushoverEnabled.value = auth.user.preferences?.pushoverEnabled ?? false
+    pushoverUserKey.value = auth.user.preferences?.pushoverUserKey || ''
+    pushoverSound.value = auth.user.preferences?.pushoverSound ?? true
   }
   loadApiKeys()
 })
@@ -156,6 +172,28 @@ async function saveProfile() {
     saveMessage.value = 'Failed to save'
   } finally {
     isSaving.value = false
+  }
+}
+
+async function savePushover() {
+  isSavingPushover.value = true
+  pushoverMessage.value = ''
+  try {
+    await usersApi.updateMe({
+      preferences: {
+        ...auth.user!.preferences,
+        pushoverEnabled: pushoverEnabled.value,
+        pushoverUserKey: pushoverUserKey.value || undefined,
+        pushoverSound: pushoverSound.value,
+      },
+    })
+    await auth.loadUser()
+    pushoverMessage.value = 'Pushover settings saved!'
+    feedbackTimers.push(setTimeout(() => { pushoverMessage.value = '' }, 3000))
+  } catch {
+    pushoverMessage.value = 'Failed to save'
+  } finally {
+    isSavingPushover.value = false
   }
 }
 
@@ -393,6 +431,67 @@ async function changePassword() {
             </button>
           </div>
         </div>
+      </section>
+
+      <!-- Push Notifications (Pushover) -->
+      <section class="bg-[#041e3e] border border-[#0a2a52] rounded-xl p-4 space-y-4">
+        <h3 class="text-sm font-medium text-[#96BEE6] uppercase tracking-wide">Push Notifications</h3>
+        <p class="text-sm text-[#96BEE6]">
+          Get real-time push notifications via <a href="https://pushover.net" target="_blank" rel="noopener" class="underline hover:text-white">Pushover</a> when workflows complete.
+        </p>
+
+        <div class="flex items-center justify-between">
+          <label class="text-sm text-[#96BEE6]">Enable Pushover</label>
+          <button
+            @click="pushoverEnabled = !pushoverEnabled"
+            class="relative w-11 h-6 rounded-full transition-colors"
+            :class="pushoverEnabled ? 'bg-[#1e407c]' : 'bg-[#0a2a52]'"
+          >
+            <span
+              class="absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full transition-transform"
+              :class="pushoverEnabled ? 'translate-x-5' : ''"
+            />
+          </button>
+        </div>
+
+        <template v-if="pushoverEnabled">
+          <div>
+            <label class="block text-sm text-[#96BEE6] mb-1">User Key</label>
+            <input
+              v-model="pushoverUserKey"
+              type="text"
+              placeholder="Your Pushover user key"
+              class="w-full bg-[#0a2a52] border border-[#1e407c]/50 rounded-xl px-4 py-3 text-white placeholder-[#4a7aa5] focus:outline-none focus:border-[#1e407c] font-mono text-sm"
+            />
+            <p class="text-xs text-[#4a7aa5] mt-1">Find this in your Pushover app or at pushover.net/dashboard</p>
+          </div>
+
+          <div class="flex items-center justify-between">
+            <label class="text-sm text-[#96BEE6]">Play sound</label>
+            <button
+              @click="pushoverSound = !pushoverSound"
+              class="relative w-11 h-6 rounded-full transition-colors"
+              :class="pushoverSound ? 'bg-[#1e407c]' : 'bg-[#0a2a52]'"
+            >
+              <span
+                class="absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full transition-transform"
+                :class="pushoverSound ? 'translate-x-5' : ''"
+              />
+            </button>
+          </div>
+        </template>
+
+        <div v-if="pushoverMessage" class="text-sm" :class="pushoverMessage.includes('Failed') ? 'text-red-400' : 'text-green-400'">
+          {{ pushoverMessage }}
+        </div>
+
+        <button
+          @click="savePushover"
+          :disabled="isSavingPushover || (pushoverEnabled && !pushoverUserKey.trim())"
+          class="w-full bg-[#1e407c] hover:bg-[#2a5299] disabled:bg-[#0a2a52] disabled:text-[#4a7aa5]/60 text-white py-3 rounded-xl font-medium"
+        >
+          {{ isSavingPushover ? 'Saving...' : 'Save Pushover Settings' }}
+        </button>
       </section>
 
       <!-- Export Data -->

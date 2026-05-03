@@ -46,7 +46,7 @@ public class UsersController : ControllerBase
         }
 
         _logger.LogInformation("Retrieved profile for user {UserId}", userId);
-        return Ok(user.Sanitized());
+        return Ok(user.SanitizedForOwner());
     }
 
     [HttpPut("me")]
@@ -73,7 +73,7 @@ public class UsersController : ControllerBase
         user = await _cosmosDb.UpsertAsync(ContainerName, user, user.PartitionKey);
 
         _logger.LogInformation("Updated profile for user {UserId}", userId);
-        return Ok(user.Sanitized());
+        return Ok(user.SanitizedForOwner());
     }
 
     [HttpPut("me/password")]

@@ -11,6 +11,9 @@ export interface User {
     defaultView: string
     collectionSort: string
     collectionFilter?: string
+    pushoverUserKey?: string
+    pushoverEnabled?: boolean
+    pushoverSound?: boolean
   }
   createdAt: string
   updatedAt: string

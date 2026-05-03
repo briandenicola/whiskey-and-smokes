@@ -64,6 +64,7 @@ public class CustomWebApplicationFactory : WebApplicationFactory<Program>
             ReplaceService<IPromptService>(services, PromptService);
             ReplaceService<IAgentService>(services, AgentService);
             ReplaceService<INotificationService>(services, NotificationService);
+            ReplaceService<IPushoverService>(services, Substitute.For<IPushoverService>());
 
             // Ensure bounded channel is available
             var channelDescriptor = services.FirstOrDefault(d => d.ServiceType == typeof(Channel<Capture>));
