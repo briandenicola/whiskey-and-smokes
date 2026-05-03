@@ -75,6 +75,10 @@ public class VenuesController : ControllerBase
         if (!VenueType.All.Contains(request.Type))
             return BadRequest(new { message = $"Invalid venue type. Must be one of: {string.Join(", ", VenueType.All)}" });
 
+        var labels = request.Labels?.Select(l => l.Trim().ToLowerInvariant()).Where(l => l.Length > 0).Distinct().ToList();
+        if (labels == null || labels.Count == 0)
+            labels = ["to-try"];
+
         var venue = new Venue
         {
             UserId = userId,
@@ -84,7 +88,7 @@ public class VenuesController : ControllerBase
             Type = request.Type,
             Rating = request.Rating,
             Location = request.Location,
-            Labels = request.Labels?.Select(l => l.Trim().ToLowerInvariant()).Where(l => l.Length > 0).Distinct().ToList() ?? [],
+            Labels = labels,
         };
 
         venue = await _cosmosDb.CreateAsync(ContainerName, venue, venue.PartitionKey);
@@ -110,6 +114,7 @@ public class VenuesController : ControllerBase
             Name = $"Extracting from {hostLabel}...",
             Type = VenueType.Restaurant,
             Status = VenueStatus.Processing,
+            Labels = ["to-try"],
         };
 
         venue = await _cosmosDb.CreateAsync(ContainerName, venue, venue.PartitionKey);
