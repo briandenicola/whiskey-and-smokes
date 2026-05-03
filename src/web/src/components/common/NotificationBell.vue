@@ -13,8 +13,24 @@ async function loadCount() {
   try {
     const res = await notificationsApi.list(1)
     unreadCount.value = res.data.unreadCount
+    return true
   } catch (e) {
     console.warn('Failed to load notification count', e)
+    return false
+  }
+}
+
+async function loadCountWithRetry() {
+  const ok = await loadCount()
+  if (!ok) {
+    // Token may not be ready yet on cold start — retry after a short delay
+    setTimeout(loadCount, 3000)
+  }
+}
+
+function handleVisibilityChange() {
+  if (document.visibilityState === 'visible') {
+    loadCount()
   }
 }
 
@@ -87,13 +103,15 @@ function closeDropdown(e: MouseEvent) {
 let refreshInterval: ReturnType<typeof setInterval> | null = null
 
 onMounted(() => {
-  loadCount()
+  loadCountWithRetry()
   refreshInterval = setInterval(loadCount, 60000)
+  document.addEventListener('visibilitychange', handleVisibilityChange)
   window.addEventListener('click', closeDropdown)
 })
 
 onUnmounted(() => {
   if (refreshInterval) clearInterval(refreshInterval)
+  document.removeEventListener('visibilitychange', handleVisibilityChange)
   window.removeEventListener('click', closeDropdown)
 })
 </script>
