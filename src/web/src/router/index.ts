@@ -66,6 +66,11 @@ const routes = [
     component: () => import('../views/SearchView.vue'),
   },
   {
+    path: '/recommendations',
+    name: 'Recommendations',
+    component: () => import('../views/RecommendationsView.vue'),
+  },
+  {
     path: '/stats',
     name: 'Stats',
     component: () => import('../views/StatsView.vue'),
