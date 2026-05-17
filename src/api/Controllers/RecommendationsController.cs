@@ -30,14 +30,15 @@ public class RecommendationsController : ControllerBase
     /// </summary>
     [HttpPost]
     public async Task<ActionResult<RecommendationResponse>> GetRecommendations(
-        [FromBody] RecommendationRequest request)
+        [FromBody] RecommendationRequest request,
+        CancellationToken cancellationToken)
     {
         var userId = GetUserId();
         _logger.LogInformation("Getting recommendations for user {UserId}", userId);
 
         try
         {
-            var response = await _recommendationService.GetRecommendationsAsync(userId, request);
+            var response = await _recommendationService.GetRecommendationsAsync(userId, request, cancellationToken);
             return Ok(response);
         }
         catch (Exception ex)
@@ -51,14 +52,14 @@ public class RecommendationsController : ControllerBase
     /// Get user's rating profile (for debugging/analytics)
     /// </summary>
     [HttpGet("profile")]
-    public async Task<ActionResult<UserRatingProfile>> GetUserProfile()
+    public async Task<ActionResult<UserRatingProfile>> GetUserProfile(CancellationToken cancellationToken)
     {
         var userId = GetUserId();
         _logger.LogInformation("Getting rating profile for user {UserId}", userId);
 
         try
         {
-            var profile = await _recommendationService.BuildUserProfileAsync(userId);
+            var profile = await _recommendationService.BuildUserProfileAsync(userId, cancellationToken);
             return Ok(profile);
         }
         catch (Exception ex)
@@ -72,7 +73,9 @@ public class RecommendationsController : ControllerBase
     /// Extract menu items from a photo
     /// </summary>
     [HttpPost("extract-menu")]
-    public async Task<ActionResult<List<string>>> ExtractMenuItems([FromBody] MenuExtractionRequest request)
+    public async Task<ActionResult<List<string>>> ExtractMenuItems(
+        [FromBody] MenuExtractionRequest request,
+        CancellationToken cancellationToken)
     {
         var userId = GetUserId();
         _logger.LogInformation("Extracting menu items for user {UserId}", userId);
@@ -84,7 +87,7 @@ public class RecommendationsController : ControllerBase
 
         try
         {
-            var items = await _recommendationService.ExtractMenuItemsAsync(request.PhotoUrl);
+            var items = await _recommendationService.ExtractMenuItemsAsync(request.PhotoUrl, cancellationToken);
             return Ok(items);
         }
         catch (Exception ex)

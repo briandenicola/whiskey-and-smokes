@@ -30,7 +30,9 @@ public class RecommendationService : IRecommendationService
         _isFoundryConfigured = !string.IsNullOrEmpty(_foundryOptions.ProjectEndpoint);
     }
 
-    public async Task<RecommendationResponse> GetRecommendationsAsync(string userId, RecommendationRequest request)
+    private static readonly TimeSpan AiTimeout = TimeSpan.FromSeconds(90);
+
+    public async Task<RecommendationResponse> GetRecommendationsAsync(string userId, RecommendationRequest request, CancellationToken cancellationToken = default)
     {
         using var activity = Diagnostics.General.StartActivity("GetRecommendations");
         activity?.SetTag("user.id", userId);
@@ -50,7 +52,7 @@ public class RecommendationService : IRecommendationService
         }
 
         // Build user profile from ratings
-        var profile = await BuildUserProfileAsync(userId);
+        var profile = await BuildUserProfileAsync(userId, cancellationToken);
 
         if (profile.TotalRatedItems == 0)
         {
@@ -65,12 +67,12 @@ public class RecommendationService : IRecommendationService
         List<string>? menuItems = null;
         if (!string.IsNullOrEmpty(request.MenuPhoto))
         {
-            menuItems = await ExtractMenuItemsAsync(request.MenuPhoto);
+            menuItems = await ExtractMenuItemsAsync(request.MenuPhoto, cancellationToken);
             _logger.LogInformation("Extracted {Count} menu items from photo", menuItems.Count);
         }
 
         // Generate recommendations using AI
-        var recommendations = await GenerateRecommendationsAsync(profile, request, menuItems);
+        var recommendations = await GenerateRecommendationsAsync(profile, request, menuItems, cancellationToken);
 
         return new RecommendationResponse
         {
@@ -81,7 +83,7 @@ public class RecommendationService : IRecommendationService
         };
     }
 
-    public async Task<UserRatingProfile> BuildUserProfileAsync(string userId)
+    public async Task<UserRatingProfile> BuildUserProfileAsync(string userId, CancellationToken cancellationToken = default)
     {
         using var activity = Diagnostics.General.StartActivity("BuildUserProfile");
         activity?.SetTag("user.id", userId);
@@ -163,7 +165,7 @@ public class RecommendationService : IRecommendationService
         };
     }
 
-    public async Task<List<string>> ExtractMenuItemsAsync(string photoUrl)
+    public async Task<List<string>> ExtractMenuItemsAsync(string photoUrl, CancellationToken cancellationToken = default)
     {
         using var activity = Diagnostics.General.StartActivity("ExtractMenuItems");
         activity?.SetTag("photo.url", photoUrl);
@@ -210,7 +212,7 @@ If no items are visible or the photo is not of a menu, return an empty array: []
                 ])
             };
 
-            var response = await chatClient.GetResponseAsync(messages);
+            var response = await chatClient.GetResponseAsync(messages, cancellationToken: cancellationToken);
             var content = response.Text ?? "[]";
             _logger.LogDebug("Menu extraction response: {Response}", content);
 
@@ -245,7 +247,8 @@ If no items are visible or the photo is not of a menu, return an empty array: []
     private async Task<RecommendationResponse> GenerateRecommendationsAsync(
         UserRatingProfile profile,
         RecommendationRequest request,
-        List<string>? menuItems)
+        List<string>? menuItems,
+        CancellationToken cancellationToken)
     {
         using var activity = Diagnostics.General.StartActivity("GenerateRecommendations");
 
@@ -336,7 +339,7 @@ If no items are visible or the photo is not of a menu, return an empty array: []
                 new(ChatRole.User, promptBuilder.ToString())
             };
 
-            var response = await chatClient.GetResponseAsync(messages);
+            var response = await chatClient.GetResponseAsync(messages, cancellationToken: cancellationToken);
             var content = response.Text ?? "{}";
             _logger.LogDebug("Recommendation response: {Response}", content);
 
