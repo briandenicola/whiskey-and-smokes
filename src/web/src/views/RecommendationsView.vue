@@ -1,9 +1,11 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import { useCamera } from '../composables/useCamera'
+import { useBreakpoint } from '../composables/useBreakpoint'
 import { capturesApi } from '../services/captures'
-import { recommendationsApi, type RecommendedItem } from '../services/recommendations'
+import { recommendationsApi, type RecommendedItem, type UserRatingProfile } from '../services/recommendations'
 
+const { isDesktop } = useBreakpoint()
 const { photos, previews, addFromInput, removePhoto, clearPhotos } = useCamera()
 
 const preferences = ref('')
@@ -15,7 +17,7 @@ const reasoning = ref<string>('')
 const basedOnItems = ref<string[]>([])
 const extractedMenuItems = ref<string[]>([])
 const menuPhotoUrl = ref<string>('')
-const profileData = ref<any>(null)
+const profileData = ref<UserRatingProfile | null>(null)
 const selectedTypes = ref<string[]>([])
 
 const availableTypes = [
@@ -134,7 +136,7 @@ loadUserProfile()
 </script>
 
 <template>
-  <div class="p-4 max-w-lg mx-auto pb-24">
+  <div class="p-4 mx-auto pb-24" :class="isDesktop ? 'max-w-6xl' : 'max-w-lg'">
     <h1 class="text-2xl font-bold text-white mb-2">AI Recommendations</h1>
     <p class="text-[#96BEE6] text-sm mb-6">
       Get personalized recommendations based on your ratings
@@ -151,7 +153,7 @@ loadUserProfile()
           <span class="text-[#4a7aa5]">Average rating:</span> {{ profileData.averageRating.toFixed(1) }}/5.0
         </p>
         <p v-if="profileData.topRatedItems.length > 0" class="text-white/80">
-          <span class="text-[#4a7aa5]">Top favorites:</span> {{ profileData.topRatedItems.slice(0, 3).map((i: any) => i.name).join(', ') }}
+          <span class="text-[#4a7aa5]">Top favorites:</span> {{ profileData.topRatedItems.slice(0, 3).map((i) => i.name).join(', ') }}
         </p>
       </div>
     </div>
