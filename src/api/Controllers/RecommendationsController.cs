@@ -85,6 +85,13 @@ public class RecommendationsController : ControllerBase
             return BadRequest(new { error = "PhotoUrl is required" });
         }
 
+        // Validate that the photo URL belongs to the authenticated user's blob path
+        if (!request.PhotoUrl.Contains($"/{userId}/"))
+        {
+            _logger.LogWarning("User {UserId} attempted to access photo not in their blob path: {PhotoUrl}", userId, request.PhotoUrl);
+            return BadRequest(new { error = "Invalid photo URL" });
+        }
+
         try
         {
             var items = await _recommendationService.ExtractMenuItemsAsync(request.PhotoUrl, cancellationToken);
