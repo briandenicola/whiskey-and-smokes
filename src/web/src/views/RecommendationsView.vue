@@ -4,6 +4,7 @@ import { useCamera } from '../composables/useCamera'
 import { useBreakpoint } from '../composables/useBreakpoint'
 import { capturesApi } from '../services/captures'
 import { recommendationsApi, type RecommendedItem, type UserRatingProfile } from '../services/recommendations'
+import { itemsApi } from '../services/items'
 
 const { isDesktop } = useBreakpoint()
 const { photos, previews, addFromInput, removePhoto, clearPhotos } = useCamera()
@@ -135,6 +136,29 @@ function reset() {
   preferences.value = ''
   selectedTypes.value = []
   isError.value = false
+  savedItems.value.clear()
+}
+
+const savedItems = ref<Set<number>>(new Set())
+const savingItems = ref<Set<number>>(new Set())
+
+async function saveToWishlist(rec: RecommendedItem, index: number) {
+  if (savedItems.value.has(index) || savingItems.value.has(index)) return
+
+  savingItems.value.add(index)
+  try {
+    await itemsApi.createWishlistItem({
+      name: rec.name,
+      type: rec.type,
+      brand: rec.brand || undefined,
+      notes: rec.reason,
+    })
+    savedItems.value.add(index)
+  } catch (error) {
+    console.error('Failed to save to wishlist:', error)
+  } finally {
+    savingItems.value.delete(index)
+  }
 }
 
 loadUserProfile()
@@ -142,21 +166,22 @@ loadUserProfile()
 
 <template>
   <div class="p-4 mx-auto pb-24" :class="isDesktop ? 'max-w-6xl' : 'max-w-lg'">
-    <h1 class="text-2xl font-bold text-white mb-2">AI Recommendations</h1>
-    <div class="flex items-center justify-between mb-6">
-      <p class="text-[#96BEE6] text-sm">
-        Get personalized recommendations based on your ratings
-      </p>
+    <div class="flex items-center justify-between mb-2">
+      <h1 class="text-2xl font-bold text-white">AI Recommendations</h1>
       <router-link
         v-if="!isDesktop"
         to="/search"
-        class="flex items-center gap-1 text-xs text-[#96BEE6]/70 hover:text-[#96BEE6] transition-colors shrink-0 ml-4"
+        class="text-[#96BEE6]/70 hover:text-[#96BEE6] transition-colors"
       >
-        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+        <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
           <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
         </svg>
-        Search
       </router-link>
+    </div>
+    <div class="mb-6">
+      <p class="text-[#96BEE6] text-sm">
+        Get personalized recommendations based on your ratings
+      </p>
     </div>
 
     <!-- User Profile Summary -->
@@ -305,6 +330,18 @@ loadUserProfile()
             </span>
             <span v-if="rec.matchedFromMenu" class="text-xs bg-green-900/50 text-green-300 px-2 py-1 rounded">
               On menu
+            </span>
+            <button
+              v-if="!savedItems.has(index)"
+              :disabled="savingItems.has(index)"
+              @click="saveToWishlist(rec, index)"
+              class="text-xs bg-amber-700/50 hover:bg-amber-700/80 text-amber-200 px-2 py-1 rounded transition-colors disabled:opacity-50"
+            >
+              <span v-if="savingItems.has(index)">Saving...</span>
+              <span v-else>+ Wishlist</span>
+            </button>
+            <span v-else class="text-xs bg-green-800/50 text-green-300 px-2 py-1 rounded">
+              Saved
             </span>
           </div>
         </div>
