@@ -10,6 +10,7 @@ import StarRating from '../components/common/StarRating.vue'
 import ThoughtsList from '../components/common/ThoughtsList.vue'
 import AutocompleteInput from '../components/common/AutocompleteInput.vue'
 import { RefreshKey } from '../composables/refreshKey'
+import { getErrorMessage } from '../services/errors'
 
 const route = useRoute()
 const router = useRouter()
@@ -22,6 +23,7 @@ const isEditing = ref(false)
 const isSaving = ref(false)
 const isAddingNote = ref(false)
 const showDeleteConfirm = ref(false)
+const error = ref('')
 const editRating = ref(0)
 const editName = ref('')
 const editType = ref('')
@@ -193,6 +195,7 @@ function startEditing() {
   if (item.value) resetEditFields(item.value)
   pendingPhotoDeletes.value = new Set()
   pendingPhotoAdds.value = []
+  error.value = ''
   isEditing.value = true
   venuesStore.loadVenues(undefined, true)
   loadSuggestions()
@@ -230,7 +233,10 @@ async function uploadNewPhoto(file: File): Promise<string> {
   if (!item.value) throw new Error('No item')
   const { data } = await itemsApi.getPhotoUploadUrl(item.value.id, file.name)
 
-  const headers: Record<string, string> = { 'Content-Type': file.type }
+  // Set Content-Type, defaulting to 'application/octet-stream' if empty (e.g., iPhone HEIC files)
+  const contentType = file.type || 'application/octet-stream'
+  const headers: Record<string, string> = { 'Content-Type': contentType }
+
   if (data.uploadUrl.includes('blob.core.windows.net') || data.uploadUrl.includes('devstoreaccount')) {
     headers['x-ms-blob-type'] = 'BlockBlob'
   } else {
@@ -238,7 +244,12 @@ async function uploadNewPhoto(file: File): Promise<string> {
     if (token) headers['Authorization'] = `Bearer ${token}`
   }
 
-  await fetch(data.uploadUrl, { method: 'PUT', headers, body: file })
+  const response = await fetch(data.uploadUrl, { method: 'PUT', headers, body: file })
+  if (!response.ok) {
+    const errorText = await response.text().catch(() => 'Unknown error')
+    throw new Error(`Upload failed: ${response.status} ${response.statusText}. ${errorText}`)
+  }
+
   return data.blobUrl
 }
 
@@ -257,6 +268,7 @@ function removeTag(tag: string) {
 async function save() {
   if (!item.value) return
   isSaving.value = true
+  error.value = ''
   try {
     // Delete marked photos
     for (const url of pendingPhotoDeletes.value) {
@@ -273,7 +285,10 @@ async function save() {
         const { data } = await itemsApi.addPhoto(item.value.id, blobUrl)
         item.value = data
         URL.revokeObjectURL(pending.previewUrl)
-      } catch { /* continue with other ops */ }
+      } catch (e: unknown) {
+        error.value = getErrorMessage(e, 'Failed to upload photo. Please try again.')
+        throw e // Re-throw to stop processing
+      }
     }
 
     // Save other fields
@@ -295,6 +310,11 @@ async function save() {
     pendingPhotoDeletes.value = new Set()
     pendingPhotoAdds.value = []
     isEditing.value = false
+  } catch (e: unknown) {
+    // Error is already set in the photo upload catch block, or set it here for other errors
+    if (!error.value) {
+      error.value = getErrorMessage(e, 'Failed to save changes. Please try again.')
+    }
   } finally {
     isSaving.value = false
   }
@@ -369,6 +389,11 @@ function isAiGenerated(data: Item): boolean {
           </button>
         </template>
       </div>
+    </div>
+
+    <!-- Error message -->
+    <div v-if="error" class="mb-4 p-3 bg-red-500/20 border border-red-500/50 rounded-lg text-red-200 text-sm">
+      {{ error }}
     </div>
 
     <!-- Photos (view mode) -->
